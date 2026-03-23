@@ -1,0 +1,232 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile in the dating app.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user profile."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "User's date of birth.",
+          "format": "date-time"
+        },
+        "gender": {
+          "type": "string",
+          "description": "User's gender."
+        },
+        "sexualOrientation": {
+          "type": "string",
+          "description": "User's sexual orientation."
+        },
+        "bio": {
+          "type": "string",
+          "description": "User's biography."
+        },
+        "interests": {
+          "type": "array",
+          "description": "User's interests.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "photos": {
+          "type": "array",
+          "description": "URLs of user's photos.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "location": {
+          "type": "string",
+          "description": "User's current location (e.g., coordinates or address)."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "dateOfBirth",
+        "gender",
+        "sexualOrientation",
+        "bio",
+        "interests",
+        "photos",
+        "location"
+      ]
+    },
+    "Match": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Match",
+      "type": "object",
+      "description": "Represents a match between two users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the match."
+        },
+        "user1Id": {
+          "type": "string",
+          "description": "Reference to the first user in the match. (Relationship: UserProfile 1:N Match)"
+        },
+        "user2Id": {
+          "type": "string",
+          "description": "Reference to the second user in the match. (Relationship: UserProfile 1:N Match)"
+        },
+        "matchDate": {
+          "type": "string",
+          "description": "Date when the match occurred.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "user1Id",
+        "user2Id",
+        "matchDate"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a chat message between two users.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the chat message."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to the user who sent the message. (Relationship: UserProfile 1:N ChatMessage)"
+        },
+        "receiverId": {
+          "type": "string",
+          "description": "Reference to the user who received the message. (Relationship: UserProfile 1:N ChatMessage)"
+        },
+        "matchId": {
+          "type": "string",
+          "description": "Reference to the match associated with the message. (Relationship: Match 1:N ChatMessage)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Content of the chat message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the message was sent.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "senderId",
+        "receiverId",
+        "matchId",
+        "message",
+        "timestamp"
+      ]
+    },
+    "Like": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Like",
+      "type": "object",
+      "description": "Represents a user's like or dislike action towards another user.",
+      "properties": {
+        "likerId": {
+          "type": "string",
+          "description": "The ID of the user who is performing the like action."
+        },
+        "likeeId": {
+          "type": "string",
+          "description": "The ID of the user who is being liked."
+        },
+        "isLike": {
+          "type": "boolean",
+          "description": "Indicates whether the user liked (true) or disliked (false) the other user."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the like/dislike was recorded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "likerId",
+        "likeeId",
+        "isLike",
+        "timestamp"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "phone"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile data. Path-based ownership ensures only the user can access their own profile."
+        }
+      },
+      {
+        "path": "/likes/{likeId}",
+        "definition": {
+          "entityName": "Like",
+          "schema": {
+            "$ref": "#/backend/entities/Like"
+          },
+          "description": "Top-level collection to store all like/dislike actions. This avoids writing to other users' subcollections, thus preventing permission issues."
+        }
+      },
+      {
+        "path": "/matches/{matchId}",
+        "definition": {
+          "entityName": "Match",
+          "schema": {
+            "$ref": "#/backend/entities/Match"
+          },
+          "description": "Stores match data between two users. Includes denormalized 'users' array for simple participant authorization.",
+          "subcollections": [
+            {
+              "path": "messages",
+              "definition": {
+                "entityName": "ChatMessage",
+                "schema": {
+                  "$ref": "#/backend/entities/ChatMessage"
+                },
+                "description": "Stores chat messages for a specific match."
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure has been redesigned for improved security and scalability, particularly for the 'like' functionality. Instead of storing 'likes' in subcollections under each user, a top-level `likes` collection is now used. Each document in `/likes` represents a single like action and contains both `likerId` and `likeeId`. This change is critical because it eliminates the need for one user to write to another user's document tree, which was causing 'permission-denied' errors with the previous security rules. This new structure allows for simple, indexed queries to find 'who I liked' (`where('likerId', '==', currentUserId)`) and 'who liked me' (`where('likeeId', '==', currentUserId)`) without complex security rule workarounds. The rest of the structure for users and matches remains the same, as it is already optimized for ownership-based security and efficient data retrieval."
+  }
+}

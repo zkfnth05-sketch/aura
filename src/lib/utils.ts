@@ -1,0 +1,97 @@
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+import type { User } from './types';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+/**
+ * Compresses an image from a data URI.
+ * @param dataUri The data URI of the image to compress.
+ * @param quality The quality of the output image, from 0 to 1.
+ * @param maxWidth The maximum width of the output image.
+ * @param maxHeight The maximum height of the output image.
+ * @returns A promise that resolves with the compressed image data URI.
+ */
+export function compressImage(dataUri: string, quality = 0.8, maxWidth = 1024, maxHeight = 1024): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round(height * (maxWidth / width));
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round(width * (maxHeight / height));
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        return reject(new Error('Failed to get canvas context'));
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = (error) => {
+      console.error("Image loading error for compression:", error);
+      // If loading fails, just return the original uri to not break the flow
+      resolve(dataUri);
+    };
+    img.src = dataUri;
+  });
+}
+
+
+/**
+ * Calculates a compatibility score and finds commonalities between two users.
+ * This is a simple, non-AI based implementation for fast results.
+ */
+export function calculateCompatibility(user1: User, user2: User): { score: number; commonalities: string[] } {
+  let score = 0;
+  const allCommonalities: string[] = [];
+
+  // Define weights for different categories
+  const weights = {
+    hobbies: 15,
+    interests: 15,
+    values: 10,
+    communication: 5,
+    lifestyle: 5,
+    relationship: 10
+  };
+
+  const findCommon = (arr1?: string[] | null, arr2?: string[] | null) => {
+    if (!Array.isArray(arr1) || !Array.isArray(arr2)) return [];
+    const set1 = new Set(arr1);
+    return arr2.filter(item => set1.has(item));
+  };
+  
+  const categories: (keyof typeof weights)[] = ['hobbies', 'interests', 'values', 'communication', 'lifestyle', 'relationship'];
+
+  categories.forEach(category => {
+    const commonItems = findCommon(user1[category as keyof User] as string[] | undefined, user2[category as keyof User] as string[] | undefined);
+    score += commonItems.length * weights[category];
+    allCommonalities.push(...commonItems);
+  });
+  
+  // Normalize score to be out of 100
+  const finalScore = Math.min(100, Math.floor(score));
+
+  return {
+    score: finalScore,
+    commonalities: [...new Set(allCommonalities)], // Return unique commonalities
+  };
+}
