@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useUser } from '@/contexts/user-context';
 import { useLanguage } from '@/contexts/language-context';
@@ -22,6 +22,7 @@ type PhotoState = {
 
 export default function UploadPhotoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, updateUser, isLoaded, authUser, setIsSignupFlowActive } = useUser();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -51,7 +52,9 @@ export default function UploadPhotoPage() {
     if (aiEnhancement) {
       setPhoto({ uri: compressedForUpload, isEnhancing: true });
       try {
-        const result = await getEnhancedPhoto({ photoDataUri: compressedForUpload, gender: user?.gender || '기타' });
+        const urlGender = searchParams.get('gender') as '여성' | '남성' | '기타' | null;
+        const finalGender = urlGender || user?.gender || '기타';
+        const result = await getEnhancedPhoto({ photoDataUri: compressedForUpload, gender: finalGender });
         const finalCompressedUri = await compressImage(result.enhancedPhotoDataUri);
         setPhoto({ uri: finalCompressedUri, isEnhancing: false });
       } catch (error: any) {

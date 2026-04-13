@@ -24,26 +24,9 @@ export default function PhonePage() {
     setPhoneNumber,
     countryCode,
     setCountryCode,
-    setupRecaptcha,
     sendVerificationCode,
     isSendingOtp,
   } = phoneAuth;
-
-  const [recaptchaContainer, setRecaptchaContainer] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    // This container is where the invisible reCAPTCHA will be rendered.
-    const container = document.getElementById('recaptcha-container');
-    if (container) {
-      setRecaptchaContainer(container);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (recaptchaContainer) {
-      setupRecaptcha(recaptchaContainer);
-    }
-  }, [recaptchaContainer, setupRecaptcha]);
 
   const handleSendCode = async () => {
     if (!/^\d{8,15}$/.test(phoneNumber.replace(/^0+/, ''))) {

@@ -19,7 +19,7 @@ import { mapGuide } from '@/lib/coachmark-steps';
 let mapUsersCache: User[] | null = null;
 
 export default function MapPage() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = 'AIzaSyDif-s30htM9_bWTE8FxOJD7wwDHkrcPg8';
   const { user: currentUser, isLoaded: isUserLoaded } = useUser();
   const firestore = useFirestore();
   const router = useRouter();

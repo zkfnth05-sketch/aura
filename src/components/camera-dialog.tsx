@@ -31,13 +31,25 @@ export default function CameraDialog({ isOpen, onClose, onPhotoTaken }: CameraDi
             videoRef.current.srcObject = stream;
           }
           setHasCameraPermission(true);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error accessing camera:', error);
           setHasCameraPermission(false);
+          
+          let errorMessage = t('camera_access_denied_desc');
+          let errorTitle = t('camera_access_denied_title');
+
+          if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+            errorTitle = "카메라를 찾을 수 없음";
+            errorMessage = "기기에 카메라 장치가 없거나 연결되지 않았습니다. 앨범에서 사진을 업로드해 주세요.";
+          } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            errorTitle = t('camera_access_denied_title');
+            errorMessage = t('camera_access_denied_desc');
+          }
+
           toast({
             variant: 'destructive',
-            title: t('camera_access_denied_title'),
-            description: t('camera_access_denied_desc'),
+            title: errorTitle,
+            description: errorMessage,
           });
         }
       } else {

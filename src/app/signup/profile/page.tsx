@@ -85,9 +85,9 @@ export default function CreateProfilePage() {
     };
     
     try {
-      // Non-blocking update. We navigate away immediately.
-      updateUser(userData);
-      router.push('/signup/photo');
+      // 성별 등 기본 정보 저장이 완벽히 끝날 때까지 기다린 후 다음 페이지로 넘깁니다.
+      await updateUser(userData);
+      router.push(`/signup/photo?gender=${gender}`);
     } catch(error) {
       console.error("Failed to start user update:", error);
       toast({

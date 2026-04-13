@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
-import type { User as AuthUser, RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
+import { User as AuthUser, RecaptchaVerifier, ConfirmationResult, signInWithPhoneNumber, PhoneAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { useUser as useAuthUserHook, useAuth, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, serverTimestamp, collection, query, where, getDoc, getDocs, updateDoc, orderBy, limit, onSnapshot, Query, DocumentData, startAfter, QueryDocumentSnapshot, documentId } from 'firebase/firestore';
 import type { User, Match, Like } from '@/lib/types';
@@ -35,8 +35,6 @@ interface PhoneAuthState {
   countryCode: string;
   setCountryCode: (code: string) => void;
   confirmationResult: ConfirmationResult | null;
-  recaptchaVerifier: RecaptchaVerifier | null;
-  setupRecaptcha: (container: HTMLElement) => void;
   sendVerificationCode: (phoneNumberOverride?: string) => Promise<string | undefined>;
   verifyOtp: (otp: string) => Promise<void>;
   reauthenticate: (otp: string) => Promise<void>;
@@ -345,38 +343,57 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setupRecaptcha = useCallback((container: HTMLElement) => {
-    if (auth) {
-        const { RecaptchaVerifier } = require('firebase/auth');
-        const verifier = new RecaptchaVerifier(auth, container, { size: 'invisible' });
-        setRecaptchaVerifier(verifier);
-      }
-  }, [auth]);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   const sendVerificationCode = useCallback(async (phoneNumberOverride?: string) => {
-    // If override is provided, use it directly (for re-auth). Otherwise, construct from state.
+    if (!auth) return;
+    
     const fullPhoneNumber = phoneNumberOverride || `${countryCode}${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
     
-    if (recaptchaVerifier && fullPhoneNumber) {
-        setIsSendingOtp(true);
-        try {
-            const { signInWithPhoneNumber } = require('firebase/auth');
-            const confirmation = await signInWithPhoneNumber(auth, fullPhoneNumber, recaptchaVerifier);
-            setConfirmationResult(confirmation);
-            setReauthVerificationId(confirmation.verificationId);
-            // Only navigate if we're in the initial signup flow
-            if(!phoneNumberOverride) {
-              router.push('/signup/otp');
-            }
-            return confirmation.verificationId;
-        } catch (error) {
-            console.error("SMS Error:", error);
-            alert("인증 코드 전송 실패. 전화번호를 확인해주세요.");
-        } finally {
-            setIsSendingOtp(false);
+    setIsSendingOtp(true);
+    try {
+        // 기존 인스턴스 정리
+        if (recaptchaVerifierRef.current) {
+          try { (recaptchaVerifierRef.current as any).clear(); } catch(e) {}
         }
+
+        const container = document.getElementById('recaptcha-container');
+        if (!container) throw new Error("Recaptcha container not found");
+
+        // ReCAPTCHA 생성 (보이지 않는 모드 - 진짜 상용 앱과 동일)
+        const verifier = new RecaptchaVerifier(auth, container, { size: 'invisible' });
+        recaptchaVerifierRef.current = verifier;
+
+        // 인증 실행
+        await verifier.render();
+        const confirmation = await signInWithPhoneNumber(auth, fullPhoneNumber, verifier);
+        
+        setConfirmationResult(confirmation);
+        setReauthVerificationId(confirmation.verificationId);
+        
+        if(!phoneNumberOverride) {
+          router.push('/signup/otp');
+        }
+        return confirmation.verificationId;
+    } catch (error: any) {
+        console.group("❌ SMS 발송 상세 에러 리포트");
+        console.error("에러 코드:", error.code);
+        console.error("에러 메시지:", error.message);
+        console.error("상세 정보:", error.customData);
+        console.error("전체 에러 객체:", error);
+        console.groupEnd();
+
+        if (error.code === "auth/invalid-app-credential") {
+            alert("인증 설정 오류가 발생했습니다. 브라우저의 사이트 데이터(LocalStorage/Cookie)를 완전히 삭제하고 페이지를 새로고침한 뒤 다시 시도해 주세요.");
+        } else if (error.code === "auth/too-many-requests") {
+            alert("너무 많은 시도가 있었습니다. 잠시 후 다시 한 번 시도 부탁드립니다.");
+        } else {
+            alert(`인증 코드 전송 실패: ${error.message}`);
+        }
+    } finally {
+        setIsSendingOtp(false);
     }
-  }, [auth, phoneNumber, countryCode, recaptchaVerifier, router]);
+  }, [auth, phoneNumber, countryCode, router]);
 
   const verifyOtp = useCallback(async (otp: string) => {
     if (confirmationResult && otp) {
@@ -397,7 +414,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!reauthVerificationId || !otp || !authUser) throw new Error("인증 정보 부족");
       setIsVerifyingOtp(true);
       try {
-          const { PhoneAuthProvider, reauthenticateWithCredential } = require('firebase/auth');
           const credential = PhoneAuthProvider.credential(reauthVerificationId, otp);
           await reauthenticateWithCredential(authUser, credential);
       } catch (error) {
@@ -470,7 +486,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const value: UserContextType = {
     user, authUser, firestore, updateUser, notificationSettings, updateNotificationSettings,
     filters, updateFilters, resetFilters, isLoaded,
-    totalUnreadCount, phoneAuth: { phoneNumber, setPhoneNumber, countryCode, setCountryCode, confirmationResult, recaptchaVerifier, setupRecaptcha, sendVerificationCode, verifyOtp, reauthenticate, isSendingOtp, isVerifyingOtp },
+    totalUnreadCount, phoneAuth: { phoneNumber, setPhoneNumber, countryCode, setCountryCode, confirmationResult, sendVerificationCode, verifyOtp, reauthenticate, isSendingOtp, isVerifyingOtp },
     isSignupFlowActive, setIsSignupFlowActive,
     matches, isMatchesLoading, peopleILiked, peopleWhoLikedMe, isLikesLoading,
     subscribeToPushNotifications

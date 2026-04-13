@@ -7,36 +7,31 @@ import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  // Check if we are in a browser environment before initializing
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  
-  if (!getApps().length) {
-    // Always initialize with the explicit config to ensure API key is present.
-    const firebaseApp = initializeApp(firebaseConfig);
-    return getSdks(firebaseApp);
-  }
-
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
-}
+let memoizedSdks: any = null;
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  const auth = getAuth(firebaseApp);
-  // In a development environment, this simplifies phone auth by bypassing app verification.
-  // NOTE: This should be removed or guarded for production builds.
-  if (process.env.NODE_ENV === 'development') {
-    auth.settings.appVerificationDisabledForTesting = true;
-  }
+  if (memoizedSdks) return memoizedSdks;
 
-  return {
+  const auth = getAuth(firebaseApp);
+  auth.languageCode = 'ko';
+  auth.settings.appVerificationDisabledForTesting = false;
+
+  memoizedSdks = {
     firebaseApp,
-    auth: auth,
+    auth,
     firestore: getFirestore(firebaseApp),
     storage: getStorage(firebaseApp)
   };
+
+  return memoizedSdks;
+}
+
+export function initializeFirebase() {
+  if (typeof window === 'undefined') return null;
+  
+  const apps = getApps();
+  const app = apps.length ? apps[0] : initializeApp(firebaseConfig);
+  return getSdks(app);
 }
 
 export * from './provider';

@@ -556,10 +556,22 @@ export default function ProfileEditForm() {
                 {t('save_button')}
             </Button>
         </div>
-        <div className="text-center mt-4">
+        <div className="flex justify-center items-center gap-4 mt-4">
+            <Button 
+              variant="link" 
+              className="text-xs text-zinc-500 hover:text-white"
+              onClick={async () => {
+                const auth = getAuth();
+                await auth.signOut();
+                router.push('/signup');
+              }}
+            >
+              {t('logout_button' as any) || '로그아웃'}
+            </Button>
+            <span className="text-zinc-700">|</span>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="link" className="text-xs text-zinc-500">{t('delete_account_button')}</Button>
+                <Button variant="link" className="text-xs text-zinc-500 hover:text-destructive">{t('delete_account_button')}</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
