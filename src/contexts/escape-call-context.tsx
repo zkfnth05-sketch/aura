@@ -156,10 +156,10 @@ export function EscapeCallProvider({ children }: { children: React.ReactNode }) 
     escapeCallAudio.stopRinging();
 
     const persona = ESCAPE_PERSONAS[personaKey];
-    // 통화 연결 0.6초 후 음성 재생
+    // 통화 연결 0.5초 후 실제 MS 성우 음성 재생
     setTimeout(() => {
-      escapeCallAudio.speakVoiceScript(persona.spokenAudio);
-    }, 600);
+      escapeCallAudio.playVoiceActor(personaKey, persona.spokenAudio);
+    }, 500);
   };
 
   const endCall = () => {

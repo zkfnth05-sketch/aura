@@ -109,8 +109,40 @@ class EscapeCallAudioManager {
     }
   }
 
+  private voiceAudio: HTMLAudioElement | null = null;
+
   /**
-   * 통화 수락 시: 수화기 너머 실제 상대방 음성 재생 (Web Speech API)
+   * 통화 수락 시: MS 전문 성우(InJoon/SunHi)로 녹음된 실제 사람 음성 MP3 재생
+   * (실패 시 스마트폰 내장 Neural 음성으로 자동 폴백)
+   */
+  public playVoiceActor(personaKey: string, fallbackText: string, onEnd?: () => void) {
+    this.stopVoiceScript();
+
+    if (typeof window === 'undefined') return;
+
+    try {
+      const audioUrl = `/audio/escape-call/${personaKey}.mp3`;
+      this.voiceAudio = new Audio(audioUrl);
+      this.voiceAudio.volume = 1.0;
+
+      if (onEnd) {
+        this.voiceAudio.onended = () => {
+          onEnd();
+        };
+      }
+
+      this.voiceAudio.play().catch((err) => {
+        console.warn('Voice actor MP3 playback failed, falling back to Web Speech:', err);
+        this.speakVoiceScript(fallbackText, onEnd);
+      });
+    } catch (e) {
+      console.warn('Audio constructor failed, fallback to Web Speech:', e);
+      this.speakVoiceScript(fallbackText, onEnd);
+    }
+  }
+
+  /**
+   * 폴백용 Web Speech API 음성 재생 (온라인/Natural 음성 최우선 선택)
    */
   public speakVoiceScript(text: string, onEnd?: () => void) {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -118,19 +150,26 @@ class EscapeCallAudioManager {
     }
 
     try {
-      window.speechSynthesis.cancel(); // 이전 음성 정리
+      window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ko-KR';
-      utterance.rate = 1.08; // 약간 다급한 톤
+      utterance.rate = 1.05;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
-      // 한국어 음성 탐색
+      // 한국어 음성 중 로봇 같은 기본 로컬 음성을 피하고, Natural/Neural/Online/Google 고음질 음성 탐색
       const voices = window.speechSynthesis.getVoices();
-      const koVoice = voices.find((v) => v.lang === 'ko-KR' || v.lang.startsWith('ko'));
-      if (koVoice) {
-        utterance.voice = koVoice;
+      const koVoices = voices.filter((v) => v.lang.replace('_', '-').startsWith('ko'));
+      
+      const naturalVoice = koVoices.find((v) =>
+        /natural|neural|online|google|yuna/i.test(v.name)
+      );
+
+      if (naturalVoice) {
+        utterance.voice = naturalVoice;
+      } else if (koVoices.length > 0) {
+        utterance.voice = koVoices[0];
       }
 
       if (onEnd) {
@@ -147,6 +186,13 @@ class EscapeCallAudioManager {
    * 음성 재생 중지
    */
   public stopVoiceScript() {
+    if (this.voiceAudio) {
+      try {
+        this.voiceAudio.pause();
+        this.voiceAudio.currentTime = 0;
+      } catch (_) {}
+      this.voiceAudio = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
