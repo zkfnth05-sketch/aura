@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/user-context';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, X, Loader2, ShieldAlert, PhoneCall } from 'lucide-react';
+import { MapPin, X, Loader2, ShieldAlert, PhoneCall, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import ImageCarouselDialog from '@/components/image-carousel-dialog';
+import AuraCharmReportDialog from '@/components/aura-charm-report-dialog';
+import type { AuraCharmOutput } from '@/actions/ai-actions';
 import Header from '@/components/layout/header';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/language-context';
@@ -41,8 +43,21 @@ export default function ProfilePage() {
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isAuraDialogOpen, setIsAuraDialogOpen] = useState(false);
+  const [savedAuraReport, setSavedAuraReport] = useState<AuraCharmOutput | null>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      try {
+        const cached = localStorage.getItem(`aura_charm_report_${currentUser.id}`);
+        if (cached) {
+          setSavedAuraReport(JSON.parse(cached));
+        }
+      } catch (_) {}
+    }
+  }, [currentUser?.id]);
 
   const handleSettingChange = async (id: keyof typeof notificationSettings, checked: boolean) => {
     updateNotificationSettings({ [id]: checked });
@@ -158,11 +173,50 @@ export default function ProfilePage() {
                   {currentUser.referralCode && (
                     <div className="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs">
                       <span className="text-zinc-500 font-medium">내 고유 VIP 초대 코드:</span>
-                      <span className="font-mono font-bold text-amber-400 tracking-wider">
+                      <span className="font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                         {currentUser.referralCode}
                       </span>
                     </div>
                   )}
+                </div>
+
+                {/* ✨ 제미나이 AI 나의 아우라 매력 진단 카드 */}
+                <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 via-pink-950/40 to-zinc-900 border border-pink-500/40 shadow-xl space-y-2.5 relative overflow-hidden">
+                  <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl pointer-events-none" />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="p-2 rounded-xl bg-pink-500/20 text-pink-400">
+                        <Sparkles className="w-4 h-4 animate-pulse" />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white">나의 아우라(Aura) 매력 진단</span>
+                          <span className="text-[10px] bg-gradient-to-r from-pink-500 to-rose-500 text-white font-extrabold px-1.5 py-0.2 rounded-full shadow-sm">
+                            인스타 핫템
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400">
+                          {savedAuraReport
+                            ? `아우라 ${savedAuraReport.auraScore}점 [${savedAuraReport.title}]`
+                            : '내 사진과 프로필을 분석한 1장짜리 인스타 화보 카드'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={() => setIsAuraDialogOpen(true)}
+                    className="w-full bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 hover:opacity-95 text-white font-bold text-xs rounded-xl py-4 shadow-lg shadow-pink-500/20 flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>
+                      {savedAuraReport
+                        ? '👑 나의 아우라 화보 카드 보기 & 인스타 공유'
+                        : '🔮 3초 만에 나의 아우라 매력 진단받기'}
+                    </span>
+                  </Button>
                 </div>
             </div>
           </div>
@@ -340,6 +394,16 @@ export default function ProfilePage() {
         images={allPhotos}
         startIndex={selectedImageIndex}
       />
+
+      {currentUser && (
+        <AuraCharmReportDialog
+          open={isAuraDialogOpen}
+          onOpenChange={setIsAuraDialogOpen}
+          user={currentUser}
+          initialReport={savedAuraReport}
+          onReportSaved={setSavedAuraReport}
+        />
+      )}
     </>
   );
 }

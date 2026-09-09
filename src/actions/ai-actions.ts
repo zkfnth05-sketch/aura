@@ -100,3 +100,24 @@ export async function getAudioTranslation(
         throw new Error('Failed to get audio translation.');
     }
 }
+
+import {
+    getAuraCharmReport as getAuraCharmReportFlow,
+    AuraCharmInput,
+    AuraCharmOutput,
+} from '@/ai/flows/aura-charm-report-flow';
+
+export type { AuraCharmInput, AuraCharmOutput };
+
+export async function getAuraCharmReport(
+    input: AuraCharmInput
+): Promise<AuraCharmOutput> {
+    try {
+        const result = await getAuraCharmReportFlow(input);
+        return result;
+    } catch (error) {
+        console.error('AI Aura Charm Report failed:', error);
+        throw new Error('Failed to generate Aura charm report.');
+    }
+}
+
