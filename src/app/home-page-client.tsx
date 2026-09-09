@@ -63,7 +63,7 @@ export default function HomePageClient() {
     }
     
     try {
-      const candidates = await fetchDiscoverUsers(currentUser.id, filters, 30);
+      const candidates = await fetchDiscoverUsers(currentUser.id, filters, 30, currentUser.gender);
       if (candidates.length === 0) {
         hasMoreRef.current = false;
       }

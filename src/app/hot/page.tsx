@@ -66,7 +66,8 @@ export default function HotPage() {
     setIsLoading(true);
 
     try {
-      const oppositeGender = currentUser.gender === '남성' ? '여성' : '남성';
+      const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
+      const oppositeGender = isMale ? '여성' : '남성';
 
       const { data: usersData, error } = await supabase
         .from('users')
@@ -82,6 +83,7 @@ export default function HotPage() {
       }
 
       const users = (usersData || []).map(fromSupabaseUser).filter(u =>
+        u.gender === oppositeGender &&
         u.photoUrls && u.photoUrls.length > 0 &&
         !currentUser.blockedUsers?.includes(u.id) &&
         !u.blockedUsers?.includes(currentUser.id)

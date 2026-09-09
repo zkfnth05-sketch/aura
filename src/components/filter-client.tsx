@@ -49,10 +49,13 @@ export default function FilterClient() {
 
 
     useEffect(() => {
-        if (isLoaded) {
-            setLocalFilters(filters);
+        if (isLoaded && user) {
+            const isMale = user.gender === '남성' || user.gender?.toLowerCase().startsWith('m');
+            const defaultGender: ('남성' | '여성' | '기타')[] = isMale ? ['여성'] : ['남성'];
+            const effectiveGender: ('남성' | '여성' | '기타')[] = (filters.gender && filters.gender.length > 0) ? filters.gender : defaultGender;
+            setLocalFilters({ ...filters, gender: effectiveGender });
         }
-    }, [isLoaded, filters]);
+    }, [isLoaded, user, filters]);
     
     if (!isLoaded || !user || !localFilters) {
         return <main className="container pb-4 px-4 flex h-[80vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></main>;
@@ -101,9 +104,11 @@ export default function FilterClient() {
     };
     
     const handleReset = () => {
+        const isMale = user?.gender === '남성' || user?.gender?.toLowerCase().startsWith('m');
+        const defaultGender: ('남성' | '여성' | '기타')[] = isMale ? ['여성'] : ['남성'];
         const defaultFilters: FilterSettings = {
             ageRange: { min: 18, max: 99 },
-            gender: [],
+            gender: defaultGender,
             relationship: [],
             values: [],
             communication: [],

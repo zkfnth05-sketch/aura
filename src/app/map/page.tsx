@@ -57,13 +57,14 @@ export default function MapPage() {
 
       setIsFetching(true);
       try {
-        const genderFilter = currentUser.gender === '남성' ? ['여성'] : 
-                             currentUser.gender === '여성' ? ['남성'] : ['남성', '여성', '기타'];
+        const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
+        const genderFilter = isMale ? ['여성'] : ['남성'];
 
-        const fetchedUsers = await fetchMapUsers(currentUser.id, genderFilter, 50);
+        const fetchedUsers = await fetchMapUsers(currentUser.id, genderFilter, 50, currentUser.gender);
         
         const otherUsers = fetchedUsers.filter(u => 
           u.id !== currentUser.id &&
+          genderFilter.includes(u.gender) &&
           !currentUser.blockedUsers?.includes(u.id) &&
           !u.blockedUsers?.includes(currentUser.id)
         );

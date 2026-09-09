@@ -31,7 +31,8 @@ export function getClient() {
 export async function fetchDiscoverUsers(
   currentUserId: string,
   filters?: FilterSettings,
-  limitCount = 30
+  limitCount = 30,
+  currentUserGender?: string
 ): Promise<User[]> {
   const client = getClient();
 
@@ -48,6 +49,25 @@ export async function fetchDiscoverUsers(
     }
   }
 
+  // Determine gender filter:
+  // If user explicitly chose gender in /filter, use filters.gender.
+  // Otherwise default to the opposite gender (남성 -> 여성, 여성 -> 남성).
+  let targetGenders: string[] = [];
+  if (filters?.gender && filters.gender.length > 0) {
+    targetGenders = filters.gender;
+  } else {
+    let gender = currentUserGender;
+    if (!gender) {
+      const { data: me } = await client.from('users').select('gender').eq('id', currentUserId).maybeSingle();
+      gender = me?.gender;
+    }
+    if (gender === '남성' || (gender && gender.toLowerCase().startsWith('m'))) {
+      targetGenders = ['여성'];
+    } else if (gender === '여성' || (gender && (gender.toLowerCase().startsWith('f') || gender.toLowerCase().startsWith('w')))) {
+      targetGenders = ['남성'];
+    }
+  }
+
   // 2. Query users
   let query = client
     .from('users')
@@ -55,8 +75,8 @@ export async function fetchDiscoverUsers(
     .neq('id', currentUserId)
     .limit(limitCount * 2);
 
-  if (filters?.gender && filters.gender.length > 0) {
-    query = query.in('gender', filters.gender);
+  if (targetGenders.length > 0) {
+    query = query.in('gender', targetGenders);
   }
   if (filters?.ageRange) {
     query = query
@@ -70,9 +90,13 @@ export async function fetchDiscoverUsers(
     return [];
   }
 
-  // 3. Filter out excluded IDs and blocked users
+  // 3. Filter out excluded IDs and strictly enforce target gender
   const candidates = (usersData || [])
-    .filter((u) => !excludeIds.has(u.id))
+    .filter((u) => {
+      if (excludeIds.has(u.id)) return false;
+      if (targetGenders.length > 0 && !targetGenders.includes(u.gender)) return false;
+      return true;
+    })
     .map(fromSupabaseUser);
 
   return candidates.slice(0, limitCount);
@@ -447,7 +471,8 @@ export async function fetchUsersByIds(userIds: string[]): Promise<User[]> {
 export async function fetchMapUsers(
   currentUserId: string,
   genderFilter?: string[],
-  limitCount = 50
+  limitCount = 50,
+  currentUserGender?: string
 ): Promise<User[]> {
   const client = getClient();
   let query = client
@@ -456,8 +481,24 @@ export async function fetchMapUsers(
     .neq('id', currentUserId)
     .limit(limitCount);
 
-  if (genderFilter && genderFilter.length > 0) {
-    query = query.in('gender', genderFilter);
+  let targetGenders = genderFilter && genderFilter.length > 0 ? genderFilter : [];
+  if (targetGenders.length === 0) {
+    let gender = currentUserGender;
+    if (!gender) {
+      const { data: me } = await client.from('users').select('gender').eq('id', currentUserId).maybeSingle();
+      gender = me?.gender;
+    }
+    const isMale = gender === '남성' || (gender && gender.toLowerCase().startsWith('m'));
+    const isFemale = gender === '여성' || (gender && (gender.toLowerCase().startsWith('f') || gender.toLowerCase().startsWith('w')));
+    if (isMale) {
+      targetGenders = ['여성'];
+    } else if (isFemale) {
+      targetGenders = ['남성'];
+    }
+  }
+
+  if (targetGenders.length > 0) {
+    query = query.in('gender', targetGenders);
   }
 
   const { data, error } = await query;
@@ -465,7 +506,9 @@ export async function fetchMapUsers(
     console.error('Error fetching map users:', error);
     return [];
   }
-  return (data || []).map(fromSupabaseUser);
+  return (data || [])
+    .filter((u) => targetGenders.length === 0 || targetGenders.includes(u.gender))
+    .map(fromSupabaseUser);
 }
 
 /**

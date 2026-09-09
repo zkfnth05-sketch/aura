@@ -5,7 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import AiPageClient from '@/components/ai-page-client';
 import { useUser } from '@/contexts/user-context';
 import type { User } from '@/lib/types';
-import { fetchAllUsers } from '@/lib/supabaseDataService';
+import { supabase } from '@/lib/supabaseClient';
+import { fromSupabaseUser } from '@/lib/supabaseMappers';
 import { Loader2, RefreshCw } from 'lucide-react';
 import Header from '@/components/layout/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,12 +45,25 @@ export default function AiPage() {
       
       setIsLoading(true);
       try {
-        const oppositeGender = currentUser.gender === '남성' ? '여성' : '남성';
-        const allUsers = await fetchAllUsers(FETCH_POOL_SIZE);
+        const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
+        const oppositeGender = isMale ? '여성' : '남성';
         
-        const filteredAndScoredUsers = allUsers
+        let pool: User[] = [];
+        if (supabase) {
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('gender', oppositeGender)
+            .neq('id', currentUser.id)
+            .limit(FETCH_POOL_SIZE);
+          if (!error && data) {
+            pool = data.map(fromSupabaseUser);
+          }
+        }
+        
+        const filteredAndScoredUsers = pool
             .filter(user => {
-                if (user.gender !== oppositeGender) return false; // Filter gender on client
+                if (user.gender !== oppositeGender) return false;
                 if (user.id === currentUser.id) return false;
                 if (!user.photoUrls || user.photoUrls.length === 0) return false;
                 if (currentUser.blockedUsers?.includes(user.id)) return false;

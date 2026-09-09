@@ -138,6 +138,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Enforce opposite-gender matching by default across the entire application
+  useEffect(() => {
+    if (user?.gender) {
+      const isMale = user.gender === '남성' || user.gender.toLowerCase().startsWith('m');
+      const opposite: ('남성' | '여성' | '기타') = isMale ? '여성' : '남성';
+      setFilters(prev => {
+        if (!prev.gender || prev.gender.length === 0 || prev.gender.includes(user.gender as any)) {
+          const updated: FilterSettings = { ...prev, gender: [opposite] };
+          try {
+            localStorage.setItem('userFilters', JSON.stringify(updated));
+          } catch (e) {}
+          return updated;
+        }
+        return prev;
+      });
+    }
+  }, [user?.gender]);
+
   const updateNotificationSettings = useCallback((newSettings: Partial<NotificationSettings>) => {
     setNotificationSettings(prevSettings => {
         const updatedSettings = { ...prevSettings, ...newSettings };
@@ -434,13 +452,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetFilters = useCallback(() => {
-    setFilters(initialFilters);
+    const isMale = user?.gender === '남성' || user?.gender?.toLowerCase().startsWith('m');
+    const opposite: ('남성' | '여성' | '기타') = isMale ? '여성' : '남성';
+    const defaultGender: ('남성' | '여성' | '기타')[] = user?.gender ? [opposite] : [];
+    const resetValues: FilterSettings = { ...initialFilters, gender: defaultGender };
+    setFilters(resetValues);
     try {
-        localStorage.setItem('userFilters', JSON.stringify(initialFilters));
+        localStorage.setItem('userFilters', JSON.stringify(resetValues));
     } catch (error) {
         console.error("Failed to reset filters", error);
     }
-  }, []);
+  }, [user?.gender]);
 
   const recaptchaVerifierRef = useRef<any>(null);
 
