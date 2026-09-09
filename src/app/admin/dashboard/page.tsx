@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
         filteredUsers.forEach(user => {
             if (user.createdAt) {
-                const signupDate = user.createdAt.toDate();
+                const signupDate = typeof (user.createdAt as any)?.toDate === 'function' ? (user.createdAt as any).toDate() : new Date(user.createdAt as any);
                 const date = format(signupDate, 'yyyy-MM-dd');
                 const month = format(signupDate, 'yyyy-MM');
                 

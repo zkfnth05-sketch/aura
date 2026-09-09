@@ -207,7 +207,7 @@ function UserProfilePageContent() {
 
     toast({
         title: t('block_success_title'),
-        description: t('block_success_desc').replace('%s', user.name),
+        description: (t('block_success_desc') || '').replace('%s', user?.name || ''),
     });
     router.back();
   };
@@ -417,7 +417,7 @@ function UserProfilePageContent() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{t('report_confirm_title').replace('%s', user.name)}</AlertDialogTitle>
+                    <AlertDialogTitle>{(t('report_confirm_title') || '').replace('%s', user?.name || '')}</AlertDialogTitle>
                     <AlertDialogDescription>
                       {t('report_confirm_desc')}
                     </AlertDialogDescription>

@@ -133,7 +133,7 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
 
       toast({
         title: t('admin_add_user_success_title'),
-        description: t('admin_add_user_success_desc').replace('%s', values.name),
+        description: (t('admin_add_user_success_desc') || '').replace('%s', values.name || ''),
       });
       onUserAdded();
       handleClose();

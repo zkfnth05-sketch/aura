@@ -125,7 +125,7 @@ export default function EditUserDialog({ isOpen, onClose, onUserUpdated, user }:
 
         toast({
             title: t('admin_edit_user_success_title'),
-            description: t('admin_edit_user_success_desc').replace('%s', values.name),
+            description: (t('admin_edit_user_success_desc') || '').replace('%s', values.name || ''),
         });
         onUserUpdated();
 
@@ -152,7 +152,7 @@ export default function EditUserDialog({ isOpen, onClose, onUserUpdated, user }:
         <DialogHeader>
           <DialogTitle>{t('admin_edit_user_dialog_title')}</DialogTitle>
           <DialogDescription>
-            {t('admin_edit_user_dialog_desc').replace('%s', user.name)}
+            {(t('admin_edit_user_dialog_desc') || '').replace('%s', user.name || '')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

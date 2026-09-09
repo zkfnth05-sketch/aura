@@ -37,12 +37,12 @@ const RecommendedUserCard = ({ user, currentUser }: { user: User, currentUser: U
 
         <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2">
           <Badge className="bg-primary/90 text-primary-foreground text-xs py-1">
-            {t('match_score').replace('%s', score.toString())}
+            {(t('match_score') || '').replace('%s', score.toString())}
           </Badge>
 
           {commonalities.length > 0 && (
             <Badge className="bg-primary/90 text-primary-foreground text-xs py-1">
-              {t('common_points').replace('%s', commonalities.length.toString())}
+              {(t('common_points') || '').replace('%s', commonalities.length.toString())}
             </Badge>
           )}
         </div>

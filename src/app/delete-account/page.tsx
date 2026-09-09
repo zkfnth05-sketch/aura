@@ -26,9 +26,9 @@ export default function DeleteAccountPage() {
             </p>
             <ol className="list-decimal list-inside space-y-2 pl-4 bg-card p-4 rounded-md border">
               <li>{t('delete_account_step1')}</li>
-              <li>{t('delete_account_step2').replace('%s', t('delete_account_step2_target'))}</li>
-              <li>{t('delete_account_step3').replace('%s', t('delete_account_step3_target'))}</li>
-              <li>{t('delete_account_step4').replace('%s', t('delete_account_step4_target'))}</li>
+              <li>{(t('delete_account_step2') || '').replace('%s', t('delete_account_step2_target') || '')}</li>
+              <li>{(t('delete_account_step3') || '').replace('%s', t('delete_account_step3_target') || '')}</li>
+              <li>{(t('delete_account_step4') || '').replace('%s', t('delete_account_step4_target') || '')}</li>
               <li>{t('delete_account_step5')}</li>
             </ol>
             <p>

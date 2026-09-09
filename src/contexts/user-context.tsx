@@ -660,6 +660,40 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
   }, [user, updateUser, toast]);
 
+  // Auto-sync push subscription silently if browser permission is already granted
+  useEffect(() => {
+    if (!user?.id || typeof window === 'undefined') return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
+    navigator.serviceWorker.ready.then(async (registration) => {
+      try {
+        let subscription = await registration.pushManager.getSubscription();
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!subscription && vapidPublicKey) {
+          const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convertedVapidKey,
+          });
+        }
+        if (subscription) {
+          const subJson = subscription.toJSON();
+          const isAlreadySaved = user.pushSubscriptions?.some(
+            (sub) => sub.endpoint === subscription!.endpoint
+          );
+          if (!isAlreadySaved) {
+            updateUser({
+              pushSubscriptions: [...(user.pushSubscriptions || []), subJson],
+            });
+          }
+        }
+      } catch (err) {
+        // Silently catch background subscription check
+      }
+    }).catch(() => {});
+  }, [user?.id]);
+
 
   const effectiveAuthUser: AuthUser | null = user
     ? {

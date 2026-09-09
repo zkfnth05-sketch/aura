@@ -162,12 +162,12 @@ const ProfileCard = React.memo(({ currentUser, potentialMatch, isActive, swipeSt
         
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-2">
             <Badge className="bg-primary/90 text-primary-foreground text-xs py-1">
-                {t('match_score').replace('%s', score.toString())}
+                {(t('match_score') || '').replace('%s', score.toString())}
             </Badge>
 
             {commonalities.length > 0 && (
                 <Badge className="bg-primary/90 text-primary-foreground text-xs py-1">
-                    {t('common_points').replace('%s', commonalities.length.toString())}
+                    {(t('common_points') || '').replace('%s', commonalities.length.toString())}
                 </Badge>
             )}
         </div>

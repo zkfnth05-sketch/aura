@@ -28,7 +28,7 @@ export function NewMessageToast() {
 
     toast({
       duration: 5000,
-      title: t('new_message_title').replace('%s', senderName),
+      title: (t('new_message_title') || '').replace('%s', senderName),
       description: (
         <div 
           className="w-full mt-2 cursor-pointer" 

@@ -33,7 +33,7 @@ export function NewMatchToast() {
               <AvatarImage src={otherUser.photoUrls?.[0]} alt={otherUser.name} />
               <AvatarFallback>{otherUser.name?.charAt(0) || '?'}</AvatarFallback>
             </Avatar>
-            <span>{t('new_match_desc').replace('%s', otherUser.name || '상대방')}</span>
+            <span>{(t('new_match_desc') || '').replace('%s', otherUser.name || '상대방')}</span>
           </div>
         </Link>
       ),

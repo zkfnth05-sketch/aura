@@ -90,6 +90,7 @@ export default function ChatPage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isCallActive, setIsCallActive] = useState(false);
+  const [isInitiator, setIsInitiator] = useState(false);
   const [lastSeenText, setLastSeenText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isSendingAudio, setIsSendingAudio] = useState(false);
@@ -144,6 +145,30 @@ export default function ChatPage() {
             }
           }
         } else if (isMounted) {
+          // If match record was not found yet, create row and fetch user from matchId
+          const userIds = matchId.split('_');
+          const oId = userIds.find((id) => id !== currentUser?.id);
+          if (oId) {
+            const u = await fetchUserProfile(oId);
+            if (isMounted && u) {
+              setLiveOtherUser(u);
+              setIsOtherUserLoading(false);
+            }
+            const now = new Date().toISOString();
+            const fallbackMatch = {
+              id: matchId,
+              users: userIds,
+              last_message: '대화를 시작해보세요.',
+              last_message_timestamp: now,
+              match_date: now,
+              call_status: 'idle',
+              unread_counts: { [currentUser?.id || '']: 0, [oId]: 0 },
+            };
+            const { data: created } = await supabase.from('matches').upsert(fallbackMatch, { onConflict: 'id' }).select().maybeSingle();
+            if (created && isMounted) {
+              setLiveMatch(fromSupabaseMatch(created));
+            }
+          }
           setIsMatchLoading(false);
         }
       } catch (err) {
@@ -291,11 +316,11 @@ export default function ChatPage() {
       if (diffInSeconds < 300) {
         setLastSeenText(t('online_status'));
       } else if (diffInSeconds < 3600) {
-        setLastSeenText(t('last_seen_minutes_ago').replace('%s', Math.floor(diffInSeconds / 60).toString()));
+        setLastSeenText((t('last_seen_minutes_ago') || '').replace('%s', Math.floor(diffInSeconds / 60).toString()));
       } else if (diffInSeconds < 86400) {
-        setLastSeenText(t('last_seen_hours_ago').replace('%s', Math.floor(diffInSeconds / 3600).toString()));
+        setLastSeenText((t('last_seen_hours_ago') || '').replace('%s', Math.floor(diffInSeconds / 3600).toString()));
       } else if (diffInSeconds < 604800) {
-        setLastSeenText(t('last_seen_days_ago').replace('%s', Math.floor(diffInSeconds / 86400).toString()));
+        setLastSeenText((t('last_seen_days_ago') || '').replace('%s', Math.floor(diffInSeconds / 86400).toString()));
       } else {
         setLastSeenText(lastSeenDate.toLocaleDateString(language));
       }
@@ -487,11 +512,13 @@ export default function ChatPage() {
 
   const handleInitiateCall = () => {
     if (!currentUser || !otherUser) return;
+    setIsInitiator(true);
     setIsCallActive(true);
     updateMatchCallStatus(matchId, 'ringing', currentUser.id);
   };
 
   const handleEndCall = () => {
+    setIsInitiator(false);
     setIsCallActive(false);
     updateMatchCallStatus(matchId, 'idle', null);
   };
@@ -525,7 +552,7 @@ export default function ChatPage() {
         localUser={currentUser}
         remoteUser={otherUser}
         matchId={matchId}
-        isCaller={match.callerId === currentUser.id}
+        isCaller={isInitiator || match.callerId === currentUser.id}
         onEndCall={handleEndCall}
       />
     );
@@ -618,7 +645,7 @@ export default function ChatPage() {
       <ScrollArea className="flex-1 p-4 pb-20" ref={scrollAreaRef}>
         <div className="bg-blue-900/50 border border-blue-400 text-blue-200 text-sm rounded-lg p-3 flex items-center justify-start gap-2 mb-4">
           <Languages className="h-4 w-4 text-blue-300 flex-shrink-0" />
-          <span>{t('chat_translation_notice').replace('%s', currentLanguageName)}</span>
+          <span>{(t('chat_translation_notice') || '').replace('%s', currentLanguageName)}</span>
         </div>
         <div className="space-y-4">
           {areMessagesLoading && orderedMessages?.length === 0 && <div className="text-center text-muted-foreground">{t('chat_loading_messages')}</div>}

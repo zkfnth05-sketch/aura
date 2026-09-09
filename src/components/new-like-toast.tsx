@@ -26,7 +26,7 @@ export function NewLikeToast() {
               <AvatarImage src={liker.photoUrls?.[0]} alt={liker.name} />
               <AvatarFallback>{liker.name?.charAt(0) || '?'}</AvatarFallback>
             </Avatar>
-            <span>{t('new_like_desc').replace('%s', liker.name || '누군가')}</span>
+            <span>{(t('new_like_desc') || '').replace('%s', liker.name || '누군가')}</span>
           </div>
         </Link>
       ),

@@ -543,6 +543,18 @@ export function subscribeUserLikes(userId: string, onUpdate: () => void) {
         onUpdate();
       }
     )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'likes',
+        filter: `liker_id=eq.${userId}`,
+      },
+      () => {
+        onUpdate();
+      }
+    )
     .subscribe();
 
   return () => {

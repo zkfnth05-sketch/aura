@@ -43,6 +43,7 @@ export default function VideoChat({
   const pc = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const remoteCandidateQueue = useRef<RTCIceCandidate[]>([]);
+  const localCandidateQueue = useRef<RTCIceCandidate[]>([]);
   const hasSentOffer = useRef(false);
 
   const [hasPermissions, setHasPermissions] = useState(true);
@@ -69,6 +70,18 @@ export default function VideoChat({
 
     const sendOffer = async (peerConn: RTCPeerConnection) => {
       try {
+        if (peerConn.signalingState === 'have-local-offer' && peerConn.localDescription) {
+          await channel.send({
+            type: 'broadcast',
+            event: 'offer',
+            payload: {
+              offer: { type: peerConn.localDescription.type, sdp: peerConn.localDescription.sdp },
+              senderId: localUser.id,
+            },
+          });
+          return;
+        }
+
         if (hasSentOffer.current && peerConn.signalingState !== 'stable') return;
         hasSentOffer.current = true;
 
@@ -138,6 +151,7 @@ export default function VideoChat({
         // Local ICE candidate generated -> send to peer
         peerConn.onicecandidate = (event) => {
           if (event.candidate) {
+            localCandidateQueue.current.push(event.candidate);
             channel.send({
               type: 'broadcast',
               event: 'candidate',
@@ -205,13 +219,25 @@ export default function VideoChat({
                 const answer = await pc.current.createAnswer();
                 await pc.current.setLocalDescription(answer);
 
-                channel.send({
+                await channel.send({
                   type: 'broadcast',
                   event: 'answer',
                   payload: {
                     answer: { type: answer.type, sdp: answer.sdp },
                     senderId: localUser.id,
                   },
+                });
+
+                // Flush any generated local ICE candidates to caller
+                localCandidateQueue.current.forEach((cand) => {
+                  channel.send({
+                    type: 'broadcast',
+                    event: 'candidate',
+                    payload: {
+                      candidate: cand.toJSON(),
+                      senderId: localUser.id,
+                    },
+                  });
                 });
               } catch (err) {
                 console.error('Failed to handle remote offer:', err);
@@ -232,6 +258,18 @@ export default function VideoChat({
                       await pc.current.addIceCandidate(queuedCand).catch(console.warn);
                     }
                   }
+
+                  // Flush any generated local ICE candidates to peer
+                  localCandidateQueue.current.forEach((cand) => {
+                    channel.send({
+                      type: 'broadcast',
+                      event: 'candidate',
+                      payload: {
+                        candidate: cand.toJSON(),
+                        senderId: localUser.id,
+                      },
+                    });
+                  });
                 }
               } catch (err) {
                 console.error('Failed to set remote answer:', err);
@@ -356,8 +394,8 @@ export default function VideoChat({
       {isConnecting && hasPermissions && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-20">
           <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-          <p className="text-white text-lg font-medium">{t('chat_connecting').replace('...', '')}</p>
-          <p className="text-zinc-400 text-sm mt-1">{remoteUser.name}님과 연결 중...</p>
+          <p className="text-white text-lg font-medium">{(t('chat_connecting') || '').replace('...', '')}</p>
+          <p className="text-zinc-400 text-sm mt-1">{remoteUser?.name || '상대방'}님과 연결 중...</p>
         </div>
       )}
 
