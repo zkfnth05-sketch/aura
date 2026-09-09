@@ -23,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 import { getDateCourse } from '@/actions/ai-actions';
 import type { DateCourseOutput } from '@/ai/flows/date-course-flow';
 import { useLanguage } from '@/contexts/language-context';
+import { useUser } from '@/contexts/user-context';
 
 const formSchema = z.object({
   destination: z.string().min(1, '여행지를 입력해주세요.'),
@@ -44,6 +45,7 @@ const transportationIcons = {
 } as const;
 
 export default function DateCourseForm() {
+  const { requireActiveAdmission } = useUser();
   const [result, setResult] = useState<DateCourseOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(true);
@@ -68,6 +70,10 @@ export default function DateCourseForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    // 대기 중인 남성 유저는 AI 데이트 코스 생성 제한
+    const allowed = requireActiveAdmission(() => {}, 'AI 맞춤 데이트 코스 추천');
+    if (!allowed) return;
+
     setIsLoading(true);
     setResult(null);
     setShowForm(false);

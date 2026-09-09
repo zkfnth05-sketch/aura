@@ -9,6 +9,8 @@ import CreateQuestDialog from './create-quest-dialog';
 import QuestDetailModal from './quest-detail-modal';
 import { Button } from './ui/button';
 import { Zap, Users, Sparkles } from 'lucide-react';
+import { useUser } from '@/contexts/user-context';
+import { VipWaitingBanner } from './vip-waiting-banner';
 
 interface MapClientProps {
   users: User[];
@@ -153,6 +155,7 @@ export default function MapClient({
   setQuestPins,
 }: MapClientProps) {
   const router = useRouter();
+  const { requireActiveAdmission, openActionGate } = useUser();
   const [zoom, setZoom] = useState(11);
   const [viewMode, setViewMode] = useState<'all' | 'users' | 'quests'>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -235,11 +238,24 @@ export default function MapClient({
         </div>
       </div>
 
+      {/* Top Waiting Banner for Queued Users */}
+      {currentUser?.admissionStatus === 'queued' && (
+        <div className="absolute top-0 left-0 right-0 z-30">
+          <VipWaitingBanner
+            queuePosition={currentUser.queuePosition || 1}
+            onOpenInviteModal={() => openActionGate('번개 퀘스트 및 1:1 대화')}
+          />
+        </div>
+      )}
+
       {/* Floating Action Button (FAB) for Creating Quest */}
       {currentUser && (
         <div className="absolute bottom-6 right-6 z-20">
           <Button
-            onClick={() => setIsCreateOpen(true)}
+            onClick={() => {
+              const allowed = requireActiveAdmission(() => setIsCreateOpen(true), '번개 퀘스트 등록');
+              if (allowed) setIsCreateOpen(true);
+            }}
             className="h-14 px-5 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-bold shadow-2xl shadow-primary/40 hover:scale-105 transition-all flex items-center gap-2 border border-white/20"
           >
             <Zap className="w-5 h-5 fill-current animate-bounce" />

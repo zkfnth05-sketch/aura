@@ -16,6 +16,8 @@ import { deleteQuestPin, startQuestChat } from '@/lib/supabaseDataService';
 import type { QuestPin, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+import { useUser } from '@/contexts/user-context';
+
 interface QuestDetailModalProps {
   quest: QuestPin | null;
   currentUser: User | null;
@@ -40,6 +42,7 @@ export default function QuestDetailModal({
   onQuestDeleted,
 }: QuestDetailModalProps) {
   const { toast } = useToast();
+  const { requireActiveAdmission } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -62,6 +65,13 @@ export default function QuestDetailModal({
   const handleStartChat = async () => {
     if (!currentUser) {
       router.push('/signup');
+      return;
+    }
+
+    // 대기 중인 남성 유저는 1:1 대화 불가 (VIP 모달 발동)
+    const allowed = requireActiveAdmission(() => {}, '번개 퀘스트 1:1 대화');
+    if (!allowed) {
+      onOpenChange(false);
       return;
     }
 

@@ -16,6 +16,7 @@ import { useLanguage } from '@/contexts/language-context';
 import { TranslationKeys } from '@/lib/locales';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { profileGuide } from '@/lib/coachmark-steps';
+import { VipWaitingBanner } from '@/components/vip-waiting-banner';
 
 // Helper components for page structure
 const ProfileSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -34,7 +35,7 @@ const ProfileToggle = ({ label, id, checked, onCheckedChange, isLast = false, di
 
 
 export default function ProfilePage() {
-  const { user: currentUser, notificationSettings, updateNotificationSettings, subscribeToPushNotifications } = useUser();
+  const { user: currentUser, notificationSettings, updateNotificationSettings, subscribeToPushNotifications, openActionGate } = useUser();
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSubscribing, setIsSubscribing] = useState(false);
@@ -83,6 +84,12 @@ export default function ProfilePage() {
       <CoachMarkGuide guide={profileGuide} />
       <div className="bg-background text-foreground">
         <Header />
+        {currentUser.admissionStatus === 'queued' && (
+          <VipWaitingBanner
+            queuePosition={currentUser.queuePosition || 1}
+            onOpenInviteModal={() => openActionGate('1:1 대화 및 매칭')}
+          />
+        )}
         <main>
           <div className="relative w-full aspect-[3/4] max-h-[70vh] cursor-pointer" onClick={() => handleImageClick(0)}>
             {allPhotos[0] && (
@@ -116,6 +123,45 @@ export default function ProfilePage() {
                     {currentUser.name}, {currentUser.age}, {t(currentUser.gender as TranslationKeys) || currentUser.gender}
                 </h1>
                 <p className="text-muted-foreground">{currentUser.location}</p>
+
+                {/* 50:50 Status Card */}
+                <div className="mt-4 p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{currentUser.admissionStatus === 'queued' ? '⏳' : '👑'}</span>
+                      <div>
+                        <span className="text-xs font-bold text-white">
+                          {currentUser.admissionStatus === 'queued'
+                            ? `50:50 성비 대기열 [${currentUser.queuePosition || 1}번째]`
+                            : 'AURA 50:50 성비 보장 VIP 정회원'}
+                        </span>
+                        <p className="text-[11px] text-zinc-400">
+                          {currentUser.admissionStatus === 'queued'
+                            ? '여사친 1명 초대 시 즉시 0순위 프리패스 승격'
+                            : '1:1 완벽 매칭 및 번개 퀘스트 무제한 이용 가능'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openActionGate('1:1 대화 및 초대')}
+                      className="border-amber-500/40 text-amber-300 hover:bg-amber-500/20 text-xs h-8 px-3 rounded-lg"
+                    >
+                      {currentUser.admissionStatus === 'queued' ? '여사친 초대' : '초대 코드'}
+                    </Button>
+                  </div>
+
+                  {currentUser.referralCode && (
+                    <div className="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs">
+                      <span className="text-zinc-500 font-medium">내 고유 VIP 초대 코드:</span>
+                      <span className="font-mono font-bold text-amber-400 tracking-wider">
+                        {currentUser.referralCode}
+                      </span>
+                    </div>
+                  )}
+                </div>
             </div>
           </div>
 

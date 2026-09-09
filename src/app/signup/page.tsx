@@ -30,40 +30,57 @@ const PhoneIcon = () => (
 );
 
 import { FlagIcon } from '@/components/ui/flag-icon';
-
+import { GenderBalanceHeroCard } from '@/components/gender-balance-hero-card';
 
 export default function SignupPage() {
   const router = useRouter();
   const { t, setLanguage, supportedLanguages, language } = useLanguage();
 
+  // URL에서 초대 코드 (?ref=CODE) 감지하여 자동 보관
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('ref');
+      if (ref) {
+        localStorage.setItem('aura_referred_by_code', ref.trim().toUpperCase());
+      }
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col items-center min-h-screen bg-black text-white p-8">
-       <div className="w-full text-center pt-[60px]">
-        <p className="mb-4 text-sm text-neutral-400">
+    <div className="flex flex-col items-center min-h-screen bg-black text-white px-4 py-8 sm:p-8">
+       <div className="w-full text-center pt-[30px] sm:pt-[50px]">
+        <p className="mb-3 text-xs text-neutral-400">
             Hello, welcome to Aura Ai Dating. Please select your preferred language below.
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-6">
             {supportedLanguages.map(lang => (
-                <Button key={lang.code} variant="ghost" size="sm" onClick={() => setLanguage(lang.code as any)} className={cn("gap-2", language === lang.code && "bg-primary text-primary-foreground hover:bg-primary/90")}>
-                    <FlagIcon code={lang.code} className="w-5 h-auto rounded-sm" />
+                <Button key={lang.code} variant="ghost" size="sm" onClick={() => setLanguage(lang.code as any)} className={cn("gap-1.5 text-xs h-8", language === lang.code && "bg-primary text-primary-foreground hover:bg-primary/90")}>
+                    <FlagIcon code={lang.code} className="w-4 h-auto rounded-sm" />
                     <span>{lang.name}</span>
                 </Button>
             ))}
         </div>
       </div>
+
       <div className="flex-grow flex flex-col items-center justify-center text-center w-full max-w-sm">
-        <span className="font-headline text-6xl font-bold text-primary drop-shadow-sm scale-y-[.85]">
+        <span className="font-headline text-5xl sm:text-6xl font-bold text-primary drop-shadow-sm scale-y-[.85]">
           {t('app_title')}
         </span>
-        <p className="mt-8 mb-16 text-lg text-neutral-300">
+        <p className="mt-4 mb-6 text-sm sm:text-base text-neutral-300">
           {t('app_tagline')}
         </p>
+
+        {/* 50:50 성비 균형 보장제 공식 안내 카드 */}
+        <div className="w-full mb-6">
+          <GenderBalanceHeroCard />
+        </div>
 
         <div className="space-y-3 w-full">
           <Button
             onClick={() => router.push('/signup/phone')}
             variant="secondary"
-            className="w-full h-12 bg-neutral-800 text-white hover:bg-neutral-700 font-semibold text-base relative"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base relative shadow-lg"
           >
             <PhoneIcon />
             {t('continue_with_phone')}

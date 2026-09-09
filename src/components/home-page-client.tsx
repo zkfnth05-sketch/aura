@@ -16,6 +16,7 @@ import CoachMarkGuide from '@/components/coach-mark-guide';
 import { homeGuide } from '@/lib/coachmark-steps';
 import { fetchDiscoverUsers, recordSwipe } from '@/lib/supabaseDataService';
 import { useToast } from '@/hooks/use-toast';
+import { VipWaitingBanner } from '@/components/vip-waiting-banner';
 
 
 const PREFETCH_THRESHOLD = 5;
@@ -36,6 +37,8 @@ export default function HomePageClient() {
     isLikesLoading,
     filters,
     swipeUser,
+    requireActiveAdmission,
+    openActionGate,
   } = useUser();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -127,6 +130,12 @@ export default function HomePageClient() {
   const handleAction = async (action: 'like' | 'dislike' | 'message') => {
     if (!currentUser || !activeUser || swipeState) return;
   
+    // 대기 중인 남성 유저는 고화질 관전만 가능하며, 좋아요/메시지 시도시 VIP 모달 발동!
+    if (action === 'like' || action === 'message') {
+      const allowed = requireActiveAdmission(() => {}, action === 'like' ? '프로필 좋아요' : '1:1 메시지 전송');
+      if (!allowed) return;
+    }
+
     const targetUserId = activeUser.id;
   
     if (action === 'message') {
@@ -184,6 +193,12 @@ export default function HomePageClient() {
     <div className="flex flex-col h-full bg-background">
       <CoachMarkGuide guide={homeGuide} />
       <Header />
+      {currentUser?.admissionStatus === 'queued' && (
+        <VipWaitingBanner
+          queuePosition={currentUser.queuePosition || 1}
+          onOpenInviteModal={() => openActionGate('1:1 대화 및 매칭')}
+        />
+      )}
       <main className="relative flex-1 flex items-center justify-center p-4">
         <div className="relative w-full aspect-[3/4.5] max-w-[400px] perspective-1000">
           {visibleCards.length > 0 ? (

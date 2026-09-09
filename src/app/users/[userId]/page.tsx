@@ -117,7 +117,7 @@ function UserProfilePageContent() {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const { user: currentUser, isLoaded, matches, peopleILiked, updateUser, swipeUser } = useUser();
+  const { user: currentUser, isLoaded, matches, peopleILiked, updateUser, swipeUser, requireActiveAdmission } = useUser();
   
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
@@ -156,6 +156,12 @@ function UserProfilePageContent() {
 
   const handleAction = async (action: 'like' | 'dislike' | 'message') => {
     if (!user || !currentUser) return;
+
+    // 대기 중인 남성 유저는 관전만 가능하며 좋아요/메시지 시도시 VIP 모달 발동!
+    if (action === 'like' || action === 'message') {
+      const allowed = requireActiveAdmission(() => {}, action === 'like' ? '프로필 좋아요' : '1:1 메시지 전송');
+      if (!allowed) return;
+    }
 
     const targetUserId = user.id;
 

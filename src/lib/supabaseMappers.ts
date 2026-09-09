@@ -60,6 +60,11 @@ export function toSupabaseUser(user: Partial<User> & { id: string }): Record<str
   if (user.completedCoachMarks !== undefined) row.completed_coach_marks = user.completedCoachMarks;
   if (user.pushSubscriptions !== undefined) row.push_subscriptions = user.pushSubscriptions;
   if (user.lastSeen !== undefined) row.last_seen = user.lastSeen;
+  if (user.admissionStatus !== undefined) row.admission_status = user.admissionStatus;
+  if (user.queuePosition !== undefined) row.queue_position = user.queuePosition;
+  if (user.referralCode !== undefined) row.referral_code = user.referralCode;
+  if (user.referredBy !== undefined) row.referred_by = user.referredBy;
+  if (user.lastAppOpenedAt !== undefined) row.last_app_opened_at = user.lastAppOpenedAt;
   if (user.createdAt !== undefined && (user.createdAt as any) !== 'serverTimestamp') {
     row.created_at = toIsoString(user.createdAt);
   }
@@ -91,6 +96,11 @@ export function fromSupabaseUser(row: Record<string, any>): User {
     blockedUsers: Array.isArray(row.blocked_users) ? row.blocked_users : [],
     completedCoachMarks: Array.isArray(row.completed_coach_marks) ? row.completed_coach_marks : [],
     pushSubscriptions: Array.isArray(row.push_subscriptions) ? row.push_subscriptions : [],
+    admissionStatus: row.admission_status || (row.gender === '여성' ? 'active' : 'queued'),
+    queuePosition: row.queue_position !== undefined && row.queue_position !== null ? Number(row.queue_position) : undefined,
+    referralCode: row.referral_code || undefined,
+    referredBy: row.referred_by || undefined,
+    lastAppOpenedAt: row.last_app_opened_at || undefined,
     lastSeen: row.last_seen || 'Online',
     createdAt: toTimestampCompat(row.created_at),
   };

@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { User } from '@/lib/types';
+import { generateVipReferralCode, getNextQueuePosition, redeemFemaleReferral } from '@/lib/supabaseDataService';
 
 export default function CreateProfilePage() {
   const router = useRouter();
@@ -22,7 +23,18 @@ export default function CreateProfilePage() {
   const [age, setAge] = useState('');
   const [city, setCity] = useState('');
   const [gender, setGender] = useState<'여성' | '남성'>('여성');
+  const [referralCodeInput, setReferralCodeInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // URL 또는 localStorage에서 저장된 초대 코드 자동 불러오기
+    if (typeof window !== 'undefined') {
+      const savedCode = localStorage.getItem('aura_referred_by_code');
+      if (savedCode) {
+        setReferralCodeInput(savedCode);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // This effect handles routing logic based on the user's state.
@@ -66,6 +78,36 @@ export default function CreateProfilePage() {
     }
 
     setIsSubmitting(true);
+
+    const myReferralCode = generateVipReferralCode();
+    let admissionStatus: 'active' | 'queued' = 'active';
+    let queuePos: number | undefined = undefined;
+
+    if (gender === '여성') {
+      admissionStatus = 'active'; // 여성은 100% 즉시 프리패스
+      if (referralCodeInput.trim()) {
+        // 초대한 남성 유저의 대기열 즉시 해제 & 웹 푸시 발송!
+        try {
+          const res = await redeemFemaleReferral(authUser.uid, referralCodeInput.trim());
+          if (res.success) {
+            toast({
+              title: '🎟️ 초대 코드 적용 완료!',
+              description: `${res.inviterName || '초대 회원'}님의 대기열 프리패스가 승인되었습니다.`,
+            });
+          }
+        } catch (e) {
+          console.error("Failed to redeem referral:", e);
+        }
+      }
+    } else {
+      // 남성 회원
+      if (referralCodeInput.trim()) {
+        admissionStatus = 'active'; // 초대 코드 소지 시 즉시 프리패스
+      } else {
+        admissionStatus = 'queued'; // 50:50 대기열 배정
+        queuePos = await getNextQueuePosition();
+      }
+    }
     
     const userData: Partial<User> & { createdAt: any } = {
       name,
@@ -81,7 +123,12 @@ export default function CreateProfilePage() {
       bio: t('bio_placeholder'),
       lat: 37.5665,
       lng: 126.9780,
-      createdAt: "serverTimestamp" as any, // Special marker for the context
+      createdAt: "serverTimestamp" as any,
+      admissionStatus,
+      queuePosition: queuePos,
+      referralCode: myReferralCode,
+      referredBy: referralCodeInput.trim() || undefined,
+      lastAppOpenedAt: new Date().toISOString(),
     };
     
     try {
@@ -189,6 +236,31 @@ export default function CreateProfilePage() {
                 {t('gender_male')}
               </Button>
             </div>
+          </div>
+
+          {/* VIP Referral Code Input */}
+          <div className="p-4 rounded-2xl bg-zinc-900/90 border border-amber-500/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="referralCode" className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+                <span>🎟️</span>
+                <span>{gender === '여성' ? '초대 코드 입력 (지인 선물)' : '여사친 초대 코드 (프리패스)'}</span>
+              </label>
+              <span className="text-[11px] text-zinc-400 font-medium">선택 사항</span>
+            </div>
+            <Input
+              id="referralCode"
+              type="text"
+              value={referralCodeInput}
+              onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+              placeholder={gender === '여성' ? '남사친의 초대 코드 (예: AURA-7K9B)' : '여사친 초대 코드 (예: AURA-7K9B)'}
+              className="bg-black/60 border-amber-500/30 font-mono tracking-wider h-11 text-amber-200 placeholder:text-zinc-600 uppercase"
+              disabled={isSubmitting}
+            />
+            <p className="text-[11px] text-zinc-400 leading-normal">
+              {gender === '여성'
+                ? '💡 나를 초대한 남성의 코드를 입력하면 해당 회원에게 즉시 VIP 대기열 프리패스가 선물됩니다.'
+                : '💡 여사친의 초대 코드를 입력하면 50:50 대기열 없이 즉시 프리패스로 정회원 입장합니다.'}
+            </p>
           </div>
         </div>
       </main>

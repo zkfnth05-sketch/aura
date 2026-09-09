@@ -31,6 +31,11 @@ export type User = {
   pushSubscriptions?: any[];
   blockedUsers?: string[];
   completedCoachMarks?: string[];
+  admissionStatus?: 'active' | 'queued' | 'expired';
+  queuePosition?: number;
+  referralCode?: string;
+  referredBy?: string;
+  lastAppOpenedAt?: string;
 };
 
 export type Match = {

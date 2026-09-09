@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
-import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes, recordSwipe } from '@/lib/supabaseDataService';
+import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes, recordSwipe, checkInactivityExpiry, touchAppOpened } from '@/lib/supabaseDataService';
 import { sendWelcomePush } from '@/lib/notificationService';
+import { VipActionGateModal } from '@/components/vip-action-gate-modal';
 
 export interface AuthUser {
   uid: string;
@@ -73,6 +74,11 @@ interface UserContextType {
   refreshLikes: () => Promise<void>;
   refreshMatches: () => Promise<void>;
   swipeUser: (targetUser: User, isLike: boolean) => Promise<{ success: boolean; isMatch: boolean; match?: Match; matchedUser?: User }>;
+  isActionGateOpen: boolean;
+  actionGateTitle: string;
+  openActionGate: (title?: string) => void;
+  closeActionGate: () => void;
+  requireActiveAdmission: (actionCallback?: () => void, title?: string) => boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -200,7 +206,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
           { event: '*', schema: 'public', table: 'users', filter: `id=eq.${localUserId}` },
           (payload) => {
             if (payload.new) {
-              setUser(fromSupabaseUser(payload.new));
+              const updatedUser = fromSupabaseUser(payload.new);
+              setUser(prev => {
+                if (prev?.admissionStatus === 'queued' && updatedUser.admissionStatus === 'active') {
+                  toast({
+                    title: '🎉 VIP 프리패스 승인!',
+                    description: '초대하신 여성 회원님이 가입을 완료하여 정회원으로 입장되었습니다!',
+                  });
+                }
+                return updatedUser;
+              });
             }
           }
         )
@@ -257,6 +272,49 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoaded, user?.id, notificationSettings.locationShared, toast, updateNotificationSettings]);
 
+
+  // --- 14-Day Inactivity Check & Touch App Opened ---
+  useEffect(() => {
+    if (user?.id) {
+      checkInactivityExpiry(user.id, user.lastAppOpenedAt).then((isExpired) => {
+        if (isExpired) {
+          toast({
+            variant: 'destructive',
+            title: '대기열 만료 안내',
+            description: '14일 동안 앱에 미접속하여 대기열 순번이 자동 만료되었습니다.',
+          });
+          setUser((prev) => (prev ? { ...prev, admissionStatus: 'expired' } : null));
+        } else {
+          touchAppOpened(user.id);
+        }
+      });
+    }
+  }, [user?.id]);
+
+  // --- 50:50 Gender Equilibrium Action Gate Modal ---
+  const [isActionGateOpen, setIsActionGateOpen] = useState(false);
+  const [actionGateTitle, setActionGateTitle] = useState('1:1 대화 및 매칭');
+
+  const openActionGate = useCallback((title?: string) => {
+    if (title) setActionGateTitle(title);
+    setIsActionGateOpen(true);
+  }, []);
+
+  const closeActionGate = useCallback(() => {
+    setIsActionGateOpen(false);
+  }, []);
+
+  const requireActiveAdmission = useCallback((actionCallback?: () => void, title?: string): boolean => {
+    const isFemale = user?.gender === '여성';
+    const isActive = user?.admissionStatus === 'active' || isFemale;
+    if (isActive) {
+      actionCallback?.();
+      return true;
+    }
+
+    openActionGate(title || '이 기능');
+    return false;
+  }, [user?.gender, user?.admissionStatus, openActionGate]);
 
   // --- Matches & Likes Queries via Supabase ---
   const [matches, setMatches] = useState<Match[] | null>(null);
@@ -746,11 +804,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
     refreshLikes,
     refreshMatches,
     swipeUser,
+    isActionGateOpen,
+    actionGateTitle,
+    openActionGate,
+    closeActionGate,
+    requireActiveAdmission,
   };
 
   return (
     <UserContext.Provider value={value}>
       {children}
+      <VipActionGateModal
+        isOpen={isActionGateOpen}
+        onClose={closeActionGate}
+        queuePosition={user?.queuePosition || 1}
+        referralCode={user?.referralCode || 'AURA-VIP'}
+        actionTitle={actionGateTitle}
+      />
     </UserContext.Provider>
   );
 }
