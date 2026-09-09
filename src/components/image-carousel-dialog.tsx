@@ -11,9 +11,9 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from '@/components/ui/carousel';
 import Image from 'next/image';
-import type { EmblaCarouselType } from 'embla-carousel-react'
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/language-context';
 
@@ -25,7 +25,7 @@ type ImageCarouselDialogProps = {
 };
 
 export default function ImageCarouselDialog({ isOpen, onClose, images, startIndex = 0 }: ImageCarouselDialogProps) {
-  const [api, setApi] = useState<EmblaCarouselType | undefined>()
+  const [api, setApi] = useState<CarouselApi>()
   const { t } = useLanguage();
 
   useEffect(() => {

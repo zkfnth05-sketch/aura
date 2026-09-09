@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useUser, useStorage } from '@/firebase';
+import { useUser } from '@/contexts/user-context';
+import { useStorage } from '@/firebase';
 import {
   Dialog,
   DialogContent,

@@ -52,7 +52,6 @@ Your response MUST be a valid JSON object that conforms to the provided schema, 
 Target Language: ${input.targetLanguage}
 Text to translate: "${input.text}"`,
         output: { schema: TranslateChatOutputSchema },
-        retries: 2, // Add retries for robustness
     });
     
     // If the model fails to produce valid output, it will throw an error which is caught by the calling function.

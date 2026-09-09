@@ -15,7 +15,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { User } from '@/lib/types';
-import { Skeleton } from './ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/language-context';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { homeGuide } from '@/lib/coachmark-steps';

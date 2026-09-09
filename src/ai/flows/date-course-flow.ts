@@ -74,7 +74,6 @@ const dateCourseTextFlow = ai.defineFlow(
 
 The JSON should have a title, totalCost, steps (array of time, title, description, directions, cost, romanticTip), a summaryAndMessage, and an overallImagePrompt for the entire course. Do NOT include image prompts for individual steps.`,
       output: { schema: DateCourseOutputSchema },
-      retries: 3,
     });
     return output!;
   }
@@ -92,7 +91,6 @@ const dateCourseImageFlow = ai.defineFlow(
       const { media } = await ai.generate({
         model: 'googleai/imagen-4.0-fast-generate-001',
         prompt: prompt,
-        retries: 3,
       });
       return media?.url || '';
     } catch (error) {

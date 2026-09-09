@@ -7,7 +7,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { format, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import dynamic from 'next/dynamic';
 
@@ -69,7 +69,8 @@ export default function DashboardPage() {
             users: signupsByDate[date],
         })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
-        const oneYearAgo = subMonths(new Date(), 12);
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const monthlyData = Object.keys(signupsByMonth)
             .map(month => ({
                 date: month,

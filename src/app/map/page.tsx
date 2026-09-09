@@ -142,8 +142,10 @@ export default function MapPage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         ) : (
-            <APIProvider apiKey={apiKey} className="w-full h-full">
-              <MapClient users={mapUsers} currentUser={currentUser} initialCenter={center} />
+            <APIProvider apiKey={apiKey}>
+              <div className="w-full h-full">
+                <MapClient users={mapUsers} currentUser={currentUser} initialCenter={center} />
+              </div>
             </APIProvider>
         )}
       </div>

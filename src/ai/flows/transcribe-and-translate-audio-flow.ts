@@ -50,7 +50,6 @@ const transcribeAndTranslateAudioFlow = ai.defineFlow(
             { media: { url: audioDataUri, contentType: mimeType } }
         ],
         output: { schema: AudioTranslationOutputSchema },
-        retries: 2,
     });
     
     return output!;

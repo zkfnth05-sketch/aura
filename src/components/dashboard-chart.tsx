@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
 const chartConfig = {
   users: {
@@ -27,10 +27,11 @@ export default function DashboardChart({ chartData, timePeriod }: DashboardChart
                     tickMargin={10}
                     axisLine={false}
                     tickFormatter={(value) => {
+                        const d = new Date(value);
                         if (timePeriod === 'monthly') {
-                            return format(parseISO(value), 'yyyy-MM');
+                            return format(d, 'yyyy-MM');
                         }
-                        return format(parseISO(value), 'MM-dd');
+                        return format(d, 'MM-dd');
                     }}
                 />
                 <YAxis allowDecimals={false} />

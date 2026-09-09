@@ -86,7 +86,6 @@ const enhancePhotoFlow = ai.defineFlow(
                   },
                 ],
             },
-            retries: 3,
         });
 
         if (media && media.url) {
