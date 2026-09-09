@@ -19,12 +19,28 @@ export interface MatchWithUser {
 }
 
 export default function MatchesPage() {
-  const { user: currentUser, isLoaded, matches, isMatchesLoading, peopleILiked, peopleWhoLikedMe, isLikesLoading } = useUser();
+  const {
+    user: currentUser,
+    isLoaded,
+    matches,
+    isMatchesLoading,
+    peopleILiked,
+    peopleWhoLikedMe,
+    isLikesLoading,
+    refreshLikes,
+    refreshMatches,
+  } = useUser();
   const { t } = useLanguage();
   const [otherUsersForMatches, setOtherUsersForMatches] = useState<User[]>([]);
   const [areOtherUsersLoading, setAreOtherUsersLoading] = useState(true);
 
-  const isLoading = !isLoaded || isMatchesLoading || isLikesLoading || areOtherUsersLoading;
+  // Always refresh likes and matches when opening the matches screen
+  useEffect(() => {
+    refreshLikes();
+    refreshMatches();
+  }, [refreshLikes, refreshMatches]);
+
+  const isChatsLoading = isMatchesLoading || areOtherUsersLoading;
 
   const otherUserIdsForMatches = useMemo(() => {
     if (!matches || !currentUser) return [];
@@ -91,7 +107,7 @@ export default function MatchesPage() {
       <CoachMarkGuide guide={matchesGuide} />
       <Header />
       <main>
-        <Tabs defaultValue="chats" className="w-full">
+        <Tabs defaultValue="chats" onValueChange={() => { refreshLikes(); refreshMatches(); }} className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 rounded-none h-14">
             <TabsTrigger
               value="chats"
@@ -114,13 +130,13 @@ export default function MatchesPage() {
           </TabsList>
           
           <TabsContent value="chats" className="mt-0 p-4 pb-4">
-            {isLoading ? <div className="flex justify-center items-center pt-20"><Loader2 className="h-8 w-8 animate-spin" /></div> : <MatchList matchesWithUsers={matchesWithUsers} />}
+            {isChatsLoading ? <div className="flex justify-center items-center pt-20"><Loader2 className="h-8 w-8 animate-spin" /></div> : <MatchList matchesWithUsers={matchesWithUsers} />}
           </TabsContent>
           <TabsContent value="liked-me" className="mt-0 p-4 pb-4">
-             {isLoading ? <div className="flex justify-center items-center pt-20"><Loader2 className="h-8 w-8 animate-spin" /></div> : <UserGrid users={uniquePeopleWhoLikedMe} />}
+             {isLikesLoading ? <div className="flex justify-center items-center pt-20"><Loader2 className="h-8 w-8 animate-spin" /></div> : <UserGrid users={uniquePeopleWhoLikedMe} />}
           </TabsContent>
           <TabsContent value="i-liked" className="mt-0 p-4 pb-4">
-            {isLoading ? <div className="flex justify-center items-center pt-20"><Loader2 className="h-8 w-8 animate-spin" /></div> : <UserGrid users={uniquePeopleILiked} />}
+            {isLikesLoading ? <div className="flex justify-center items-center pt-20"><Loader2 className="h-8 w-8 animate-spin" /></div> : <UserGrid users={uniquePeopleILiked} />}
           </TabsContent>
             
         </Tabs>

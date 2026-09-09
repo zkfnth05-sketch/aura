@@ -36,6 +36,7 @@ export default function HomePageClient() {
     peopleILiked,
     isLikesLoading,
     filters,
+    swipeUser,
   } = useUser();
   const { t } = useLanguage();
   
@@ -123,16 +124,6 @@ export default function HomePageClient() {
     return matches.find(m => m.users.includes(activeUser.id)) || null;
   }, [matches, activeUser]);
 
-  const handleSwipe = (direction: 'left' | 'right') => {
-    if (!activeUser || swipeState) return;
-    setSwipeState(direction);
-  
-    setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
-      setSwipeState(null);
-    }, 400); // Animation time
-  };
-
   const { toast } = useToast();
 
   const handleAction = async (action: 'like' | 'dislike' | 'message') => {
@@ -146,7 +137,7 @@ export default function HomePageClient() {
         return;
       }
       
-      const res = await recordSwipe(currentUser.id, targetUserId, true);
+      const res = await swipeUser(activeUser, true);
       const matchId = res.match ? res.match.id : [currentUser.id, targetUserId].sort().join('_');
       router.push(`/chat/${matchId}`);
       return;
@@ -155,7 +146,7 @@ export default function HomePageClient() {
     const direction = action === 'dislike' ? 'left' : 'right';
     setSwipeState(direction);
   
-    recordSwipe(currentUser.id, targetUserId, action === 'like').then((result) => {
+    swipeUser(activeUser, action === 'like').then((result) => {
       if (result.isMatch) {
         toast({
           title: "🎉 매칭 성공!",
@@ -171,10 +162,14 @@ export default function HomePageClient() {
       setSwipeState(null);
     }, 400); // Animation time
   };
+
+  const handleSwipe = (direction: 'left' | 'right') => {
+    handleAction(direction === 'right' ? 'like' : 'dislike');
+  };
   
   const isLikedByMe = peopleILiked?.some(u => u.id === activeUser?.id);
   
-  const isReallyLoading = !isLoaded || isLikesLoading || (isRecommendedUsersLoading && recommendedUsers.length === 0);
+  const isReallyLoading = !isLoaded || (isRecommendedUsersLoading && recommendedUsers.length === 0);
 
   if (isReallyLoading) {
     return (

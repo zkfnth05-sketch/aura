@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
-import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes } from '@/lib/supabaseDataService';
+import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes, recordSwipe } from '@/lib/supabaseDataService';
 import { sendWelcomePush } from '@/lib/notificationService';
 
 export interface AuthUser {
@@ -70,6 +70,9 @@ interface UserContextType {
   peopleWhoLikedMe: User[] | null;
   isLikesLoading: boolean;
   subscribeToPushNotifications: () => Promise<void>;
+  refreshLikes: () => Promise<void>;
+  refreshMatches: () => Promise<void>;
+  swipeUser: (targetUser: User, isLike: boolean) => Promise<{ success: boolean; isMatch: boolean; match?: Match; matchedUser?: User }>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -242,6 +245,58 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
   const [isLikesLoading, setIsLikesLoading] = useState(true);
 
+  const refreshMatches = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = await fetchUserMatches(user.id);
+      setMatches(data);
+      setIsMatchesLoading(false);
+    } catch (e) {
+      setIsMatchesLoading(false);
+    }
+  }, [user?.id]);
+
+  const refreshLikes = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { peopleILiked: myLikes, peopleWhoLikedMe: likesToMe } = await fetchUserLikes(user.id);
+      const [likedUsers, likedByUsers] = await Promise.all([
+        fetchUsersByIds(myLikes.map((l) => l.likeeId)),
+        fetchUsersByIds(likesToMe.map((l) => l.likerId)),
+      ]);
+      setPeopleILiked(likedUsers);
+      setPeopleWhoLikedMe(likedByUsers);
+      setIsLikesLoading(false);
+    } catch (e) {
+      setIsLikesLoading(false);
+    }
+  }, [user?.id]);
+
+  const swipeUser = useCallback(async (targetUser: User, isLike: boolean) => {
+    if (!user?.id) return { success: false, isMatch: false };
+
+    if (isLike) {
+      // Optimistic instant addition to peopleILiked!
+      setPeopleILiked(prev => [targetUser, ...(prev || []).filter(u => u.id !== targetUser.id)]);
+    } else {
+      setPeopleILiked(prev => (prev || []).filter(u => u.id !== targetUser.id));
+    }
+
+    try {
+      const result = await recordSwipe(user.id, targetUser.id, isLike);
+      if (result.isMatch && result.match) {
+        setMatches(prev => [result.match!, ...(prev || []).filter(m => m.id !== result.match!.id)]);
+      }
+      // Re-sync with server
+      refreshLikes();
+      return result;
+    } catch (err) {
+      console.error('Failed to record swipe in swipeUser:', err);
+      refreshLikes();
+      return { success: false, isMatch: false };
+    }
+  }, [user?.id, refreshLikes]);
+
   useEffect(() => {
     if (!user?.id) {
       setMatches([]);
@@ -256,47 +311,63 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setIsMatchesLoading(true);
     setIsLikesLoading(true);
 
-    const loadMatches = async () => {
-      try {
-        const data = await fetchUserMatches(user.id);
-        if (isMounted) {
-          setMatches(data);
-          setIsMatchesLoading(false);
-        }
-      } catch (e) {
-        if (isMounted) setIsMatchesLoading(false);
-      }
-    };
-    loadMatches();
-    const unsubscribeMatches = subscribeUserMatches(user.id, loadMatches);
+    refreshMatches();
+    const unsubscribeMatches = subscribeUserMatches(user.id, () => {
+      if (isMounted) refreshMatches();
+    });
 
-    const loadLikes = async () => {
-      try {
-        const { peopleILiked: myLikes, peopleWhoLikedMe: likesToMe } = await fetchUserLikes(user.id);
-        const [likedUsers, likedByUsers] = await Promise.all([
-          fetchUsersByIds(myLikes.map((l) => l.likeeId)),
-          fetchUsersByIds(likesToMe.map((l) => l.likerId)),
-        ]);
-        if (isMounted) {
-          setPeopleILiked(likedUsers);
-          setPeopleWhoLikedMe(likedByUsers);
-          setIsLikesLoading(false);
-        }
-      } catch (e) {
-        if (isMounted) setIsLikesLoading(false);
-      }
-    };
-    loadLikes();
-    const unsubscribeLikes = subscribeUserLikes(user.id, loadLikes);
+    refreshLikes();
+    const unsubscribeLikes = subscribeUserLikes(user.id, () => {
+      if (isMounted) refreshLikes();
+    });
 
     // Instant WebSocket broadcast listener for user-specific events
-    const alertChannel = supabase?.channel(`user_ctx_alerts_${user.id}`)
+    // Topic: user_alerts_${user.id} (100% matched with notificationService.ts)
+    const alertChannel = supabase?.channel(`user_alerts_${user.id}`)
       .on('broadcast', { event: 'alert' }, ({ payload }) => {
         if (!isMounted) return;
         if (payload?.type === 'like') {
-          loadLikes();
-        } else if (payload?.type === 'match' || payload?.type === 'message' || payload?.type === 'call') {
-          loadMatches();
+          if (payload.title && payload.body) {
+            toast({
+              title: payload.title,
+              description: payload.body,
+            });
+          }
+          if (payload.liker) {
+            // Optimistic instant update for People Who Liked Me!
+            setPeopleWhoLikedMe(prev => {
+              const exists = (prev || []).some(u => u.id === payload.liker.id);
+              if (exists) return prev;
+              return [payload.liker as User, ...(prev || [])];
+            });
+          }
+          refreshLikes();
+        } else if (payload?.type === 'match') {
+          if (payload.title && payload.body) {
+            toast({
+              title: payload.title,
+              description: payload.body,
+            });
+          }
+          if (payload.matchedUser && payload.matchId) {
+            setMatches(prev => {
+              const exists = (prev || []).some(m => m.id === payload.matchId);
+              if (exists) return prev;
+              return [{
+                id: payload.matchId,
+                users: [user.id, payload.matchedUser.id],
+                lastMessage: '매칭되었습니다! 인사를 건네보세요.',
+                lastMessageTimestamp: { toDate: () => new Date(), toMillis: () => Date.now() },
+                unreadCounts: {},
+                matchDate: { toDate: () => new Date(), toMillis: () => Date.now() },
+                callStatus: 'idle',
+              }, ...(prev || [])];
+            });
+          }
+          refreshMatches();
+          refreshLikes();
+        } else if (payload?.type === 'message' || payload?.type === 'call') {
+          refreshMatches();
         }
       })
       .subscribe();
@@ -309,7 +380,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         supabase.removeChannel(alertChannel);
       }
     };
-  }, [user?.id]);
+  }, [user?.id, refreshMatches, refreshLikes]);
 
   const totalUnreadCount = (matches || []).reduce((acc, match) => {
     if (user && user.id && match.unreadCounts) {
@@ -616,6 +687,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     peopleWhoLikedMe,
     isLikesLoading,
     subscribeToPushNotifications,
+    refreshLikes,
+    refreshMatches,
+    swipeUser,
   };
 
   return (

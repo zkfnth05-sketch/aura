@@ -117,7 +117,7 @@ function UserProfilePageContent() {
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const { user: currentUser, isLoaded, matches, peopleILiked, updateUser } = useUser();
+  const { user: currentUser, isLoaded, matches, peopleILiked, updateUser, swipeUser } = useUser();
   
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
@@ -182,6 +182,7 @@ function UserProfilePageContent() {
 
       try {
         await getClient().from('matches').upsert(matchData, { onConflict: 'id' });
+        await swipeUser(user, true);
       } catch (e) {
         console.error('Failed to create match:', e);
       }
@@ -190,7 +191,7 @@ function UserProfilePageContent() {
     }
 
     try {
-      await recordSwipe(currentUser.id, targetUserId, action === 'like');
+      await swipeUser(user, action === 'like');
     } catch (e) {
       console.error('Failed to record swipe:', e);
     }

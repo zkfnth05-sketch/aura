@@ -380,13 +380,18 @@ export async function fetchUserLikes(userId: string): Promise<{
       .from('likes')
       .select('*')
       .eq('liker_id', userId)
-      .eq('is_like', true),
+      .eq('is_like', true)
+      .order('created_at', { ascending: false }),
     client
       .from('likes')
       .select('*')
       .eq('likee_id', userId)
-      .eq('is_like', true),
+      .eq('is_like', true)
+      .order('created_at', { ascending: false }),
   ]);
+
+  if (sentRes.error) console.error('Error fetching sent likes:', sentRes.error);
+  if (receivedRes.error) console.error('Error fetching received likes:', receivedRes.error);
 
   const peopleILiked = (sentRes.data || []).map(fromSupabaseLike);
   const peopleWhoLikedMe = (receivedRes.data || []).map(fromSupabaseLike);
@@ -417,19 +422,23 @@ export async function fetchAllUsers(limitCount = 100): Promise<User[]> {
  * Fetch multiple users by their IDs
  */
 export async function fetchUsersByIds(userIds: string[]): Promise<User[]> {
-  if (!userIds || userIds.length === 0) return [];
+  const cleanIds = Array.from(new Set((userIds || []).filter(Boolean)));
+  if (cleanIds.length === 0) return [];
+
   const client = getClient();
   const { data, error } = await client
     .from('users')
     .select('*')
-    .in('id', userIds);
+    .in('id', cleanIds);
 
   if (error || !data) {
     console.error('Error fetching users by IDs:', error);
     return [];
   }
 
-  return data.map(fromSupabaseUser);
+  const userMap = new Map(data.map((u) => [u.id, fromSupabaseUser(u)]));
+  // Preserve original order so recent likes remain at the top
+  return cleanIds.map((id) => userMap.get(id)).filter((u): u is User => !!u);
 }
 
 /**
