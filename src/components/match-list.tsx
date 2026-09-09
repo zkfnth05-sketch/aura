@@ -50,7 +50,7 @@ const MatchListItem = ({match, otherUser}: MatchWithUser) => {
     }
 
     return (
-        <Link href={`/chat/${match.id}`} onClick={handleChatClick} prefetch={false} className="block rounded-lg transition-colors hover:bg-accent">
+        <Link href={`/chat/${match.id}`} onClick={handleChatClick} prefetch={true} className="block rounded-lg transition-colors hover:bg-accent">
             <div className="flex items-center gap-4 p-2">
                 <div onClick={handleAvatarClick} className="relative cursor-pointer z-10">
                     <Avatar className="h-14 w-14 border-2 border-primary/50">
