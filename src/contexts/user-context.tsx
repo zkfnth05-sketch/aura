@@ -2,13 +2,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
-import { User as AuthUser, RecaptchaVerifier, ConfirmationResult, signInWithPhoneNumber, PhoneAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { User as AuthUser } from 'firebase/auth';
 import { useUser as useAuthUserHook, useAuth, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, serverTimestamp, collection, query, where, getDoc, getDocs, updateDoc, orderBy, limit, onSnapshot, Query, DocumentData, startAfter, QueryDocumentSnapshot, documentId } from 'firebase/firestore';
 import type { User, Match, Like } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabaseClient';
+import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
 
 interface NotificationSettings {
   all: boolean;
@@ -34,7 +36,7 @@ interface PhoneAuthState {
   setPhoneNumber: (phone: string) => void;
   countryCode: string;
   setCountryCode: (code: string) => void;
-  confirmationResult: ConfirmationResult | null;
+  confirmationResult: any;
   sendVerificationCode: (phoneNumberOverride?: string) => Promise<string | undefined>;
   verifyOtp: (otp: string) => Promise<void>;
   reauthenticate: (otp: string) => Promise<void>;
@@ -117,8 +119,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('+82');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState<any>(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [reauthVerificationId, setReauthVerificationId] = useState<string | null>(null);
@@ -160,10 +162,51 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // User Document Fetching & Presence Management
   useEffect(() => {
-    if (isAuthLoading || !firestore) {
-      setIsUserDocLoading(true);
-      return;
+    // User Document Fetching: Supabase 우선, fallback으로 Firebase
+    const localUserId = typeof window !== 'undefined' ? localStorage.getItem('aura_user_id') : null;
+    const targetUserId = localUserId || authUser?.uid;
+
+    if (supabase && targetUserId) {
+      supabase
+        .from('users')
+        .select('*')
+        .eq('id', targetUserId)
+        .maybeSingle()
+        .then(
+          ({ data, error }) => {
+            if (data) {
+              setUser(fromSupabaseUser(data));
+            } else if (!authUser) {
+              setUser(null);
+            }
+            setIsUserDocLoading(false);
+          },
+          (err: any) => {
+            console.error("Supabase user fetch error:", err);
+            setIsUserDocLoading(false);
+          }
+        );
+
+      const channel = supabase
+        .channel(`user_changes_${targetUserId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'users', filter: `id=eq.${targetUserId}` },
+          (payload) => {
+            if (payload.new) {
+              setUser(fromSupabaseUser(payload.new));
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        if (supabase) {
+          supabase.removeChannel(channel);
+        }
+      };
     }
+
     if (!authUser) {
       setUser(null);
       setIsUserDocLoading(false);
@@ -172,7 +215,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const userRef = doc(firestore, 'users', authUser.uid);
     
-    // Subscribe to user document
+    // Subscribe to user document in Firestore (fallback)
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
         setUser(docSnap.data() as User);
@@ -188,17 +231,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // Handle presence (lastSeen)
     const updateLastSeen = () => {
+      if (supabase && targetUserId) {
+        supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', targetUserId).then();
+      }
       getDoc(userRef).then(docSnap => {
         if(docSnap.exists()){
           updateDoc(userRef, { lastSeen: new Date().toISOString() })
             .catch(e => console.error("Error updating lastSeen:", e));
         }
-      });
+      }).catch(() => {});
     };
     
-    // Only update lastSeen on window focus, not location.
     window.addEventListener('focus', updateLastSeen);
-    updateLastSeen(); // Update once on load
+    updateLastSeen();
     
     return () => {
       unsubscribe();
@@ -309,17 +354,49 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return acc;
   }, 0);
 
-  const updateUser = useCallback((newUserData: Partial<User>): Promise<void> => {
-    if (!authUser || !firestore) {
+  const updateUser = useCallback(async (newUserData: Partial<User>): Promise<void> => {
+    const targetUid = authUser?.uid || (typeof window !== 'undefined' ? (localStorage.getItem('aura_user_id') || localStorage.getItem('aura_temp_uid')) : null);
+    if (!targetUid) {
       return Promise.reject(new Error("User not authenticated."));
     }
-    const userRef = doc(firestore, 'users', authUser.uid);
-    const dataToSave: any = { ...newUserData, id: authUser.uid };
-    if (newUserData.createdAt === "serverTimestamp") {
-      dataToSave.createdAt = serverTimestamp();
+
+    const dataToSave: any = { ...newUserData, id: targetUid };
+
+    // 1. Supabase에 저장
+    if (supabase) {
+      try {
+        const payload = toSupabaseUser(dataToSave);
+        const { error } = await supabase.from('users').upsert(payload);
+        if (error) {
+          console.error("Supabase upsert error:", error);
+        } else {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('aura_user_id', targetUid);
+            localStorage.removeItem('aura_temp_uid');
+          }
+          setUser(prev => ({
+            ...(prev || {}),
+            ...newUserData,
+            id: targetUid,
+          } as User));
+        }
+      } catch (e) {
+        console.error("Supabase user update exception:", e);
+      }
     }
-    // Return the promise from the non-blocking call
-    return setDocumentNonBlocking(userRef, dataToSave, { merge: true });
+
+    // 2. Firebase 호환 저장
+    if (firestore && authUser) {
+      try {
+        const userRef = doc(firestore, 'users', authUser.uid);
+        if ((newUserData.createdAt as any) === "serverTimestamp") {
+          dataToSave.createdAt = serverTimestamp();
+        }
+        await setDocumentNonBlocking(userRef, dataToSave, { merge: true });
+      } catch (err) {
+        console.warn("Firebase shadow write skipped or failed:", err);
+      }
+    }
   }, [authUser, firestore]);
   
   const updateFilters = useCallback((newFilters: Partial<FilterSettings>) => {
@@ -343,86 +420,130 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+  const recaptchaVerifierRef = useRef<any>(null);
 
   const sendVerificationCode = useCallback(async (phoneNumberOverride?: string) => {
-    if (!auth) return;
-    
-    const fullPhoneNumber = phoneNumberOverride || `${countryCode}${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
+    const rawPhone = phoneNumberOverride || `${countryCode}${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
+    const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
     
     setIsSendingOtp(true);
     try {
-        // 기존 인스턴스 정리
-        if (recaptchaVerifierRef.current) {
-          try { (recaptchaVerifierRef.current as any).clear(); } catch(e) {}
+      const res = await fetch('/api/auth/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', phoneNumber: cleanPhone }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({
+          title: '인증번호 발송',
+          description: data.message || '인증번호가 발송되었습니다.',
+        });
+        if (data.testAuthCode) {
+          toast({
+            title: '🧪 테스트 모드 인증번호',
+            description: `[ ${data.testAuthCode} ] 입력 후 인증을 진행해 주세요.`,
+            duration: 10000,
+          });
         }
-
-        const container = document.getElementById('recaptcha-container');
-        if (!container) throw new Error("Recaptcha container not found");
-
-        // ReCAPTCHA 생성 (보이지 않는 모드 - 진짜 상용 앱과 동일)
-        const verifier = new RecaptchaVerifier(auth, container, { size: 'invisible' });
-        recaptchaVerifierRef.current = verifier;
-
-        // 인증 실행
-        await verifier.render();
-        const confirmation = await signInWithPhoneNumber(auth, fullPhoneNumber, verifier);
-        
-        setConfirmationResult(confirmation);
-        setReauthVerificationId(confirmation.verificationId);
-        
-        if(!phoneNumberOverride) {
+        if (!phoneNumberOverride) {
           router.push('/signup/otp');
         }
-        return confirmation.verificationId;
+        return 'sent';
+      } else {
+        toast({
+          variant: 'destructive',
+          title: '발송 실패',
+          description: data.message || '인증번호 발송에 실패했습니다.',
+        });
+      }
     } catch (error: any) {
-        console.group("❌ SMS 발송 상세 에러 리포트");
-        console.error("에러 코드:", error.code);
-        console.error("에러 메시지:", error.message);
-        console.error("상세 정보:", error.customData);
-        console.error("전체 에러 객체:", error);
-        console.groupEnd();
-
-        if (error.code === "auth/invalid-app-credential") {
-            alert("인증 설정 오류가 발생했습니다. 브라우저의 사이트 데이터(LocalStorage/Cookie)를 완전히 삭제하고 페이지를 새로고침한 뒤 다시 시도해 주세요.");
-        } else if (error.code === "auth/too-many-requests") {
-            alert("너무 많은 시도가 있었습니다. 잠시 후 다시 한 번 시도 부탁드립니다.");
-        } else {
-            alert(`인증 코드 전송 실패: ${error.message}`);
-        }
+      console.error('SMS Send error:', error);
+      toast({
+        variant: 'destructive',
+        title: '발송 오류',
+        description: '문자 발송 중 오류가 발생했습니다.',
+      });
     } finally {
-        setIsSendingOtp(false);
+      setIsSendingOtp(false);
     }
-  }, [auth, phoneNumber, countryCode, router]);
+  }, [phoneNumber, countryCode, router, toast]);
 
   const verifyOtp = useCallback(async (otp: string) => {
-    if (confirmationResult && otp) {
-        setIsVerifyingOtp(true);
-        try {
-          await confirmationResult.confirm(otp);
+    const rawPhone = `${countryCode}${phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}`;
+    const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+
+    setIsVerifyingOtp(true);
+    try {
+      const res = await fetch('/api/auth/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', phoneNumber: cleanPhone, code: otp }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast({
+          title: '인증 성공',
+          description: '휴대폰 번호 인증이 완료되었습니다.',
+        });
+
+        if (data.isExistingUser && data.user) {
+          // 기존 회원인 경우: 로그인 처리 후 홈으로 이동 (Bug #2 해결)
+          const loadedUser = fromSupabaseUser(data.user);
+          setUser(loadedUser);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('aura_user_id', loadedUser.id);
+          }
+          router.push('/');
+        } else {
+          // 신규 회원인 경우: 임시 회원 번호 설정 후 프로필 작성 화면으로 이동
+          const newUid = `user_${cleanPhone}`;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('aura_signup_phone', cleanPhone);
+            localStorage.setItem('aura_temp_uid', newUid);
+          }
           router.push('/signup/profile');
-        } catch (error) {
-          console.error("OTP Error:", error);
-          alert("인증 코드가 잘못되었습니다.");
-        } finally {
-          setIsVerifyingOtp(false);
         }
+      } else {
+        toast({
+          variant: 'destructive',
+          title: '인증 실패',
+          description: data.message || '인증번호가 일치하지 않습니다.',
+        });
       }
-  }, [confirmationResult, router]);
-  
+    } catch (error: any) {
+      console.error('Verify error:', error);
+      toast({
+        variant: 'destructive',
+        title: '인증 오류',
+        description: '인증 확인 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  }, [phoneNumber, countryCode, router, toast]);
+
   const reauthenticate = useCallback(async (otp: string) => {
-    if (!reauthVerificationId || !otp || !authUser) throw new Error("인증 정보 부족");
-      setIsVerifyingOtp(true);
-      try {
-          const credential = PhoneAuthProvider.credential(reauthVerificationId, otp);
-          await reauthenticateWithCredential(authUser, credential);
-      } catch (error) {
-          console.error("Reauth Error:", error);
-          throw new Error("인증 실패");
-      } finally {
-          setIsVerifyingOtp(false);
+    const cleanPhone = user?.phoneNumber?.replace(/[^0-9]/g, '') || '';
+    if (!cleanPhone) throw new Error("전화번호 정보 부족");
+    
+    setIsVerifyingOtp(true);
+    try {
+      const res = await fetch('/api/auth/sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', phoneNumber: cleanPhone, code: otp }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || '인증 실패');
       }
-  }, [reauthVerificationId, authUser]);
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  }, [user?.phoneNumber]);
 
   const urlBase64ToUint8Array = (base64String: string) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -483,13 +604,54 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [user, firestore, updateUser, toast]);
 
 
+  const effectiveAuthUser = user
+    ? ({
+        uid: user.id,
+        phoneNumber: user.phoneNumber || '',
+        email: user.email || '',
+        displayName: user.name || '',
+      } as any)
+    : (typeof window !== 'undefined' && localStorage.getItem('aura_temp_uid'))
+    ? ({
+        uid: localStorage.getItem('aura_temp_uid')!,
+        phoneNumber: localStorage.getItem('aura_signup_phone') || '',
+        email: '',
+        displayName: '',
+      } as any)
+    : authUser;
+
   const value: UserContextType = {
-    user, authUser, firestore, updateUser, notificationSettings, updateNotificationSettings,
-    filters, updateFilters, resetFilters, isLoaded,
-    totalUnreadCount, phoneAuth: { phoneNumber, setPhoneNumber, countryCode, setCountryCode, confirmationResult, sendVerificationCode, verifyOtp, reauthenticate, isSendingOtp, isVerifyingOtp },
-    isSignupFlowActive, setIsSignupFlowActive,
-    matches, isMatchesLoading, peopleILiked, peopleWhoLikedMe, isLikesLoading,
-    subscribeToPushNotifications
+    user,
+    authUser: effectiveAuthUser,
+    firestore,
+    updateUser,
+    notificationSettings,
+    updateNotificationSettings,
+    filters,
+    updateFilters,
+    resetFilters,
+    isLoaded,
+    totalUnreadCount,
+    phoneAuth: {
+      phoneNumber,
+      setPhoneNumber,
+      countryCode,
+      setCountryCode,
+      confirmationResult,
+      sendVerificationCode,
+      verifyOtp,
+      reauthenticate,
+      isSendingOtp,
+      isVerifyingOtp,
+    },
+    isSignupFlowActive,
+    setIsSignupFlowActive,
+    matches,
+    isMatchesLoading,
+    peopleILiked,
+    peopleWhoLikedMe,
+    isLikesLoading,
+    subscribeToPushNotifications,
   };
 
   return (

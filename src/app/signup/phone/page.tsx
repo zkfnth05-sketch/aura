@@ -93,9 +93,6 @@ export default function PhonePage() {
           {isSendingOtp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('get_verify_code')}
         </Button>
       </footer>
-      
-      {/* This div is essential for the invisible reCAPTCHA */}
-      <div id="recaptcha-container"></div>
     </div>
   );
 }

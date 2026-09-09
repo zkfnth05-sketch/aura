@@ -81,7 +81,7 @@ export default function CreateProfilePage() {
       bio: t('bio_placeholder'),
       lat: 37.5665,
       lng: 126.9780,
-      createdAt: "serverTimestamp", // Special marker for the context
+      createdAt: "serverTimestamp" as any, // Special marker for the context
     };
     
     try {

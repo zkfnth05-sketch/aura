@@ -20,7 +20,6 @@ export default function ReauthDialog({ isOpen, onClose, onReauthSuccess }: Reaut
   const { toast } = useToast();
   const { t } = useLanguage();
   const { 
-    setupRecaptcha, 
     sendVerificationCode, 
     reauthenticate,
     isSendingOtp, 
@@ -29,13 +28,6 @@ export default function ReauthDialog({ isOpen, onClose, onReauthSuccess }: Reaut
   
   const [otp, setOtp] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
-  const [recaptchaContainer, setRecaptchaContainer] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (recaptchaContainer) {
-      setupRecaptcha(recaptchaContainer);
-    }
-  }, [recaptchaContainer, setupRecaptcha]);
 
   useEffect(() => {
     // Reset state when dialog opens
@@ -132,7 +124,6 @@ export default function ReauthDialog({ isOpen, onClose, onReauthSuccess }: Reaut
             {isVerifyingOtp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('reauth_submit_button')}
           </Button>
         </DialogFooter>
-        <div id="recaptcha-container-reauth" ref={setRecaptchaContainer}></div>
       </DialogContent>
     </Dialog>
   );
