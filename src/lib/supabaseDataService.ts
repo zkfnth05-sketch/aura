@@ -535,6 +535,16 @@ export async function updateMatchCallStatus(
         }
       }).catch((err) => console.error('Error notifying incoming call:', err));
     }
+  } else if (callStatus === 'active') {
+    // If call accepted, broadcast active event to both participants
+    userIds.forEach((uid) => {
+      sendRealtimeBroadcast(uid, {
+        type: 'call',
+        title: '통화 연결',
+        body: '영상 통화가 연결되었습니다.',
+        data: { callStatus: 'active', matchId },
+      });
+    });
   } else if (callStatus === 'idle') {
     // If call ended or rejected, broadcast dismiss event to all participants
     userIds.forEach((uid) => {

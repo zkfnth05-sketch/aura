@@ -120,16 +120,20 @@ export default function ChatPage() {
     const loadMatch = async () => {
       if (!supabase) return;
       try {
-        const { data: matchData } = await supabase
+        const { data } = await supabase
           .from('matches')
           .select('*')
           .eq('id', matchId)
           .maybeSingle();
 
-        if (matchData && isMounted) {
-          const m = fromSupabaseMatch(matchData);
+        if (data) {
+          const m = fromSupabaseMatch(data);
           setLiveMatch(m);
           setIsMatchLoading(false);
+
+          if (m.callStatus === 'active' || (m.callStatus === 'ringing' && m.callerId === currentUser?.id)) {
+            setIsCallActive(true);
+          }
 
           const oId = m.users.find((id) => id !== currentUser?.id);
           if (oId) {
@@ -151,6 +155,30 @@ export default function ChatPage() {
     loadMatch();
 
     if (supabase) {
+      // 1. Sync call status via Realtime Broadcast
+      const alertChannel = supabase
+        .channel(`chat_page_alerts_${currentUser?.id}_${matchId}`)
+        .on('broadcast', { event: 'alert' }, ({ payload }) => {
+          if (!isMounted) return;
+          if (payload?.type === 'call' && (payload.matchId === matchId || payload.data?.matchId === matchId)) {
+            if (payload.data?.callStatus === 'active') {
+              setIsCallActive(true);
+            } else if (payload.data?.callStatus === 'idle') {
+              setIsCallActive(false);
+            }
+          }
+        })
+        .subscribe();
+
+      // 2. Sync signaling end_call
+      const callChannel = supabase
+        .channel(`chat_call_sync_${matchId}`)
+        .on('broadcast', { event: 'end_call' }, () => {
+          if (isMounted) setIsCallActive(false);
+        })
+        .subscribe();
+
+      // 3. Fallback: postgres_changes
       const matchChannel = supabase
         .channel(`match-channel-${matchId}`)
         .on(
@@ -160,9 +188,9 @@ export default function ChatPage() {
             if (payload.new && isMounted) {
               const updated = fromSupabaseMatch(payload.new);
               setLiveMatch(updated);
-              if (updated.callStatus === 'active' || updated.callStatus === 'ringing') {
+              if (updated.callStatus === 'active' || (updated.callStatus === 'ringing' && updated.callerId === currentUser?.id)) {
                 setIsCallActive(true);
-              } else {
+              } else if (updated.callStatus === 'idle') {
                 setIsCallActive(false);
               }
             }
@@ -172,6 +200,8 @@ export default function ChatPage() {
 
       return () => {
         isMounted = false;
+        supabase?.removeChannel(alertChannel);
+        supabase?.removeChannel(callChannel);
         supabase?.removeChannel(matchChannel);
       };
     }
@@ -457,6 +487,7 @@ export default function ChatPage() {
 
   const handleInitiateCall = () => {
     if (!currentUser || !otherUser) return;
+    setIsCallActive(true);
     updateMatchCallStatus(matchId, 'ringing', currentUser.id);
   };
 
@@ -489,7 +520,15 @@ export default function ChatPage() {
   }
 
   if (isCallActive) {
-    return <VideoChat localUser={currentUser} remoteUser={otherUser} matchId={matchId} onEndCall={handleEndCall} />;
+    return (
+      <VideoChat
+        localUser={currentUser}
+        remoteUser={otherUser}
+        matchId={matchId}
+        isCaller={match.callerId === currentUser.id}
+        onEndCall={handleEndCall}
+      />
+    );
   }
   
   const renderFooterContent = () => {
