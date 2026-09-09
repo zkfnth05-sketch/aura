@@ -2,7 +2,6 @@
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { UserProvider } from '@/contexts/user-context';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 import AppLayout from '@/components/layout/app-layout';
 import { LanguageProvider } from '@/contexts/language-context';
 import { SelectedChatProvider } from '@/contexts/selected-chat-context';
@@ -45,18 +44,16 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full bg-background text-foreground" suppressHydrationWarning>
-        <FirebaseClientProvider>
-          <UserProvider>
-            <LanguageProvider>
-              <SelectedChatProvider>
-                <AppLayout>
-                  {children}
-                </AppLayout>
-              </SelectedChatProvider>
-              <Toaster />
-            </LanguageProvider>
-          </UserProvider>
-        </FirebaseClientProvider>
+        <UserProvider>
+          <LanguageProvider>
+            <SelectedChatProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </SelectedChatProvider>
+            <Toaster />
+          </LanguageProvider>
+        </UserProvider>
       </body>
     </html>
   );

@@ -2,14 +2,19 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
-import { User as AuthUser } from 'firebase/auth';
-import { useUser as useAuthUserHook, useAuth, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import type { User, Match, Like } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
 import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes } from '@/lib/supabaseDataService';
+
+export interface AuthUser {
+  uid: string;
+  phoneNumber?: string;
+  email?: string;
+  displayName?: string;
+}
 
 interface NotificationSettings {
   all: boolean;
@@ -89,9 +94,6 @@ const initialFilters: FilterSettings = {
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const { user: authUser, isUserLoading: isAuthLoading } = useAuthUserHook();
-  const firestore = useFirestore();
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -112,7 +114,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [peopleILiked, setPeopleILiked] = useState<User[] | null>(null);
   const [peopleWhoLikedMe, setPeopleWhoLikedMe] = useState<User[] | null>(null);
   
-  const isLoaded = !isAuthLoading && !isUserDocLoading && areSettingsLoaded;
+  const isLoaded = !isUserDocLoading && areSettingsLoaded;
 
   // Load Settings from LocalStorage
   useEffect(() => {
@@ -144,23 +146,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // User Document Fetching & Presence Management
+  // User Document Fetching & Presence Management via Supabase
   useEffect(() => {
-    // User Document Fetching: Supabase 우선, fallback으로 Firebase
     const localUserId = typeof window !== 'undefined' ? localStorage.getItem('aura_user_id') : null;
-    const targetUserId = localUserId || authUser?.uid;
 
-    if (supabase && targetUserId) {
+    if (supabase && localUserId) {
       supabase
         .from('users')
         .select('*')
-        .eq('id', targetUserId)
+        .eq('id', localUserId)
         .maybeSingle()
         .then(
-          ({ data, error }) => {
+          ({ data }) => {
             if (data) {
               setUser(fromSupabaseUser(data));
-            } else if (!authUser) {
+            } else {
               setUser(null);
             }
             setIsUserDocLoading(false);
@@ -172,10 +172,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         );
 
       const channel = supabase
-        .channel(`user_changes_${targetUserId}`)
+        .channel(`user_changes_${localUserId}`)
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'users', filter: `id=eq.${targetUserId}` },
+          { event: '*', schema: 'public', table: 'users', filter: `id=eq.${localUserId}` },
           (payload) => {
             if (payload.new) {
               setUser(fromSupabaseUser(payload.new));
@@ -184,26 +184,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
         )
         .subscribe();
 
+      const updateLastSeen = () => {
+        if (supabase && localUserId) {
+          supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', localUserId).then();
+        }
+      };
+      
+      window.addEventListener('focus', updateLastSeen);
+      updateLastSeen();
+      
       return () => {
         if (supabase) {
           supabase.removeChannel(channel);
         }
+        window.removeEventListener('focus', updateLastSeen);
       };
+    } else {
+      setIsUserDocLoading(false);
     }
-
-    const updateLastSeen = () => {
-      if (supabase && targetUserId) {
-        supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', targetUserId).then();
-      }
-    };
-    
-    window.addEventListener('focus', updateLastSeen);
-    updateLastSeen();
-    
-    return () => {
-      window.removeEventListener('focus', updateLastSeen);
-    };
-  }, [authUser, isAuthLoading]);
+  }, []);
 
   // Dedicated useEffect for location management
   useEffect(() => {
@@ -234,7 +233,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     }
-  }, [isLoaded, user?.id, firestore, notificationSettings.locationShared, toast, updateNotificationSettings]);
+  }, [isLoaded, user?.id, notificationSettings.locationShared, toast, updateNotificationSettings]);
 
 
   // --- Matches & Likes Queries via Supabase ---
@@ -304,14 +303,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, 0);
 
   const updateUser = useCallback(async (newUserData: Partial<User>): Promise<void> => {
-    const targetUid = authUser?.uid || (typeof window !== 'undefined' ? (localStorage.getItem('aura_user_id') || localStorage.getItem('aura_temp_uid')) : null);
+    const targetUid = user?.id || (typeof window !== 'undefined' ? (localStorage.getItem('aura_user_id') || localStorage.getItem('aura_temp_uid')) : null);
     if (!targetUid) {
       return Promise.reject(new Error("User not authenticated."));
     }
 
     const dataToSave: any = { ...newUserData, id: targetUid };
 
-    // 1. Supabase에 저장
+    // Supabase에 저장
     if (supabase) {
       try {
         const payload = toSupabaseUser(dataToSave);
@@ -333,8 +332,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.error("Supabase user update exception:", e);
       }
     }
-
-  }, [authUser]);
+  }, [user?.id]);
   
   const updateFilters = useCallback((newFilters: Partial<FilterSettings>) => {
     setFilters(prevFilters => {
@@ -538,29 +536,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
           console.error('Failed to subscribe to push notifications:', error);
           toast({ variant: 'destructive', title: '구독 실패', description: '푸시 알림 구독에 실패했습니다. 다시 시도해주세요.' });
       }
-  }, [user, firestore, updateUser, toast]);
+  }, [user, updateUser, toast]);
 
 
-  const effectiveAuthUser = user
-    ? ({
+  const effectiveAuthUser: AuthUser | null = user
+    ? {
         uid: user.id,
         phoneNumber: user.phoneNumber || '',
         email: user.email || '',
         displayName: user.name || '',
-      } as any)
+      }
     : (typeof window !== 'undefined' && localStorage.getItem('aura_temp_uid'))
-    ? ({
+    ? {
         uid: localStorage.getItem('aura_temp_uid')!,
         phoneNumber: localStorage.getItem('aura_signup_phone') || '',
         email: '',
         displayName: '',
-      } as any)
-    : authUser;
+      }
+    : null;
 
   const value: UserContextType = {
     user,
     authUser: effectiveAuthUser,
-    firestore,
+    firestore: null,
     updateUser,
     notificationSettings,
     updateNotificationSettings,
