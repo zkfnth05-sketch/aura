@@ -301,6 +301,7 @@ export default function MapClient({
           open={isCreateOpen}
           onOpenChange={setIsCreateOpen}
           creatorId={currentUser.id}
+          currentUser={currentUser}
           currentLat={currentUser.lat || initialCenter.lat}
           currentLng={currentUser.lng || initialCenter.lng}
           onQuestCreated={handleQuestCreated}

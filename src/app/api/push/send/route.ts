@@ -66,35 +66,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Case 2: Send to target user's saved subscriptions
-    if (!targetUserId) {
+    // Case 2: Send to target user(s) saved subscriptions
+    const userIds: string[] = Array.isArray(body.targetUserIds)
+      ? body.targetUserIds.filter(Boolean)
+      : (targetUserId ? [targetUserId] : []);
+
+    if (userIds.length === 0) {
       return NextResponse.json(
-        { error: 'targetUserId or subscription is required' },
+        { error: 'targetUserId, targetUserIds, or subscription is required' },
         { status: 400 }
       );
     }
 
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: users, error: userError } = await supabaseAdmin
       .from('users')
       .select('id, push_subscriptions')
-      .eq('id', targetUserId)
-      .maybeSingle();
+      .in('id', userIds);
 
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'User not found or query error', details: userError },
-        { status: 404 }
-      );
-    }
-
-    const rawSubscriptions = user.push_subscriptions;
-    const subscriptions: any[] = Array.isArray(rawSubscriptions) ? rawSubscriptions : [];
-
-    if (subscriptions.length === 0) {
+    if (userError || !users || users.length === 0) {
       return NextResponse.json({
         success: true,
         sent: 0,
-        message: 'No push subscriptions found for this user',
+        message: 'No users found for targeted IDs',
+      });
+    }
+
+    // Collect all subscriptions across targeted users
+    const allSubs: { userId: string; sub: any }[] = [];
+    for (const u of users) {
+      const raw = u.push_subscriptions;
+      if (Array.isArray(raw)) {
+        for (const s of raw) {
+          if (s && typeof s === 'object' && s.endpoint) {
+            allSubs.push({ userId: u.id, sub: s });
+          }
+        }
+      }
+    }
+
+    if (allSubs.length === 0) {
+      return NextResponse.json({
+        success: true,
+        sent: 0,
+        message: 'No push subscriptions found for targeted users',
       });
     }
 
@@ -103,8 +117,7 @@ export async function POST(req: NextRequest) {
     const staleEndpoints = new Set<string>();
 
     await Promise.all(
-      subscriptions.map(async (sub) => {
-        if (!sub || !sub.endpoint) return;
+      allSubs.map(async ({ sub }) => {
         try {
           await webpush.sendNotification(sub, payload);
           sentCount++;
@@ -120,22 +133,11 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    // Prune stale subscriptions from database if any expired
-    if (staleEndpoints.size > 0) {
-      const activeSubscriptions = subscriptions.filter(
-        (sub) => !staleEndpoints.has(sub.endpoint)
-      );
-      await supabaseAdmin
-        .from('users')
-        .update({ push_subscriptions: activeSubscriptions })
-        .eq('id', targetUserId);
-    }
-
     return NextResponse.json({
       success: true,
       sent: sentCount,
       failed: failedCount,
-      pruned: staleEndpoints.size,
+      totalTargetUsers: userIds.length,
     });
   } catch (error: any) {
     console.error('Error in /api/push/send route:', error);

@@ -1045,3 +1045,102 @@ export async function touchAppOpened(userId: string): Promise<void> {
     console.error('Failed to touch app opened at:', err);
   }
 }
+
+/**
+ * Haversine 공식을 사용한 두 위경도 좌표 간 직선거리(km) 계산
+ */
+function calculateHaversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // 지구 반지름 (km)
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+const CATEGORY_RADAR_NAMES: Record<string, string> = {
+  coffee: '☕ 커피/디저트',
+  food: '🍽️ 맛집 탐방',
+  drink: '🍷 가벼운 한잔',
+  walk: '🏃 산책/러닝',
+  activity: '🎨 놀거리/문화',
+};
+
+/**
+ * 24시간 번개 퀘스트 등록 시 반경 5km 이내의 이성 회원들에게 실시간 웹 푸시 발송
+ * (남성이 올리면 5km 이내 여성에게, 여성이 올리면 5km 이내 남성에게 발송)
+ */
+export async function sendRadarPushToNearbyUsers(params: {
+  questPin: QuestPin;
+  creator: User;
+  radiusKm?: number;
+}): Promise<{ sentCount: number; targetCount: number }> {
+  const { questPin, creator, radiusKm = 5 } = params;
+  const client = getClient();
+
+  try {
+    // 1. 반대 성별 결정 (남성 -> 여성에게만, 여성 -> 남성에게만)
+    const isMale = creator.gender === '남성' || (creator.gender && creator.gender.toLowerCase().startsWith('m'));
+    const targetGenders = isMale ? ['여성', 'female', 'Female', 'w', 'W'] : ['남성', 'male', 'Male', 'm', 'M'];
+
+    // 2. 5km 이내 이성 유저 1차 바운딩 박스 쿼리 (약 ±0.05도)
+    const pinLat = questPin.approxLat;
+    const pinLng = questPin.approxLng;
+    const latDelta = 0.05; // 약 5.5km
+    const lngDelta = 0.06; // 약 5.5km
+
+    const { data: candidateUsers, error } = await client
+      .from('users')
+      .select('id, lat, lng, gender, admission_status')
+      .in('gender', targetGenders)
+      .neq('id', creator.id)
+      .not('lat', 'is', null)
+      .not('lng', 'is', null)
+      .gte('lat', pinLat - latDelta)
+      .lte('lat', pinLat + latDelta)
+      .gte('lng', pinLng - lngDelta)
+      .lte('lng', pinLng + lngDelta);
+
+    if (error || !candidateUsers || candidateUsers.length === 0) {
+      return { sentCount: 0, targetCount: 0 };
+    }
+
+    // 3. Haversine 공식을 통한 실제 5km 이내 정밀 필터링 및 만료 유저 제외
+    const nearbyTargetUserIds = candidateUsers
+      .filter((u) => {
+        if (u.admission_status === 'expired') return false;
+        const dist = calculateHaversineDistanceKm(pinLat, pinLng, Number(u.lat), Number(u.lng));
+        return dist <= radiusKm;
+      })
+      .map((u) => u.id);
+
+    if (nearbyTargetUserIds.length === 0) {
+      return { sentCount: 0, targetCount: 0 };
+    }
+
+    // 4. 웹 푸시 일괄 발송 (/api/push/send)
+    const catName = CATEGORY_RADAR_NAMES[questPin.category] || '⚡ 번개';
+    const response = await fetch('/api/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        targetUserIds: nearbyTargetUserIds,
+        title: `⚡ [반경 5km 번개 레이더] ${catName} 도착!`,
+        body: `"${questPin.title}" - ${creator.name}님이 올리신 즉석 번개입니다. 지금 탭하여 1:1 대화를 시작해보세요!`,
+        url: '/map',
+        icon: '/icon.svg',
+      }),
+    });
+
+    const resJson = await response.json().catch(() => ({}));
+    return {
+      sentCount: resJson.sent || 0,
+      targetCount: nearbyTargetUserIds.length,
+    };
+  } catch (err) {
+    console.error('Error sending radar push to nearby users:', err);
+    return { sentCount: 0, targetCount: 0 };
+  }
+}

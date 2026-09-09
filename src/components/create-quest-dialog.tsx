@@ -11,16 +11,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ShieldCheck, Clock, Zap, Coffee, Utensils, Wine, Footprints, Sparkles, Loader2 } from 'lucide-react';
+import { ShieldCheck, Clock, Zap, Coffee, Utensils, Wine, Footprints, Sparkles, Loader2, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createQuestPin } from '@/lib/supabaseDataService';
-import type { QuestCategory, QuestPin } from '@/lib/types';
+import { createQuestPin, sendRadarPushToNearbyUsers, fetchUserProfile } from '@/lib/supabaseDataService';
+import type { QuestCategory, QuestPin, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface CreateQuestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   creatorId: string;
+  currentUser?: User | null;
   currentLat: number;
   currentLng: number;
   onQuestCreated: (newQuest: QuestPin) => void;
@@ -45,6 +46,7 @@ export default function CreateQuestDialog({
   open,
   onOpenChange,
   creatorId,
+  currentUser,
   currentLat,
   currentLng,
   onQuestCreated,
@@ -88,6 +90,31 @@ export default function CreateQuestDialog({
         onOpenChange(false);
         setTitle('');
         setDescription('');
+
+        // ⚡ [반경 5km 실시간 번개 레이더 푸시] 발송 (남성 -> 5km 여성, 여성 -> 5km 남성)
+        try {
+          let userObj = currentUser;
+          if (!userObj && creatorId) {
+            userObj = await fetchUserProfile(creatorId);
+          }
+          if (userObj) {
+            const radarResult = await sendRadarPushToNearbyUsers({
+              questPin: quest,
+              creator: userObj,
+              radiusKm: 5,
+            });
+            if (radarResult.targetCount > 0) {
+              const isMale = userObj.gender === '남성' || userObj.gender?.toLowerCase().startsWith('m');
+              const targetGenderStr = isMale ? '여성' : '남성';
+              toast({
+                title: '⚡ 5km 번개 레이더 발송 완료!',
+                description: `반경 5km 이내의 ${targetGenderStr} 회원 ${radarResult.targetCount}명에게 실시간 번개 푸시가 전파되었습니다!`,
+              });
+            }
+          }
+        } catch (pushErr) {
+          console.error('Radar push error:', pushErr);
+        }
       }
     } catch (err: any) {
       toast({
@@ -127,6 +154,10 @@ export default function CreateQuestDialog({
           <div className="flex items-center gap-1.5 text-zinc-400 pt-0.5 text-[11px]">
             <Clock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             <span>등록 후 <strong>정확히 24시간 뒤 DB에서 흔적 없이 자동 삭제</strong>됩니다.</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-pink-400 pt-0.5 text-[11px]">
+            <Radio className="w-3.5 h-3.5 text-pink-400 flex-shrink-0 animate-pulse" />
+            <span>등록 즉시 <strong>반경 5km 이내 이성 회원</strong> 스마트폰으로 실시간 번개 레이더 푸시가 발송됩니다.</span>
           </div>
         </div>
 
