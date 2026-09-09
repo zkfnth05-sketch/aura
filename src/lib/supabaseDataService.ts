@@ -168,11 +168,11 @@ export async function fetchUserMatches(userId: string): Promise<Match[]> {
   const { data, error } = await client
     .from('matches')
     .select('*')
-    .contains('users', [userId])
+    .contains('users', JSON.stringify([userId]))
     .order('last_message_timestamp', { ascending: false });
 
   if (error) {
-    console.error('Error fetching matches:', error);
+    console.error('Error fetching matches:', error.message || error);
     return [];
   }
 
