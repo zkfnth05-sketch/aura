@@ -21,7 +21,7 @@ export default function CreateProfilePage() {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [city, setCity] = useState('');
-  const [gender, setGender] = useState<'여성' | '남성' | '기타'>('여성');
+  const [gender, setGender] = useState<'여성' | '남성'>('여성');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function CreateProfilePage() {
 
           <div>
             <label className="text-sm font-medium text-zinc-400">{t('gender_label')}</label>
-            <div className="mt-2 grid grid-cols-3 gap-px bg-zinc-800 rounded-lg border border-zinc-800 overflow-hidden">
+            <div className="mt-2 grid grid-cols-2 gap-px bg-zinc-800 rounded-lg border border-zinc-800 overflow-hidden">
               <Button
                 onClick={() => setGender('여성')}
                 variant={gender === '여성' ? 'default' : 'ghost'}
@@ -187,19 +187,6 @@ export default function CreateProfilePage() {
                 )}
               >
                 {t('gender_male')}
-              </Button>
-              <Button
-                onClick={() => setGender('기타')}
-                variant={gender === '기타' ? 'default' : 'ghost'}
-                disabled={isSubmitting}
-                className={cn(
-                  'h-12 text-base rounded-none',
-                  gender === '기타'
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-                )}
-              >
-                {t('gender_other')}
               </Button>
             </div>
           </div>
