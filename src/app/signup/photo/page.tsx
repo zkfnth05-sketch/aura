@@ -146,7 +146,7 @@ export default function UploadPhotoPage() {
                 className="relative w-48 h-48 flex items-center justify-center border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer bg-zinc-900/50"
                 >
                 {photo.uri ? (
-                    <Image src={photo.uri} alt="Profile preview" layout="fill" className="object-cover rounded-lg" />
+                    <Image src={photo.uri} alt="Profile preview" fill className="object-cover rounded-lg" />
                 ) : (
                     <Plus className="w-10 h-10 text-zinc-500" />
                 )}

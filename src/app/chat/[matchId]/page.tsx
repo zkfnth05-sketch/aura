@@ -104,6 +104,7 @@ export default function ChatPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- Data Fetching via Supabase ---
   const [liveMatch, setLiveMatch] = useState<Match | null>(null);
@@ -446,6 +447,10 @@ export default function ChatPage() {
         clearInterval(countdownIntervalRef.current);
         countdownIntervalRef.current = null;
     }
+    if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
+    }
   };
   
   const startRecording = async () => {
@@ -473,6 +478,10 @@ export default function ChatPage() {
           clearInterval(countdownIntervalRef.current);
           countdownIntervalRef.current = null;
         }
+        if (recordingTimeoutRef.current) {
+          clearTimeout(recordingTimeoutRef.current);
+          recordingTimeoutRef.current = null;
+        }
       };
   
       mediaRecorderRef.current.start();
@@ -489,7 +498,7 @@ export default function ChatPage() {
         });
       }, 1000);
   
-      setTimeout(stopRecording, 15000);
+      recordingTimeoutRef.current = setTimeout(stopRecording, 15000);
   
     } catch (err) {
       toast({ variant: 'destructive', title: t('chat_mic_permission_failed_title'), description: t('chat_mic_permission_failed_desc') })

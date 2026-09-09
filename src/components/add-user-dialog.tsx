@@ -170,7 +170,7 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {photoPreview ? (
-                      <Image src={photoPreview} alt="Profile preview" layout="fill" className="object-cover rounded-lg" />
+                      <Image src={photoPreview} alt="Profile preview" fill className="object-cover rounded-lg" />
                     ) : (
                       <Plus className="w-8 h-8 text-zinc-500" />
                     )}

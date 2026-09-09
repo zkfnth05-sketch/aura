@@ -17,7 +17,7 @@ export default function OtpPage() {
   const { phoneAuth } = useUser();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const { phoneNumber, countryCode, verifyOtp, isVerifyingOtp, sendVerificationCode } = phoneAuth;
+  const { phoneNumber, countryCode, verifyOtp, isVerifyingOtp, sendVerificationCode, isSendingOtp } = phoneAuth;
 
   const handleVerify = async () => {
     if (otp.length === 6) {
@@ -55,8 +55,20 @@ export default function OtpPage() {
               disabled={isVerifyingOtp}
             />
           </div>
-           <Button variant="link" onClick={() => sendVerificationCode()} className="text-zinc-400">
-              {t('resend_code')}
+            <Button 
+              variant="link" 
+              onClick={() => sendVerificationCode()} 
+              disabled={isSendingOtp || isVerifyingOtp}
+              className="text-zinc-400"
+            >
+              {isSendingOtp ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('resend_code')}
+                </span>
+              ) : (
+                t('resend_code')
+              )}
             </Button>
         </div>
       </main>

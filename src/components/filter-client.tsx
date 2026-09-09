@@ -38,12 +38,12 @@ export default function FilterClient() {
     const [localFilters, setLocalFilters] = useState<FilterSettings | null>(null);
 
     const allValues = {
-      relationship: [t('relationship_section_title_serious'), t('relationship_section_title_casual'), t('relationship_section_title_friends'), t('relationship_section_title_chat')],
-      values: [t('values_section_title_adventure'), t('values_section_title_stability'), t('values_section_title_creativity'), t('values_section_title_growth'), t('values_section_title_authenticity'), t('values_section_title_passion'), t('values_section_title_calmness'), t('values_section_title_humor')],
-      communication: [t('communication_section_title_deep'), t('communication_section_title_witty'), t('communication_section_title_sincere'), t('communication_section_title_warm'), t('communication_section_title_direct')],
-      lifestyle: [t('lifestyle_section_title_active'), t('lifestyle_section_title_homebody'), t('lifestyle_section_title_artist'), t('lifestyle_section_title_wellness'), t('lifestyle_section_title_explorer'), t('lifestyle_section_title_minimalist')],
-      hobbies: [t('hobbies_section_title_movies'), t('hobbies_section_title_music'), t('hobbies_section_title_exercise'), t('hobbies_section_title_cooking'), t('hobbies_section_title_reading'), t('hobbies_section_title_travel'), t('hobbies_section_title_games'), t('hobbies_section_title_camping'), t('hobbies_section_title_watercolor'), t('hobbies_section_title_baking'), t('hobbies_section_title_coding'), t('hobbies_section_title_piano'), t('hobbies_section_title_scuba'), t('hobbies_section_title_meditation')],
-      interests: [t('interests_section_title_foodie'), t('interests_section_title_cafe'), t('interests_section_title_photo'), t('interests_section_title_fashion'), t('interests_section_title_beauty'), t('interests_section_title_finance'), t('interests_section_title_self_dev'), t('interests_section_title_drawing'), t('interests_section_title_hiking'), t('interests_section_title_classical'), t('interests_section_title_yoga'), t('interests_section_title_reading')]
+      relationship: ['relationship_section_title_serious', 'relationship_section_title_casual', 'relationship_section_title_friends', 'relationship_section_title_chat'],
+      values: ['values_section_title_adventure', 'values_section_title_stability', 'values_section_title_creativity', 'values_section_title_growth', 'values_section_title_authenticity', 'values_section_title_passion', 'values_section_title_calmness', 'values_section_title_humor'],
+      communication: ['communication_section_title_deep', 'communication_section_title_witty', 'communication_section_title_sincere', 'communication_section_title_warm', 'communication_section_title_direct'],
+      lifestyle: ['lifestyle_section_title_active', 'lifestyle_section_title_homebody', 'lifestyle_section_title_artist', 'lifestyle_section_title_wellness', 'lifestyle_section_title_explorer', 'lifestyle_section_title_minimalist'],
+      hobbies: ['hobbies_section_title_movies', 'hobbies_section_title_music', 'hobbies_section_title_exercise', 'hobbies_section_title_cooking', 'hobbies_section_title_reading', 'hobbies_section_title_travel', 'hobbies_section_title_games', 'hobbies_section_title_camping', 'hobbies_section_title_watercolor', 'hobbies_section_title_baking', 'hobbies_section_title_coding', 'hobbies_section_title_piano', 'hobbies_section_title_scuba', 'hobbies_section_title_meditation'],
+      interests: ['interests_section_title_foodie', 'interests_section_title_cafe', 'interests_section_title_photo', 'interests_section_title_fashion', 'interests_section_title_beauty', 'interests_section_title_finance', 'interests_section_title_self_dev', 'interests_section_title_drawing', 'interests_section_title_hiking', 'interests_section_title_classical', 'interests_section_title_yoga', 'interests_section_title_reading']
     };
     const genderOptions: ('남성' | '여성' | '기타')[] = ['남성', '여성', '기타'];
 
@@ -168,12 +168,12 @@ export default function FilterClient() {
             }).map(([titleKey, key]) => (
                 <Section key={key} title={t(titleKey as any)}>
                     <div className="flex flex-wrap gap-2">
-                        {allValues[key as keyof typeof allValues].map(item => (
+                        {allValues[key as keyof typeof allValues].map(itemKey => (
                             <TagButton 
-                                key={item}
-                                label={item}
-                                isSelected={(localFilters[key as keyof typeof localFilters] as string[]).includes(item)}
-                                onClick={() => handleMultiSelect(key as keyof FilterSettings, item)}
+                                key={itemKey}
+                                label={t(itemKey as any)}
+                                isSelected={(localFilters[key as keyof typeof localFilters] as string[]).includes(itemKey)}
+                                onClick={() => handleMultiSelect(key as keyof FilterSettings, itemKey)}
                             />
                         ))}
                     </div>

@@ -29,46 +29,7 @@ const PhoneIcon = () => (
     </svg>
 );
 
-const FlagIcon = ({ code, ...props }: { code: string } & React.SVGProps<SVGSVGElement>) => {
-  switch (code) {
-    case 'ko':
-      return <svg viewBox="0 0 900 600" {...props}>
-        <rect width="900" height="600" fill="#fff"/>
-        <g transform="translate(450,300)">
-        <circle r="150" fill="#cd2e3a"/>
-        <path d="M0-150a150 150 0 0 0 0 300 75 75 0 0 1 0-150 75 75 0 0 1 0 150" fill="#0047a0"/>
-        </g>
-        <g fill="#000" transform="translate(193.2,143.2) rotate(33.69)">
-        <path d="M-75-25h150v16.7h-150z"/>
-        <path d="M-75-8.3h150v16.7h-150z"/>
-        <path d="M-75 8.3h150v16.7h-150z"/>
-        </g>
-        <g fill="#000" transform="translate(706.8,456.8) rotate(33.69)">
-        <path d="M-75-25h50v16.7h-50zM25-25h50v16.7h-50z"/>
-        <path d="M-75-8.3h50v16.7h-50zM25-8.3h50v16.7h-50z"/>
-        <path d="M-75 8.3h50v16.7h-50zM25 8.3h50v16.7h-50z"/>
-        </g>
-        <g fill="#000" transform="translate(706.8,143.2) rotate(-33.69)">
-        <path d="M-75-25h50v16.7h-50zM25-25h50v16.7h-50z"/>
-        <path d="M-75-8.3h150v16.7h-150z"/>
-        <path d="M-75 8.3h50v16.7h-50zM25 8.3h50v16.7h-50z"/>
-        </g>
-        <g fill="#000" transform="translate(193.2,456.8) rotate(-33.69)">
-        <path d="M-75-25h150v16.7h-150z"/>
-        <path d="M-75-8.3h50v16.7h-50zM25-8.3h50v16.7h-50z"/>
-        <path d="M-75 8.3h150v16.7h-150z"/>
-        </g>
-      </svg>;
-    case 'en':
-      return <svg viewBox="0 0 38 20" {...props}><path fill="#B22234" d="m0,0H38V20H0"/><path stroke="#fff" strokeWidth="2" d="m0,2H38m0,4H0m0,4H38m0,4H0"/><path fill="#3C3B6E" d="m0,0H18V10H0"/></svg>;
-    case 'es':
-      return <svg viewBox="0 0 30 20" {...props}><path fill="#C60B1E" d="M0 0h30v20H0z"/><path fill="#FFC400" d="M0 5h30v10H0z"/></svg>;
-    case 'ja':
-      return <svg viewBox="0 0 30 20" {...props}><path fill="#fff" d="M0 0h30v20H0z"/><circle cx="15" cy="10" r="6" fill="#BC002D"/></svg>;
-    default:
-      return null;
-  }
-};
+import { FlagIcon } from '@/components/ui/flag-icon';
 
 
 export default function SignupPage() {
