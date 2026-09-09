@@ -8,8 +8,8 @@ import Header from '@/components/layout/header';
 import { useUser } from '@/contexts/user-context';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { Loader2 } from 'lucide-react';
-import { fetchMapUsers } from '@/lib/supabaseDataService';
-import type { User } from '@/lib/types';
+import { fetchMapUsers, fetchActiveQuestPins, subscribeQuestPins } from '@/lib/supabaseDataService';
+import type { User, QuestPin } from '@/lib/types';
 import { useLanguage } from '@/contexts/language-context';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { mapGuide } from '@/lib/coachmark-steps';
@@ -24,6 +24,7 @@ export default function MapPage() {
   const { t } = useLanguage();
 
   const [mapUsers, setMapUsers] = useState<User[]>(mapUsersCache || []);
+  const [questPins, setQuestPins] = useState<QuestPin[]>([]);
   const [isFetching, setIsFetching] = useState(!mapUsersCache);
   const [center, setCenter] = useState({ lat: 37.5665, lng: 126.9780 });
 
@@ -46,6 +47,16 @@ export default function MapPage() {
       );
     }
   }, [isUserLoaded, currentUser]);
+
+  // Load active 24-hour quest pins (opposite gender filtered) and subscribe to realtime updates
+  useEffect(() => {
+    if (!currentUser) return;
+    fetchActiveQuestPins(currentUser.id, currentUser.gender).then(setQuestPins);
+    const unsubscribe = subscribeQuestPins(() => {
+      fetchActiveQuestPins(currentUser.id, currentUser.gender).then(setQuestPins);
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -133,7 +144,13 @@ export default function MapPage() {
         ) : (
             <APIProvider apiKey={apiKey}>
               <div className="w-full h-full">
-                <MapClient users={mapUsers} currentUser={currentUser} initialCenter={center} />
+                <MapClient
+                  users={mapUsers}
+                  currentUser={currentUser}
+                  initialCenter={center}
+                  questPins={questPins}
+                  setQuestPins={setQuestPins}
+                />
               </div>
             </APIProvider>
         )}

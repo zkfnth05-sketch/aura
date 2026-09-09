@@ -1,16 +1,21 @@
-'use client';
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Map, AdvancedMarker } from '@vis.gl/react-google-maps';
-import type { User } from '@/lib/types';
+import type { User, QuestPin } from '@/lib/types';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { QuestPinMarker } from './quest-pin-marker';
+import CreateQuestDialog from './create-quest-dialog';
+import QuestDetailModal from './quest-detail-modal';
+import { Button } from './ui/button';
+import { Zap, Users, Sparkles } from 'lucide-react';
 
 interface MapClientProps {
   users: User[];
   currentUser: User | null;
   initialCenter: { lat: number; lng: number };
+  questPins?: QuestPin[];
+  setQuestPins?: React.Dispatch<React.SetStateAction<QuestPin[]>>;
 }
 
 const mapStyles: google.maps.MapTypeStyle[] = [
@@ -140,9 +145,19 @@ const MemoizedAdvancedMarker = React.memo(function MemoizedAdvancedMarker({
 MemoizedAdvancedMarker.displayName = 'MemoizedAdvancedMarker';
 
 
-export default function MapClient({ users, currentUser, initialCenter }: MapClientProps) {
+export default function MapClient({
+  users,
+  currentUser,
+  initialCenter,
+  questPins = [],
+  setQuestPins,
+}: MapClientProps) {
   const router = useRouter();
   const [zoom, setZoom] = useState(11);
+  const [viewMode, setViewMode] = useState<'all' | 'users' | 'quests'>('all');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedQuest, setSelectedQuest] = useState<QuestPin | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   
   const handleMarkerClick = useCallback((userId: string) => {
     if (currentUser && userId === currentUser.id) {
@@ -152,10 +167,25 @@ export default function MapClient({ users, currentUser, initialCenter }: MapClie
     }
   }, [router, currentUser?.id]);
 
+  const handleQuestClick = useCallback((quest: QuestPin) => {
+    setSelectedQuest(quest);
+    setIsDetailOpen(true);
+  }, []);
+
+  const handleQuestCreated = useCallback((newQuest: QuestPin) => {
+    setQuestPins?.(prev => [newQuest, ...prev]);
+  }, [setQuestPins]);
+
+  const handleQuestDeleted = useCallback((deletedId: string) => {
+    setQuestPins?.(prev => prev.filter(q => q.id !== deletedId));
+  }, [setQuestPins]);
+
   return (
     <div className="w-full h-full relative overflow-hidden">
-      <div className="absolute top-4 left-0 right-0 z-10 px-4">
-        <div className="max-w-md mx-auto bg-black/60 backdrop-blur-md rounded-full p-1 flex justify-around items-center text-white">
+      {/* Top Filter Bar */}
+      <div className="absolute top-4 left-0 right-0 z-10 px-4 space-y-2 pointer-events-none">
+        {/* Distance Zoom Chips */}
+        <div className="max-w-md mx-auto bg-black/60 backdrop-blur-md rounded-full p-1 flex justify-around items-center text-white pointer-events-auto border border-white/10 shadow-lg">
           {distanceOptions.map(option => (
             <button
               key={option.label}
@@ -169,8 +199,56 @@ export default function MapClient({ users, currentUser, initialCenter }: MapClie
             </button>
           ))}
         </div>
+
+        {/* View Mode Switcher (All / Users / Quests) */}
+        <div className="max-w-xs mx-auto bg-zinc-950/80 backdrop-blur-md rounded-full p-1 flex justify-around items-center text-white pointer-events-auto border border-white/15 shadow-xl text-xs">
+          <button
+            onClick={() => setViewMode('all')}
+            className={cn(
+              'py-1 px-3 rounded-full font-semibold transition-all flex items-center gap-1.5',
+              viewMode === 'all' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>전체</span>
+          </button>
+          <button
+            onClick={() => setViewMode('users')}
+            className={cn(
+              'py-1 px-3 rounded-full font-semibold transition-all flex items-center gap-1.5',
+              viewMode === 'users' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+            )}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>프로필</span>
+          </button>
+          <button
+            onClick={() => setViewMode('quests')}
+            className={cn(
+              'py-1 px-3 rounded-full font-semibold transition-all flex items-center gap-1.5',
+              viewMode === 'quests' ? 'bg-primary text-white shadow-sm' : 'text-primary hover:text-primary/90'
+            )}
+          >
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>번개 ({questPins.length})</span>
+          </button>
+        </div>
       </div>
 
+      {/* Floating Action Button (FAB) for Creating Quest */}
+      {currentUser && (
+        <div className="absolute bottom-6 right-6 z-20">
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            className="h-14 px-5 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-bold shadow-2xl shadow-primary/40 hover:scale-105 transition-all flex items-center gap-2 border border-white/20"
+          >
+            <Zap className="w-5 h-5 fill-current animate-bounce" />
+            <span className="text-sm tracking-wide">번개 퀘스트 올리기</span>
+          </Button>
+        </div>
+      )}
+
+      {/* Google Maps Container */}
       <Map
         defaultCenter={initialCenter}
         zoom={zoom}
@@ -180,7 +258,8 @@ export default function MapClient({ users, currentUser, initialCenter }: MapClie
         gestureHandling={'greedy'}
         reuseMaps={true}
       >
-        {users.map((user) => (
+        {/* Render Users */}
+        {viewMode !== 'quests' && users.map((user) => (
           <MemoizedAdvancedMarker
             key={user.id}
             user={user}
@@ -188,7 +267,39 @@ export default function MapClient({ users, currentUser, initialCenter }: MapClie
             onClick={handleMarkerClick}
           />
         ))}
+
+        {/* Render Quest Pins */}
+        {viewMode !== 'users' && questPins.map((quest) => (
+          <QuestPinMarker
+            key={quest.id}
+            quest={quest}
+            isMyQuest={!!currentUser && quest.creatorId === currentUser.id}
+            onClick={handleQuestClick}
+          />
+        ))}
       </Map>
+
+      {/* Create Quest Modal */}
+      {currentUser && (
+        <CreateQuestDialog
+          open={isCreateOpen}
+          onOpenChange={setIsCreateOpen}
+          creatorId={currentUser.id}
+          currentLat={currentUser.lat || initialCenter.lat}
+          currentLng={currentUser.lng || initialCenter.lng}
+          onQuestCreated={handleQuestCreated}
+        />
+      )}
+
+      {/* Quest Details & 1:1 Chat / Delete Modal */}
+      <QuestDetailModal
+        quest={selectedQuest}
+        currentUser={currentUser}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        onQuestDeleted={handleQuestDeleted}
+      />
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import type { User, Match, Message, Like } from './types';
+import type { User, Match, Message, Like, QuestPin, QuestApplication } from './types';
 
 // Helper to provide a Timestamp-like object compatible with UI calling .toDate() or .toMillis()
 export function toTimestampCompat(val: any): any {
@@ -168,3 +168,49 @@ export function fromSupabaseLike(row: Record<string, any>): Like {
     timestamp: toTimestampCompat(row.created_at),
   };
 }
+
+export function fromSupabaseQuestPin(row: Record<string, any>, creatorUser?: User): QuestPin {
+  return {
+    id: row.id,
+    creatorId: row.creator_id,
+    creator: creatorUser,
+    creatorGender: creatorUser?.gender || row.creator_gender || undefined,
+    title: row.title,
+    category: row.category,
+    description: row.description || '',
+    approxLat: Number(row.approx_lat),
+    approxLng: Number(row.approx_lng),
+    meetupTime: row.meetup_time || '',
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    status: row.status || 'open',
+  };
+}
+
+export function toSupabaseQuestPin(quest: Partial<QuestPin>): Record<string, any> {
+  const row: Record<string, any> = {};
+  if (quest.id) row.id = quest.id;
+  if (quest.creatorId !== undefined) row.creator_id = quest.creatorId;
+  if (quest.title !== undefined) row.title = quest.title;
+  if (quest.category !== undefined) row.category = quest.category;
+  if (quest.description !== undefined) row.description = quest.description;
+  if (quest.approxLat !== undefined) row.approx_lat = quest.approxLat;
+  if (quest.approxLng !== undefined) row.approx_lng = quest.approxLng;
+  if (quest.meetupTime !== undefined) row.meetup_time = quest.meetupTime;
+  if (quest.status !== undefined) row.status = quest.status;
+  if (quest.expiresAt !== undefined) row.expires_at = quest.expiresAt;
+  return row;
+}
+
+export function fromSupabaseQuestApplication(row: Record<string, any>, applicantUser?: User): QuestApplication {
+  return {
+    id: row.id,
+    questId: row.quest_id,
+    applicantId: row.applicant_id,
+    applicant: applicantUser,
+    message: row.message || '',
+    status: row.status || 'pending',
+    createdAt: row.created_at,
+  };
+}
+

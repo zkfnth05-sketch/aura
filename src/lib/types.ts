@@ -73,4 +73,33 @@ export type LikedBy = {
     id: string;
     likerId: string;
     timestamp: Timestamp;
-}
+};
+
+export type QuestCategory = 'coffee' | 'food' | 'drink' | 'activity' | 'walk';
+
+export type QuestPin = {
+  id: string;
+  creatorId: string;
+  creator?: User;
+  creatorGender?: '남성' | '여성' | string;
+  title: string;
+  category: QuestCategory;
+  description?: string;
+  approxLat: number;
+  approxLng: number;
+  meetupTime?: string;
+  createdAt: string;
+  expiresAt: string;
+  status: 'open' | 'matched' | 'expired';
+};
+
+export type QuestApplication = {
+  id: string;
+  questId: string;
+  applicantId: string;
+  applicant?: User;
+  message?: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+};
+

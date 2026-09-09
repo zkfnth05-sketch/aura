@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import type { User, Match, Message, Like } from './types';
+import type { User, Match, Message, Like, QuestPin, QuestCategory, QuestApplication } from './types';
 import {
   fromSupabaseUser,
   toSupabaseUser,
@@ -8,6 +8,9 @@ import {
   fromSupabaseMessage,
   toSupabaseMessage,
   fromSupabaseLike,
+  fromSupabaseQuestPin,
+  toSupabaseQuestPin,
+  fromSupabaseQuestApplication,
 } from './supabaseMappers';
 import type { FilterSettings } from '@/contexts/user-context';
 import {
@@ -652,4 +655,208 @@ export async function submitUserReport(params: {
     return true;
   }
 }
+
+/**
+ * Fetch active quest pins with 24-hour expiration filter and opposite gender filtering
+ */
+export async function fetchActiveQuestPins(
+  currentUserId?: string,
+  currentUserGender?: string
+): Promise<QuestPin[]> {
+  const client = getClient();
+  const nowIso = new Date().toISOString();
+
+  // Fetch all open quest pins that haven't expired
+  const { data: pinsData, error } = await client
+    .from('quest_pins')
+    .select('*')
+    .eq('status', 'open')
+    .gt('expires_at', nowIso)
+    .order('created_at', { ascending: false });
+
+  if (error || !pinsData || pinsData.length === 0) {
+    if (error) console.warn('fetchActiveQuestPins note:', error.message);
+    return [];
+  }
+
+  // Collect creator IDs to fetch user profiles
+  const creatorIds = Array.from(new Set(pinsData.map((p) => p.creator_id)));
+  const { data: usersData } = await client
+    .from('users')
+    .select('*')
+    .in('id', creatorIds);
+
+  const userMap = new Map<string, User>();
+  if (usersData) {
+    usersData.forEach((u) => {
+      userMap.set(u.id, fromSupabaseUser(u));
+    });
+  }
+
+  const isMale = currentUserGender === '남성' || currentUserGender?.toLowerCase().startsWith('m');
+  const targetOppositeGender = isMale ? '여성' : '남성';
+
+  const mappedPins: QuestPin[] = [];
+
+  for (const row of pinsData) {
+    const creator = userMap.get(row.creator_id);
+    const pin = fromSupabaseQuestPin(row, creator);
+
+    // Filter rule:
+    // 1. If it's my own pin, always keep it (for management/deletion)
+    // 2. If it's another user's pin, only include if creator's gender is the opposite gender
+    if (currentUserId && pin.creatorId === currentUserId) {
+      mappedPins.push(pin);
+    } else if (!currentUserGender || !creator?.gender) {
+      mappedPins.push(pin);
+    } else if (creator.gender === targetOppositeGender) {
+      mappedPins.push(pin);
+    }
+  }
+
+  return mappedPins;
+}
+
+/**
+ * Create a new 24-hour quest pin with 500m safe location fuzzing
+ */
+export async function createQuestPin(params: {
+  creatorId: string;
+  title: string;
+  category: QuestCategory;
+  description?: string;
+  meetupTime?: string;
+  realLat: number;
+  realLng: number;
+}): Promise<QuestPin | null> {
+  const client = getClient();
+
+  // 500m random safe fuzzing
+  const distance = 200 + Math.random() * 300; // 200m ~ 500m
+  const angle = Math.random() * 2 * Math.PI;
+  const earthRadius = 6378137;
+  const dLat = (distance * Math.cos(angle)) / earthRadius;
+  const dLng = (distance * Math.sin(angle)) / (earthRadius * Math.cos((Math.PI * params.realLat) / 180));
+  const approxLat = params.realLat + (dLat * 180) / Math.PI;
+  const approxLng = params.realLng + (dLng * 180) / Math.PI;
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await client
+    .from('quest_pins')
+    .insert({
+      creator_id: params.creatorId,
+      title: params.title.trim(),
+      category: params.category,
+      description: params.description?.trim() || '',
+      approx_lat: approxLat,
+      approx_lng: approxLng,
+      meetup_time: params.meetupTime?.trim() || '',
+      created_at: new Date().toISOString(),
+      expires_at: expiresAt,
+      status: 'open',
+    })
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    console.error('Failed to create quest pin:', error);
+    throw new Error(error?.message || 'Failed to create quest pin');
+  }
+
+  const creator = await fetchUserProfile(params.creatorId);
+  return fromSupabaseQuestPin(data, creator || undefined);
+}
+
+/**
+ * Delete a quest pin (by creator)
+ */
+export async function deleteQuestPin(questId: string, creatorId: string): Promise<boolean> {
+  const client = getClient();
+  const { error } = await client
+    .from('quest_pins')
+    .delete()
+    .eq('id', questId)
+    .eq('creator_id', creatorId);
+
+  if (error) {
+    console.error('Failed to delete quest pin:', error);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Start or retrieve a 1:1 chat for a quest pin
+ */
+export async function startQuestChat(
+  currentUserId: string,
+  targetUserId: string,
+  questTitle: string
+): Promise<string> {
+  const client = getClient();
+
+  // 1. Check if match already exists
+  const { data: existingMatches } = await client
+    .from('matches')
+    .select('*')
+    .contains('users', [currentUserId, targetUserId]);
+
+  if (existingMatches && existingMatches.length > 0) {
+    return existingMatches[0].id;
+  }
+
+  // 2. Create new match
+  const newMatchId = `match_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const now = new Date().toISOString();
+
+  const { error } = await client.from('matches').insert({
+    id: newMatchId,
+    users: [currentUserId, targetUserId],
+    last_message: `⚡ 번개 퀘스트: "${questTitle}" 대화가 시작되었습니다.`,
+    last_message_sender_id: currentUserId,
+    last_message_timestamp: now,
+    unread_counts: { [targetUserId]: 1, [currentUserId]: 0 },
+    created_at: now,
+    match_date: now,
+    call_status: 'idle',
+    caller_id: null,
+  });
+
+  if (error) {
+    console.error('Failed to create match for quest:', error);
+    throw new Error('Failed to create match');
+  }
+
+  // Send initial message
+  await sendChatMessage({
+    matchId: newMatchId,
+    senderId: currentUserId,
+    text: `안녕하세요! 올려주신 번개 퀘스트 [${questTitle}] 보고 메시지 드려요 😊`,
+  });
+
+  return newMatchId;
+}
+
+/**
+ * Subscribe to realtime changes in quest_pins
+ */
+export function subscribeQuestPins(onChange: () => void) {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('realtime_quest_pins')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'quest_pins' },
+      () => {
+        onChange();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase?.removeChannel(channel);
+  };
+}
+
 
