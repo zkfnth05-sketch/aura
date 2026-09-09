@@ -44,34 +44,17 @@ export default function ProfilePage() {
   const handleSettingChange = async (id: keyof typeof notificationSettings, checked: boolean) => {
     updateNotificationSettings({ [id]: checked });
 
-    // If the main "all notifications" toggle is turned on, initiate push subscription
-    if (id === 'all' && checked) {
-      if (Notification.permission === 'granted') {
+    // If notifications toggle is turned on, ensure push subscription is active
+    if ((id === 'all' || id === 'newMatch' || id === 'newMessage' || id === 'videoCall') && checked) {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
         setIsSubscribing(true);
-        await subscribeToPushNotifications();
-        setIsSubscribing(false);
-      } else if (Notification.permission === 'default') {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          setIsSubscribing(true);
+        try {
           await subscribeToPushNotifications();
+        } catch (e) {
+          console.error('Error during push subscription:', e);
+        } finally {
           setIsSubscribing(false);
-        } else {
-           toast({
-              variant: 'destructive',
-              title: t('push_noti_denied_title'),
-              description: t('push_noti_denied_desc'),
-          });
-          updateNotificationSettings({ all: false }); // Revert toggle if permission denied
         }
-      } else {
-        // Permission is denied
-        toast({
-            variant: 'destructive',
-            title: t('push_noti_denied_title'),
-            description: t('push_noti_denied_desc'),
-        });
-        updateNotificationSettings({ all: false }); // Revert toggle if permission denied
       }
     }
   };

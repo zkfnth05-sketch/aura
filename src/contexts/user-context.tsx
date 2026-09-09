@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
 import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes } from '@/lib/supabaseDataService';
+import { sendWelcomePush } from '@/lib/notificationService';
 
 export interface AuthUser {
   uid: string;
@@ -288,10 +289,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
     loadLikes();
     const unsubscribeLikes = subscribeUserLikes(user.id, loadLikes);
 
+    // Instant WebSocket broadcast listener for user-specific events
+    const alertChannel = supabase?.channel(`user_ctx_alerts_${user.id}`)
+      .on('broadcast', { event: 'alert' }, ({ payload }) => {
+        if (!isMounted) return;
+        if (payload?.type === 'like') {
+          loadLikes();
+        } else if (payload?.type === 'match' || payload?.type === 'message' || payload?.type === 'call') {
+          loadMatches();
+        }
+      })
+      .subscribe();
+
     return () => {
       isMounted = false;
       unsubscribeMatches();
       unsubscribeLikes();
+      if (alertChannel && supabase) {
+        supabase.removeChannel(alertChannel);
+      }
     };
   }, [user?.id]);
 
@@ -501,17 +517,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!user) return;
 
       try {
-        const registration = await navigator.serviceWorker.ready;
-        let subscription = await registration.pushManager.getSubscription();
-
-        if (subscription) {
-            const isAlreadySaved = user.pushSubscriptions?.some(sub => sub.endpoint === subscription!.endpoint);
-            if (!isAlreadySaved) {
-                await updateUser({ pushSubscriptions: [...(user.pushSubscriptions || []), subscription.toJSON()] });
-            }
-            toast({ title: '알림이 설정되었습니다.' });
+        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            toast({ variant: 'destructive', title: '알림 권한 필요', description: '푸시 알림을 받으시려면 브라우저 알림 권한을 허용해주세요.' });
             return;
+          }
         }
+
+        let registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+          registration = await navigator.serviceWorker.register('/sw.js');
+        }
+        await navigator.serviceWorker.ready;
+
+        let subscription = await registration.pushManager.getSubscription();
 
         const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!vapidPublicKey) {
@@ -522,16 +542,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
-        subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedVapidKey
-        });
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: convertedVapidKey
+          });
+        }
 
-        await updateUser({
-            pushSubscriptions: [...(user.pushSubscriptions || []), subscription.toJSON()]
-        });
+        const subJson = subscription.toJSON();
+        const isAlreadySaved = user.pushSubscriptions?.some(sub => sub.endpoint === subscription!.endpoint);
+        if (!isAlreadySaved) {
+            await updateUser({
+                pushSubscriptions: [...(user.pushSubscriptions || []), subJson]
+            });
+        }
+
+        // Send a welcome test notification to confirm it's working immediately
+        sendWelcomePush(subJson).catch(() => {});
         
-        toast({ title: '알림이 성공적으로 설정되었습니다.' });
+        toast({ title: '알림이 성공적으로 설정되었습니다.', description: '새로운 매치와 메시지 소식을 실시간으로 받아보실 수 있습니다.' });
       } catch (error) {
           console.error('Failed to subscribe to push notifications:', error);
           toast({ variant: 'destructive', title: '구독 실패', description: '푸시 알림 구독에 실패했습니다. 다시 시도해주세요.' });

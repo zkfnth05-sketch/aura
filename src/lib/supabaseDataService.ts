@@ -10,6 +10,13 @@ import {
   fromSupabaseLike,
 } from './supabaseMappers';
 import type { FilterSettings } from '@/contexts/user-context';
+import {
+  notifyNewLike,
+  notifyNewMatch,
+  notifyNewMessage,
+  notifyIncomingCall,
+  sendRealtimeBroadcast,
+} from './notificationService';
 
 export function getClient() {
   if (!supabase) {
@@ -112,6 +119,13 @@ export async function recordSwipe(
     .maybeSingle();
 
   if (!reciprocalLike) {
+    // Notify likee in real-time (In-app alert + Web Push)
+    fetchUserProfile(likerId).then((liker) => {
+      if (liker) {
+        notifyNewLike({ targetUserId: likeeId, liker });
+      }
+    }).catch((err) => console.error('Error notifying new like:', err));
+
     return { success: true, isMatch: false };
   }
 
@@ -151,6 +165,13 @@ export async function recordSwipe(
 
   const matchedUser = otherUserData ? fromSupabaseUser(otherUserData) : undefined;
   const match = fromSupabaseMatch(createdMatch);
+
+  // Notify both users about the new match (In-app toast + Web Push)
+  fetchUserProfile(likerId).then((liker) => {
+    if (liker && matchedUser) {
+      notifyNewMatch({ userA: liker, userB: matchedUser, matchId });
+    }
+  }).catch((err) => console.error('Error notifying new match:', err));
 
   return {
     success: true,
@@ -258,6 +279,22 @@ export async function sendChatMessage(params: {
       last_message_sender_id: params.senderId,
     })
     .eq('id', params.matchId);
+
+  // Notify recipient in real-time (In-app toast + Web Push)
+  const userIds = params.matchId.split('_');
+  const recipientId = userIds.find((id) => id !== params.senderId);
+  if (recipientId) {
+    fetchUserProfile(params.senderId).then((sender) => {
+      if (sender) {
+        notifyNewMessage({
+          recipientId,
+          sender,
+          matchId: params.matchId,
+          text: params.text || (params.audioUrl ? '음성 메시지' : '새로운 메시지'),
+        });
+      }
+    }).catch((err) => console.error('Error notifying chat message:', err));
+  }
 
   return fromSupabaseMessage(insertedMsg);
 }
@@ -483,6 +520,31 @@ export async function updateMatchCallStatus(
 
   if (error) {
     console.error('Error updating call status:', error);
+    return;
+  }
+
+  const userIds = matchId.split('_');
+
+  // If ringing, dispatch incoming call alert to the other participant
+  if (callStatus === 'ringing' && callerId) {
+    const recipientId = userIds.find((id) => id !== callerId);
+    if (recipientId) {
+      fetchUserProfile(callerId).then((caller) => {
+        if (caller) {
+          notifyIncomingCall({ recipientId, caller, matchId });
+        }
+      }).catch((err) => console.error('Error notifying incoming call:', err));
+    }
+  } else if (callStatus === 'idle') {
+    // If call ended or rejected, broadcast dismiss event to all participants
+    userIds.forEach((uid) => {
+      sendRealtimeBroadcast(uid, {
+        type: 'call',
+        title: '통화 종료',
+        body: '통화가 종료되었습니다.',
+        data: { callStatus: 'idle', matchId },
+      });
+    });
   }
 }
 

@@ -24,6 +24,7 @@ import {
   subscribeChatMessages,
   sendChatMessage,
   fetchUserProfile,
+  updateMatchCallStatus,
 } from '@/lib/supabaseDataService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AudioMessagePlayer from '@/components/audio-message-player';
@@ -455,17 +456,14 @@ export default function ChatPage() {
   };
 
   const handleInitiateCall = () => {
-    if (!currentUser || !otherUser || !supabase) return;
-    supabase
-      .from('matches')
-      .update({ call_status: 'ringing', caller_id: currentUser.id })
-      .eq('id', matchId)
-      .then();
+    if (!currentUser || !otherUser) return;
+    updateMatchCallStatus(matchId, 'ringing', currentUser.id);
   };
 
   const handleEndCall = () => {
-      setIsCallActive(false);
-  }
+    setIsCallActive(false);
+    updateMatchCallStatus(matchId, 'idle', null);
+  };
   
   if (!isUserLoaded) {
     return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
