@@ -15,9 +15,7 @@ import { useUser } from '@/contexts/user-context';
 import { getAIChatReplySuggestions, getChatTranslation } from '@/actions/ai-actions';
 import { useToast } from '@/hooks/use-toast';
 import VideoChat from '@/components/video-chat';
-import { useStorage } from '@/firebase';
-import { Timestamp } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadMediaFile } from '@/lib/supabaseStorageService';
 import { useLanguage } from '@/contexts/language-context';
 import { supabase } from '@/lib/supabaseClient';
 import { fromSupabaseMatch } from '@/lib/supabaseMappers';
@@ -59,7 +57,7 @@ const VideoIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const formatMessageTime = (timestamp: Timestamp | any, locale: string): string => {
+const formatMessageTime = (timestamp: any, locale: string): string => {
     if (!timestamp?.toDate) {
       return '';
     }
@@ -82,7 +80,6 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const matchId = params.matchId as string;
-  const storage = useStorage();
   const { user: currentUser, isLoaded: isUserLoaded, updateUser } = useUser();
   const { t, language, supportedLanguages } = useLanguage();
   const { toast } = useToast();
@@ -333,16 +330,17 @@ export default function ChatPage() {
   };
 
   const handleSendAudio = async (audioBlob: Blob | null) => {
-    if (!audioBlob || !currentUser || !otherUser || !storage || isSendingAudio) return;
+    if (!audioBlob || !currentUser || !liveOtherUser || isSendingAudio) return;
 
     setIsSendingAudio(true);
     updateUser({ lastSeen: new Date().toISOString() });
 
-    const audioFileRef = storageRef(storage, `audio_messages/${matchId}/${new Date().getTime()}.webm`);
-
     try {
-      const snapshot = await uploadBytes(audioFileRef, audioBlob);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const downloadURL = await uploadMediaFile(
+        audioBlob,
+        'audio',
+        `${matchId}_${Date.now()}.webm`
+      );
 
       const sent = await sendChatMessage({
         matchId,

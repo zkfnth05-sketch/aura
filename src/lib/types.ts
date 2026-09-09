@@ -1,5 +1,10 @@
 
-import type { Timestamp } from 'firebase/firestore';
+export type Timestamp = {
+  toDate: () => Date;
+  toMillis?: () => number;
+  seconds?: number;
+  nanoseconds?: number;
+};
 
 export type User = {
   id: string;

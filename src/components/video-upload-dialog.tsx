@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser } from '@/contexts/user-context';
-import { useStorage } from '@/firebase';
+import { uploadMediaFile } from '@/lib/supabaseStorageService';
 import {
   Dialog,
   DialogContent,
@@ -14,14 +14,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useLanguage } from '@/contexts/language-context';
 
 const MAX_DURATION_SECONDS = 15;
 
 export default function VideoUploadDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user, updateUser } = useUser();
-  const storage = useStorage();
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -165,12 +163,10 @@ export default function VideoUploadDialog({ isOpen, onClose }: { isOpen: boolean
   }, [toast, startCamera, cleanupMedia, handleStopRecording]);
   
   const handleSave = async () => {
-    if (!videoBlob || !user || !storage) return;
+    if (!videoBlob || !user) return;
     setMode('uploading');
     try {
-      const videoFileRef = storageRef(storage, `videos/${user.id}/${Date.now()}.webm`);
-      await uploadBytes(videoFileRef, videoBlob);
-      const downloadURL = await getDownloadURL(videoFileRef);
+      const downloadURL = await uploadMediaFile(videoBlob, 'videos', `${user.id}_${Date.now()}.webm`);
       await updateUser({ videoUrls: [...(user.videoUrls || []), downloadURL] });
       toast({ title: '동영상 업로드 성공', description: '프로필에 동영상이 추가되었습니다.' });
       handleClose();

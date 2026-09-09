@@ -14,8 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn, compressImage } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import CameraDialog from '@/components/camera-dialog';
-import { getAuth, deleteUser } from 'firebase/auth';
-import { useStorage } from '@/firebase';
+import { uploadDataUri, uploadMediaFile } from '@/lib/supabaseStorageService';
 import { deleteUserProfile } from '@/lib/supabaseDataService';
 import {
   AlertDialog,
@@ -35,7 +34,6 @@ import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import VideoUploadDialog from './video-upload-dialog';
 import { getEnhancedPhoto } from '@/actions/ai-actions';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 const FlagIcon = ({ code, ...props }: { code: string } & React.SVGProps<SVGSVGElement>) => {
@@ -91,7 +89,6 @@ export default function ProfileEditForm() {
   const { toast } = useToast();
   const { user: currentUser, updateUser, isLoaded, authUser } = useUser();
   const { t, setLanguage, supportedLanguages } = useLanguage();
-  const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -222,7 +219,8 @@ export default function ProfileEditForm() {
     }
     
     try {
-        await updateUser({ photoUrls: [...photoUrls, finalUriToUpload] });
+        const cdnPhotoUrl = await uploadDataUri(finalUriToUpload, 'profiles');
+        await updateUser({ photoUrls: [...photoUrls, cdnPhotoUrl] });
     } catch (error) {
         console.error("Failed to update user with new photo:", error);
         toast({
@@ -262,28 +260,29 @@ export default function ProfileEditForm() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!authUser) return;
+    const uidToDelete = currentUser?.id || authUser?.uid;
+    if (!uidToDelete) return;
   
     try {
-      await deleteUserProfile(authUser.uid);
-      await deleteUser(authUser);
+      await deleteUserProfile(uidToDelete);
   
       toast({
         title: t('account_deleted_message'),
         description: t('delete_account_confirm_description'),
       });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('aura_user_id');
+        localStorage.removeItem('aura_signup_phone');
+        localStorage.removeItem('aura_temp_uid');
+      }
       router.push('/signup');
     } catch (error: any) {
       console.error("Failed to delete account:", error);
-      if (error.code === 'auth/requires-recent-login') {
-        setIsReauthDialogOpen(true);
-      } else {
-        toast({
-          variant: "destructive",
-          title: t('delete_account_error'),
-          description: error.message,
-        });
-      }
+      toast({
+        variant: "destructive",
+        title: t('delete_account_error'),
+        description: error.message,
+      });
     }
   };
 
@@ -311,13 +310,15 @@ export default function ProfileEditForm() {
         return;
       }
       
-      if (!currentUser || !storage) return;
+      if (!currentUser) return;
 
       setIsSaving(true);
       try {
-        const videoFileRef = storageRef(storage, `videos/${currentUser.id}/${Date.now()}.${file.name.split('.').pop() || 'webm'}`);
-        await uploadBytes(videoFileRef, file);
-        const downloadURL = await getDownloadURL(videoFileRef);
+        const downloadURL = await uploadMediaFile(
+          file,
+          'videos',
+          `${currentUser.id}_${Date.now()}.${file.name.split('.').pop() || 'webm'}`
+        );
         await updateUser({ videoUrls: [...(currentUser.videoUrls || []), downloadURL] });
 
         toast({
@@ -558,9 +559,12 @@ export default function ProfileEditForm() {
             <Button 
               variant="link" 
               className="text-xs text-zinc-500 hover:text-white"
-              onClick={async () => {
-                const auth = getAuth();
-                await auth.signOut();
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('aura_user_id');
+                  localStorage.removeItem('aura_signup_phone');
+                  localStorage.removeItem('aura_temp_uid');
+                }
                 router.push('/signup');
               }}
             >

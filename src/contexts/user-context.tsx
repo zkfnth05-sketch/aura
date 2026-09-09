@@ -4,10 +4,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { User as AuthUser } from 'firebase/auth';
 import { useUser as useAuthUserHook, useAuth, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, serverTimestamp, collection, query, where, getDoc, getDocs, updateDoc, orderBy, limit, onSnapshot, Query, DocumentData, startAfter, QueryDocumentSnapshot, documentId } from 'firebase/firestore';
 import type { User, Match, Like } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
@@ -193,49 +191,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    if (!authUser) {
-      setUser(null);
-      setIsUserDocLoading(false);
-      return;
-    }
-
-    const userRef = doc(firestore, 'users', authUser.uid);
-    
-    // Subscribe to user document in Firestore (fallback)
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setUser(docSnap.data() as User);
-      } else {
-        setUser(null);
-      }
-      setIsUserDocLoading(false);
-    }, error => {
-       console.error("Failed to fetch user document:", error);
-       setUser(null);
-       setIsUserDocLoading(false);
-    });
-
-    // Handle presence (lastSeen)
     const updateLastSeen = () => {
       if (supabase && targetUserId) {
         supabase.from('users').update({ last_seen: new Date().toISOString() }).eq('id', targetUserId).then();
       }
-      getDoc(userRef).then(docSnap => {
-        if(docSnap.exists()){
-          updateDoc(userRef, { lastSeen: new Date().toISOString() })
-            .catch(e => console.error("Error updating lastSeen:", e));
-        }
-      }).catch(() => {});
     };
     
     window.addEventListener('focus', updateLastSeen);
     updateLastSeen();
     
     return () => {
-      unsubscribe();
       window.removeEventListener('focus', updateLastSeen);
     };
-  }, [authUser, firestore, isAuthLoading]);
+  }, [authUser, isAuthLoading]);
 
   // Dedicated useEffect for location management
   useEffect(() => {
@@ -366,19 +334,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // 2. Firebase 호환 저장
-    if (firestore && authUser) {
-      try {
-        const userRef = doc(firestore, 'users', authUser.uid);
-        if ((newUserData.createdAt as any) === "serverTimestamp") {
-          dataToSave.createdAt = serverTimestamp();
-        }
-        await setDocumentNonBlocking(userRef, dataToSave, { merge: true });
-      } catch (err) {
-        console.warn("Firebase shadow write skipped or failed:", err);
-      }
-    }
-  }, [authUser, firestore]);
+  }, [authUser]);
   
   const updateFilters = useCallback((newFilters: Partial<FilterSettings>) => {
     setFilters(prevFilters => {
@@ -544,7 +500,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           toast({ variant: 'destructive', title: '푸시 알림 미지원', description: '이 브라우저는 푸시 알림을 지원하지 않습니다.' });
           return;
       }
-      if (!user || !firestore) return;
+      if (!user) return;
 
       try {
         const registration = await navigator.serviceWorker.ready;

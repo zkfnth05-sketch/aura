@@ -19,6 +19,7 @@ import { Switch } from './ui/switch';
 import { getEnhancedPhoto } from '@/actions/ai-actions';
 import { Label } from '@/components/ui/label';
 import { compressImage } from '@/lib/utils';
+import { uploadDataUri } from '@/lib/supabaseStorageService';
 import { useLanguage } from '@/contexts/language-context';
 
 const formSchema = z.object({
@@ -94,10 +95,11 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
 
       if (originalPhotoUri) {
         const compressedUri = await compressImage(originalPhotoUri);
+        let finalPhotoUri = compressedUri;
         if (aiEnhancement) {
           try {
             const result = await getEnhancedPhoto({ photoDataUri: compressedUri, gender: values.gender });
-            photoUrlToSave = await compressImage(result.enhancedPhotoDataUri);
+            finalPhotoUri = await compressImage(result.enhancedPhotoDataUri);
           } catch (error: any) {
             console.error("AI photo enhancement failed:", error);
             toast({
@@ -105,11 +107,10 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
               title: t('ai_enhance_failed_title'),
               description: t('ai_enhance_failed_desc'),
             });
-            photoUrlToSave = compressedUri; // Fallback to original
           }
-        } else {
-            photoUrlToSave = compressedUri;
         }
+        // Upload photo to Supabase Storage CDN
+        photoUrlToSave = await uploadDataUri(finalPhotoUri, 'profiles');
       } else {
         const randomImage = PlaceHolderImages[Math.floor(Math.random() * PlaceHolderImages.length)];
         photoUrlToSave = randomImage.imageUrl;

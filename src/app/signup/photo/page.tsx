@@ -12,6 +12,7 @@ import { Plus, Loader2, Camera, ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getEnhancedPhoto } from '@/actions/ai-actions';
 import { compressImage } from '@/lib/utils';
+import { uploadDataUri } from '@/lib/supabaseStorageService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import CameraDialog from '@/components/camera-dialog';
 
@@ -104,8 +105,9 @@ export default function UploadPhotoPage() {
     setIsSubmitting(true);
     
     try {
+      const cdnUrl = await uploadDataUri(photo.uri, 'profiles');
       await updateUser({
-        photoUrls: [photo.uri],
+        photoUrls: [cdnUrl],
       });
       setIsSignupFlowActive(false); // Signal that the signup flow is now complete
       router.push('/profile');
