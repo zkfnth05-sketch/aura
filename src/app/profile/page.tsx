@@ -6,13 +6,14 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, X, Loader2 } from 'lucide-react';
+import { MapPin, X, Loader2, ShieldAlert, PhoneCall } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import ImageCarouselDialog from '@/components/image-carousel-dialog';
 import Header from '@/components/layout/header';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/language-context';
+import { useEscapeCall } from '@/contexts/escape-call-context';
 import { TranslationKeys } from '@/lib/locales';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { profileGuide } from '@/lib/coachmark-steps';
@@ -36,6 +37,7 @@ const ProfileToggle = ({ label, id, checked, onCheckedChange, isLast = false, di
 
 export default function ProfilePage() {
   const { user: currentUser, notificationSettings, updateNotificationSettings, subscribeToPushNotifications, openActionGate } = useUser();
+  const { openConfigModal: openEscapeModal } = useEscapeCall();
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isSubscribing, setIsSubscribing] = useState(false);
@@ -253,6 +255,39 @@ export default function ProfilePage() {
                   </div>
                 </ProfileSection>
               )}
+
+              {/* 🛡️ 여성 안심 라운지 & 가짜 탈출 전화 카드 */}
+              <div className="my-6 bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-zinc-950 border border-pink-500/30 rounded-3xl p-5 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2.5 rounded-2xl bg-pink-500/20 text-pink-400">
+                      <ShieldAlert className="w-5 h-5" />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>여성 안심 탈출 라운지</span>
+                        <span className="text-[10px] bg-pink-500 text-white font-bold px-1.5 py-0.2 rounded-full">HOT</span>
+                      </h3>
+                      <p className="text-xs text-zinc-400">오프라인 첫 만남 비상 탈출 가짜 전화</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  만남 자리가 어색하거나 곤란할 때, <strong>진짜 전화 수신 화면과 음성 대본</strong>으로 자연스럽게 자리를 벗어날 수 있습니다. 미리 테스트해보세요!
+                </p>
+
+                <div className="pt-1">
+                  <Button
+                    type="button"
+                    onClick={openEscapeModal}
+                    className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-xs rounded-2xl py-5 shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2"
+                  >
+                    <PhoneCall className="w-4 h-4" />
+                    <span>가짜 탈출 전화 사전 체험 및 예약하기</span>
+                  </Button>
+                </div>
+              </div>
 
               <ProfileSection title={t('profile_settings_section')}>
                   <ProfileToggle 

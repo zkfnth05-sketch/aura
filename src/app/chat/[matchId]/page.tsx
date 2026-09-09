@@ -5,13 +5,14 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Match, Message, User } from '@/lib/types';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Send, Loader2, UserX, Languages, Square, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, UserX, Languages, Square, Trash2, ShieldAlert, PhoneCall } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/user-context';
+import { useEscapeCall } from '@/contexts/escape-call-context';
 import { getAIChatReplySuggestions, getChatTranslation } from '@/actions/ai-actions';
 import { useToast } from '@/hooks/use-toast';
 import VideoChat from '@/components/video-chat';
@@ -85,6 +86,7 @@ export default function ChatPage() {
   const { t, language, supportedLanguages } = useLanguage();
   const { toast } = useToast();
   const { selectedChat } = useSelectedChat();
+  const { openConfigModal, countdown: escapeCountdown } = useEscapeCall();
   
   const [newMessage, setNewMessage] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -646,6 +648,32 @@ export default function ChatPage() {
             <p className={cn("text-xs", lastSeenText === t('online_status') ? 'text-primary' : 'text-muted-foreground')}>{lastSeenText || <>&nbsp;</>}</p>
           </div>
         </div>
+        {/* 여성 안심 탈출 가짜 전화 버튼 */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={openConfigModal}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all text-xs font-semibold",
+            escapeCountdown !== null
+              ? "bg-pink-500/20 border-pink-500 text-pink-300 animate-pulse"
+              : "bg-zinc-900/80 border-pink-500/40 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
+          )}
+          title="여성 안심 탈출 가짜 전화"
+        >
+          {escapeCountdown !== null ? (
+            <>
+              <PhoneCall className="h-3.5 w-3.5 text-pink-400 animate-bounce" />
+              <span>{escapeCountdown}s</span>
+            </>
+          ) : (
+            <>
+              <ShieldAlert className="h-4 w-4 text-pink-400" />
+              <span className="hidden sm:inline">안심 탈출</span>
+            </>
+          )}
+        </Button>
+
         <Button variant="ghost" size="icon" onClick={handleInitiateCall} disabled={match.callStatus === 'ringing' || match.callStatus === 'active'}>
           <VideoIcon className="h-6 w-6 text-primary" />
         </Button>

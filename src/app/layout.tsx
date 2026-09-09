@@ -5,6 +5,9 @@ import { UserProvider } from '@/contexts/user-context';
 import AppLayout from '@/components/layout/app-layout';
 import { LanguageProvider } from '@/contexts/language-context';
 import { SelectedChatProvider } from '@/contexts/selected-chat-context';
+import { EscapeCallProvider } from '@/contexts/escape-call-context';
+import EscapeCallConfigDialog from '@/components/escape-call/escape-call-config-dialog';
+import IncomingEscapeCallModal from '@/components/escape-call/incoming-escape-call-modal';
 import { useEffect } from 'react';
 
 
@@ -47,9 +50,13 @@ export default function RootLayout({
         <UserProvider>
           <LanguageProvider>
             <SelectedChatProvider>
-              <AppLayout>
-                {children}
-              </AppLayout>
+              <EscapeCallProvider>
+                <AppLayout>
+                  {children}
+                </AppLayout>
+                <EscapeCallConfigDialog />
+                <IncomingEscapeCallModal />
+              </EscapeCallProvider>
             </SelectedChatProvider>
             <Toaster />
           </LanguageProvider>
