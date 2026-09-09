@@ -11,6 +11,7 @@ import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
+import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes } from '@/lib/supabaseDataService';
 
 interface NotificationSettings {
   all: boolean;
@@ -86,21 +87,6 @@ const initialFilters: FilterSettings = {
   lifestyle: [],
   hobbies: [],
   interests: [],
-}
-
-async function fetchUsersByIds(firestore: any, userIds: string[]): Promise<User[]> {
-  if (userIds.length === 0) return [];
-  const users: User[] = [];
-  const CHUNK_SIZE = 30; 
-  for (let i = 0; i < userIds.length; i += CHUNK_SIZE) {
-    const chunk = userIds.slice(i, i + CHUNK_SIZE);
-    if (chunk.length > 0) {
-      const usersQuery = query(collection(firestore, 'users'), where(documentId(), 'in', chunk));
-      const userDocs = await getDocs(usersQuery);
-      users.push(...userDocs.docs.map(d => d.data() as User));
-    }
-  }
-  return users;
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
@@ -253,26 +239,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Dedicated useEffect for location management
   useEffect(() => {
-    if (!isLoaded || !user || !firestore) {
+    if (!isLoaded || !user) {
       return;
     }
     
     if (notificationSettings.locationShared) {
-      const userRef = doc(firestore, 'users', user.id);
-
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          // Get the latest user data before writing to prevent race conditions or stale data writes
-          getDoc(userRef).then(docSnap => {
-            if (docSnap.exists()) {
-              const currentUserData = docSnap.data() as User;
-              if (currentUserData.lat !== latitude || currentUserData.lng !== longitude) {
-                updateDoc(userRef, { lat: latitude, lng: longitude })
-                  .catch(e => console.error("Error updating location:", e));
-              }
-            }
-          }).catch(e => console.error("Error fetching user doc before location update:", e));
+          if (user.lat !== latitude || user.lng !== longitude) {
+            updateUser({ lat: latitude, lng: longitude });
+          }
         },
         (error) => {
           console.warn("Geolocation error:", error.message);
@@ -292,60 +269,64 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [isLoaded, user?.id, firestore, notificationSettings.locationShared, toast, updateNotificationSettings]);
 
 
-  // --- Matches & Likes Queries ---
-  const matchesQuery = useMemoFirebase(() => {
-    if (!user?.id || !firestore) return null;
-    return query(collection(firestore, "matches"), where("users", "array-contains", user.id));
-  }, [user?.id, firestore]);
-  const { data: matches, isLoading: isMatchesLoading } = useCollection<Match>(matchesQuery);
-  
-  const myLikesQuery = useMemoFirebase(() => {
-    if (!user?.id || !firestore) return null;
-    return query(collection(firestore, 'likes'), where('likerId', '==', user.id), where('isLike', '==', true));
-  }, [user?.id, firestore]);
-  const { data: myLikes, isLoading: isMyLikesLoading } = useCollection<Like>(myLikesQuery);
+  // --- Matches & Likes Queries via Supabase ---
+  const [matches, setMatches] = useState<Match[] | null>(null);
+  const [isMatchesLoading, setIsMatchesLoading] = useState(true);
+  const [isLikesLoading, setIsLikesLoading] = useState(true);
 
-  const likesToMeQuery = useMemoFirebase(() => {
-      if (!user?.id || !firestore) return null;
-      return query(collection(firestore, 'likes'), where('likeeId', '==', user.id), where('isLike', '==', true));
-  }, [user?.id, firestore]);
-  const { data: likesToMe, isLoading: isLikesToMeLoading } = useCollection<Like>(likesToMeQuery);
-
-  const isLikesLoading = isMyLikesLoading || isLikesToMeLoading;
-
-  // Process Likes Data (Converted to Users)
   useEffect(() => {
-    const fetchLikeUsers = async () => {
-        if (!firestore) return;
-        // Don't run if myLikes are still loading.
-        if (myLikes === null) return;
-        
-        if (myLikes.length > 0) {
-            const ids = myLikes.map(l => l.likeeId);
-            const users = await fetchUsersByIds(firestore, ids);
-            setPeopleILiked(users);
-        } else {
-            setPeopleILiked([]);
-        }
-    };
-    fetchLikeUsers();
-  }, [myLikes, firestore]);
-  
-  useEffect(() => {
-    const fetchLikedByUsers = async () => {
-        if (!firestore) return;
-        if (likesToMe === null) return;
+    if (!user?.id) {
+      setMatches([]);
+      setPeopleILiked([]);
+      setPeopleWhoLikedMe([]);
+      setIsMatchesLoading(false);
+      setIsLikesLoading(false);
+      return;
+    }
 
-        if (likesToMe.length > 0) {
-            const ids = likesToMe.map(l => l.likerId);
-            const users = await fetchUsersByIds(firestore, ids);
-            setPeopleWhoLikedMe(users);
-        } else {
-            setPeopleWhoLikedMe([]);
+    let isMounted = true;
+    setIsMatchesLoading(true);
+    setIsLikesLoading(true);
+
+    const loadMatches = async () => {
+      try {
+        const data = await fetchUserMatches(user.id);
+        if (isMounted) {
+          setMatches(data);
+          setIsMatchesLoading(false);
         }
+      } catch (e) {
+        if (isMounted) setIsMatchesLoading(false);
+      }
     };
-    fetchLikedByUsers();
-  }, [likesToMe, firestore]);
+    loadMatches();
+    const unsubscribeMatches = subscribeUserMatches(user.id, loadMatches);
+
+    const loadLikes = async () => {
+      try {
+        const { peopleILiked: myLikes, peopleWhoLikedMe: likesToMe } = await fetchUserLikes(user.id);
+        const [likedUsers, likedByUsers] = await Promise.all([
+          fetchUsersByIds(myLikes.map((l) => l.likeeId)),
+          fetchUsersByIds(likesToMe.map((l) => l.likerId)),
+        ]);
+        if (isMounted) {
+          setPeopleILiked(likedUsers);
+          setPeopleWhoLikedMe(likedByUsers);
+          setIsLikesLoading(false);
+        }
+      } catch (e) {
+        if (isMounted) setIsLikesLoading(false);
+      }
+    };
+    loadLikes();
+    const unsubscribeLikes = subscribeUserLikes(user.id, loadLikes);
+
+    return () => {
+      isMounted = false;
+      unsubscribeMatches();
+      unsubscribeLikes();
+    };
+  }, [user?.id]);
 
   const totalUnreadCount = (matches || []).reduce((acc, match) => {
     if (user && user.id && match.unreadCounts) {

@@ -1,9 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin-layout';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { fetchAllUsers } from '@/lib/supabaseDataService';
 import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -22,16 +21,27 @@ const DashboardChart = dynamic(() => import('@/components/dashboard-chart'), {
 
 
 export default function DashboardPage() {
-    const firestore = useFirestore();
     const [genderFilter, setGenderFilter] = useState<'all' | '남성' | '여성'>('all');
     const [timePeriod, setTimePeriod] = useState<'daily' | 'monthly'>('daily');
 
-    const usersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'users'), orderBy('createdAt', 'asc'));
-    }, [firestore]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const { data: users, isLoading } = useCollection<User>(usersQuery);
+    useEffect(() => {
+        let isMounted = true;
+        fetchAllUsers(500)
+            .then(data => {
+                if (isMounted) {
+                    setUsers(data);
+                    setIsLoading(false);
+                }
+            })
+            .catch(e => {
+                console.error('Error fetching dashboard users:', e);
+                if (isMounted) setIsLoading(false);
+            });
+        return () => { isMounted = false; };
+    }, []);
 
     const { chartData, totalUsers, last7DaysSignups } = useMemo(() => {
         if (!users) {

@@ -5,8 +5,7 @@ import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore } from '@/firebase';
-import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { saveUserProfile } from '@/lib/supabaseDataService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,8 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { Switch } from './ui/switch';
 import { getEnhancedPhoto } from '@/actions/ai-actions';
 import { Label } from '@/components/ui/label';
@@ -42,7 +39,6 @@ type AddUserDialogProps = {
 
 export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserDialogProps) {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -87,11 +83,11 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
   }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!firestore) return;
     setIsSubmitting(true);
 
-    const usersCol = collection(firestore, 'users');
-    const newUserRef = doc(usersCol);
+    const newUserId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     
     try {
       let photoUrlToSave: string | undefined;
@@ -120,9 +116,9 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
       }
 
       const newUserPayload = {
-        id: newUserRef.id,
+        id: newUserId,
         ...values,
-        createdAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
         photoUrls: photoUrlToSave ? [photoUrlToSave] : [],
         bio: t('bio_placeholder'),
         hobbies: ['hobbies_section_title_reading', 'hobbies_section_title_movies'],
@@ -132,7 +128,7 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
         phoneNumber: '',
       };
   
-      await setDoc(newUserRef, newUserPayload);
+      await saveUserProfile(newUserPayload as any);
 
       toast({
         title: t('admin_add_user_success_title'),
@@ -142,21 +138,12 @@ export default function AddUserDialog({ isOpen, onClose, onUserAdded }: AddUserD
       handleClose();
 
     } catch (error: any) {
-        if (error.code === 'permission-denied') {
-            const contextualError = new FirestorePermissionError({
-              operation: 'create',
-              path: newUserRef.path,
-              requestResourceData: { /* Payload might be large, omitting for brevity in error */ ...values, id: newUserRef.id },
-            });
-            errorEmitter.emit('permission-error', contextualError);
-          } else {
-            console.error("Error adding user:", error);
-            toast({
-              variant: "destructive",
-              title: t('admin_add_user_failed_title'),
-              description: error.message || t('admin_add_user_failed_desc'),
-            });
-          }
+      console.error("Error adding user:", error);
+      toast({
+        variant: "destructive",
+        title: t('admin_add_user_failed_title'),
+        description: error.message || t('admin_add_user_failed_desc'),
+      });
     } finally {
         setIsSubmitting(false);
     }

@@ -15,8 +15,8 @@ import { cn, compressImage } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import CameraDialog from '@/components/camera-dialog';
 import { getAuth, deleteUser } from 'firebase/auth';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { useFirestore, useStorage } from '@/firebase';
+import { useStorage } from '@/firebase';
+import { deleteUserProfile } from '@/lib/supabaseDataService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +91,6 @@ export default function ProfileEditForm() {
   const { toast } = useToast();
   const { user: currentUser, updateUser, isLoaded, authUser } = useUser();
   const { t, setLanguage, supportedLanguages } = useLanguage();
-  const firestore = useFirestore();
   const storage = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
@@ -263,12 +262,11 @@ export default function ProfileEditForm() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!authUser || !firestore) return;
+    if (!authUser) return;
   
     try {
+      await deleteUserProfile(authUser.uid);
       await deleteUser(authUser);
-      const userDocRef = doc(firestore, 'users', authUser.uid);
-      await deleteDoc(userDocRef);
   
       toast({
         title: t('account_deleted_message'),

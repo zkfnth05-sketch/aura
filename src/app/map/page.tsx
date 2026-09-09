@@ -8,8 +8,7 @@ import Header from '@/components/layout/header';
 import { useUser } from '@/contexts/user-context';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { Loader2 } from 'lucide-react';
-import { useFirestore } from '@/firebase';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { fetchMapUsers } from '@/lib/supabaseDataService';
 import type { User } from '@/lib/types';
 import { useLanguage } from '@/contexts/language-context';
 import CoachMarkGuide from '@/components/coach-mark-guide';
@@ -21,7 +20,6 @@ let mapUsersCache: User[] | null = null;
 export default function MapPage() {
   const apiKey = 'AIzaSyDif-s30htM9_bWTE8FxOJD7wwDHkrcPg8';
   const { user: currentUser, isLoaded: isUserLoaded } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
   const { t } = useLanguage();
 
@@ -52,7 +50,7 @@ export default function MapPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       // 1. Caching & Smart Trigger: Only fetch if cache is empty and dependencies are ready.
-      if (mapUsersCache || !currentUser || !firestore) {
+      if (mapUsersCache || !currentUser) {
         if(mapUsersCache) setIsFetching(false); // If using cache, stop loading indicator
         return;
       }
@@ -62,14 +60,7 @@ export default function MapPage() {
         const genderFilter = currentUser.gender === '남성' ? ['여성'] : 
                              currentUser.gender === '여성' ? ['남성'] : ['남성', '여성', '기타'];
 
-        const usersQuery = query(
-          collection(firestore, 'users'),
-          where('gender', 'in', genderFilter),
-          limit(50)
-        );
-        
-        const snapshot = await getDocs(usersQuery);
-        const fetchedUsers = snapshot.docs.map(d => d.data() as User);
+        const fetchedUsers = await fetchMapUsers(currentUser.id, genderFilter, 50);
         
         const otherUsers = fetchedUsers.filter(u => 
           u.id !== currentUser.id &&
@@ -91,13 +82,10 @@ export default function MapPage() {
       }
     };
 
-    // 3. Smart Trigger: This effect now smartly decides whether to fetch.
-    // It runs when the user is loaded, but the fetch logic inside is protected by the `mapUsersCache` check,
-    // preventing re-fetches on minor currentUser object updates.
     if (isUserLoaded) {
       fetchUsers();
     }
-  }, [isUserLoaded, currentUser, firestore]);
+  }, [isUserLoaded, currentUser]);
 
   if (!apiKey) {
     return (

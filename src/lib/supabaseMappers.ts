@@ -1,4 +1,36 @@
-import type { User } from './types';
+import type { User, Match, Message, Like } from './types';
+
+// Helper to provide a Timestamp-like object compatible with UI calling .toDate() or .toMillis()
+export function toTimestampCompat(val: any): any {
+  if (!val) {
+    const now = new Date();
+    return {
+      toDate: () => now,
+      toMillis: () => now.getTime(),
+      seconds: Math.floor(now.getTime() / 1000),
+      nanoseconds: 0,
+    };
+  }
+  if (typeof val.toDate === 'function') {
+    return val;
+  }
+  const d = typeof val === 'string' || typeof val === 'number' ? new Date(val) : (val instanceof Date ? val : new Date());
+  return {
+    toDate: () => d,
+    toMillis: () => d.getTime(),
+    seconds: Math.floor(d.getTime() / 1000),
+    nanoseconds: 0,
+  };
+}
+
+export function toIsoString(val: any): string {
+  if (!val) return new Date().toISOString();
+  if (typeof val.toDate === 'function') return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number') return new Date(val).toISOString();
+  return new Date().toISOString();
+}
 
 export function toSupabaseUser(user: Partial<User> & { id: string }): Record<string, any> {
   const row: Record<string, any> = {
@@ -29,7 +61,7 @@ export function toSupabaseUser(user: Partial<User> & { id: string }): Record<str
   if (user.pushSubscriptions !== undefined) row.push_subscriptions = user.pushSubscriptions;
   if (user.lastSeen !== undefined) row.last_seen = user.lastSeen;
   if (user.createdAt !== undefined && (user.createdAt as any) !== 'serverTimestamp') {
-    row.created_at = typeof user.createdAt === 'string' ? user.createdAt : new Date().toISOString();
+    row.created_at = toIsoString(user.createdAt);
   }
 
   return row;
@@ -60,6 +92,79 @@ export function fromSupabaseUser(row: Record<string, any>): User {
     completedCoachMarks: Array.isArray(row.completed_coach_marks) ? row.completed_coach_marks : [],
     pushSubscriptions: Array.isArray(row.push_subscriptions) ? row.push_subscriptions : [],
     lastSeen: row.last_seen || 'Online',
-    createdAt: row.created_at as any,
+    createdAt: toTimestampCompat(row.created_at),
+  };
+}
+
+export function toSupabaseMatch(match: Partial<Match> & { id: string }): Record<string, any> {
+  const row: Record<string, any> = {
+    id: match.id,
+  };
+  if (match.users !== undefined) row.users = match.users;
+  if (match.lastMessage !== undefined) row.last_message = match.lastMessage;
+  if (match.lastMessageTimestamp !== undefined) row.last_message_timestamp = toIsoString(match.lastMessageTimestamp);
+  if (match.lastMessageSenderId !== undefined) row.last_message_sender_id = match.lastMessageSenderId;
+  if (match.unreadCounts !== undefined) row.unread_counts = match.unreadCounts;
+  if (match.matchDate !== undefined) row.match_date = toIsoString(match.matchDate);
+  if (match.callStatus !== undefined) row.call_status = match.callStatus;
+  if (match.callerId !== undefined) row.caller_id = match.callerId;
+  return row;
+}
+
+export function fromSupabaseMatch(row: Record<string, any>): Match {
+  return {
+    id: row.id,
+    users: Array.isArray(row.users) ? row.users : [],
+    lastMessage: row.last_message || '',
+    lastMessageTimestamp: toTimestampCompat(row.last_message_timestamp || row.match_date),
+    lastMessageSenderId: row.last_message_sender_id || undefined,
+    unreadCounts: typeof row.unread_counts === 'object' && row.unread_counts !== null ? row.unread_counts : {},
+    matchDate: toTimestampCompat(row.match_date || row.created_at),
+    callStatus: row.call_status || 'idle',
+    callerId: row.caller_id || null,
+  };
+}
+
+export function toSupabaseMessage(msg: {
+  id?: string;
+  matchId: string;
+  senderId: string;
+  text?: string;
+  audioUrl?: string;
+  senderLanguage?: string;
+  translations?: Record<string, any>;
+  timestamp?: any;
+}): Record<string, any> {
+  const row: Record<string, any> = {
+    match_id: msg.matchId,
+    sender_id: msg.senderId,
+    text: msg.text || '',
+    audio_url: msg.audioUrl || null,
+    sender_language: msg.senderLanguage || 'ko',
+    translations: msg.translations || {},
+    created_at: toIsoString(msg.timestamp || new Date()),
+  };
+  if (msg.id) row.id = msg.id;
+  return row;
+}
+
+export function fromSupabaseMessage(row: Record<string, any>): Message {
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    text: row.text || '',
+    audioUrl: row.audio_url || undefined,
+    timestamp: toTimestampCompat(row.created_at),
+    senderLanguage: row.sender_language || 'ko',
+    translations: row.translations || {},
+  };
+}
+
+export function fromSupabaseLike(row: Record<string, any>): Like {
+  return {
+    likerId: row.liker_id,
+    likeeId: row.likee_id,
+    isLike: Boolean(row.is_like),
+    timestamp: toTimestampCompat(row.created_at),
   };
 }

@@ -1,88 +1,64 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useUser } from '@/contexts/user-context';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import type { Like, User } from '@/lib/types';
+import { fetchUserProfile, getClient } from '@/lib/supabaseDataService';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/language-context';
 
 export function NewLikeToast() {
   const { user: currentUser } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const { t } = useLanguage();
 
-  const lastSeenLikeTimestamp = useRef<Timestamp | null>(null);
-
-  const newLikesQuery = useMemoFirebase(() => {
-    if (!currentUser?.id || !firestore) {
-      return null;
-    }
-    // Query the top-level 'likes' collection for likes where the current user is the 'likee'
-    return query(
-      collection(firestore, 'likes'),
-      where('likeeId', '==', currentUser.id),
-      where('isLike', '==', true), // Only show for likes, not dislikes
-      orderBy('timestamp', 'desc'),
-      limit(1)
-    );
-  }, [firestore, currentUser]);
-
-  const { data: newLikes } = useCollection<Like>(newLikesQuery);
-
-  const showToast = useCallback(async (like: Like) => {
-    if (!firestore || !like.likerId) return;
-
-    try {
-      const userRef = doc(firestore, 'users', like.likerId);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const liker = userSnap.data() as User;
-
-        toast({
-          duration: 5000,
-          title: t('new_like_title'),
-          description: (
-            <Link href={`/users/${liker.id}`} className="w-full">
-              <div className="flex items-center gap-3 mt-2 cursor-pointer">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={liker.photoUrls?.[0]} alt={liker.name} />
-                  <AvatarFallback>{liker.name?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <span>{t('new_like_desc').replace('%s', liker.name)}</span>
-              </div>
-            </Link>
-          ),
-        });
-      }
-    } catch (error) {
-        console.error("Failed to fetch liker's profile for toast:", error);
-    }
-  }, [firestore, toast, t]);
-
   useEffect(() => {
-    if (newLikes && newLikes.length > 0) {
-      const latestLike = newLikes[0];
-      
-      // On the very first load, set the initial timestamp without showing a toast.
-      if (lastSeenLikeTimestamp.current === null) {
-          if (latestLike && latestLike.timestamp) {
-              lastSeenLikeTimestamp.current = latestLike.timestamp;
+    if (!currentUser?.id) return;
+    const client = getClient();
+    const channel = client
+      .channel(`new-like-toast-${currentUser.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'likes',
+          filter: `likee_id=eq.${currentUser.id}`,
+        },
+        async (payload) => {
+          const row = payload.new as any;
+          if (!row || !row.is_like || !row.liker_id) return;
+          try {
+            const liker = await fetchUserProfile(row.liker_id);
+            if (liker) {
+              toast({
+                duration: 5000,
+                title: t('new_like_title'),
+                description: (
+                  <Link href={`/users/${liker.id}`} className="w-full">
+                    <div className="flex items-center gap-3 mt-2 cursor-pointer">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={liker.photoUrls?.[0]} alt={liker.name} />
+                        <AvatarFallback>{liker.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span>{t('new_like_desc').replace('%s', liker.name)}</span>
+                    </div>
+                  </Link>
+                ),
+              });
+            }
+          } catch (e) {
+            console.error('Error showing like toast:', e);
           }
-          return;
-      }
-      
-      if (latestLike && latestLike.timestamp && (lastSeenLikeTimestamp.current.seconds < latestLike.timestamp.seconds)) {
-        showToast(latestLike);
-        lastSeenLikeTimestamp.current = latestLike.timestamp;
-      }
-    }
-  }, [newLikes, showToast]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [currentUser?.id, toast, t]);
 
   return null;
 }

@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, deleteDoc, getCountFromServer } from 'firebase/firestore';
+import { fetchAllUsers, deleteUserProfile } from '@/lib/supabaseDataService';
 import type { User } from '@/lib/types';
 import {
   Table,
@@ -103,7 +102,6 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -115,6 +113,21 @@ export default function AdminPage() {
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchAllUsers(300);
+      setUsers(data);
+    } catch (e) {
+      console.error('Failed to load users for admin:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const authStatus = sessionStorage.getItem('isAdminAuthenticated');
     if (authStatus === 'true') {
@@ -123,15 +136,13 @@ export default function AdminPage() {
     setIsLoadingAuth(false);
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadUsers();
+    }
+  }, [isAuthenticated, loadUsers]);
 
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
-
-  const { data: users, isLoading } = useCollection<User>(usersQuery);
-
-  const filteredUsers = users?.filter(user => {
+  const filteredUsers = users.filter(user => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -143,7 +154,6 @@ export default function AdminPage() {
   });
 
   const stats = useMemo(() => {
-    if (!users) return { total: 0, male: 0, female: 0 };
     const maleCount = users.filter(u => u.gender === '남성').length;
     const femaleCount = users.filter(u => u.gender === '여성').length;
     return {
@@ -165,9 +175,9 @@ export default function AdminPage() {
   }
   
   const handleDeleteUser = async (userId: string) => {
-    if (!firestore) return;
     try {
-      await deleteDoc(doc(firestore, 'users', userId));
+      await deleteUserProfile(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
       toast({
         title: "사용자 삭제됨",
         description: `사용자(ID: ${userId.substring(0,8)})가 성공적으로 삭제되었습니다.`,
@@ -184,11 +194,13 @@ export default function AdminPage() {
 
   const handleUserAdded = () => {
     setIsAddUserDialogOpen(false);
+    loadUsers();
   }
 
   const handleUserUpdated = () => {
     setIsEditUserDialogOpen(false);
     setEditingUser(null);
+    loadUsers();
   }
 
   if (isLoadingAuth) {

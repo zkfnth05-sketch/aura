@@ -15,12 +15,18 @@ import { useUser } from '@/contexts/user-context';
 import { getAIChatReplySuggestions, getChatTranslation } from '@/actions/ai-actions';
 import { useToast } from '@/hooks/use-toast';
 import VideoChat from '@/components/video-chat';
-import { useFirestore, useStorage, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { CollectionReference, addDoc, serverTimestamp, query, orderBy, doc, updateDoc, onSnapshot, writeBatch, increment, collection, getDoc, Timestamp, limit } from 'firebase/firestore';
+import { useStorage } from '@/firebase';
+import { Timestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { useLanguage } from '@/contexts/language-context';
+import { supabase } from '@/lib/supabaseClient';
+import { fromSupabaseMatch } from '@/lib/supabaseMappers';
+import {
+  fetchChatMessages,
+  subscribeChatMessages,
+  sendChatMessage,
+  fetchUserProfile,
+} from '@/lib/supabaseDataService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AudioMessagePlayer from '@/components/audio-message-player';
 import CoachMarkGuide from '@/components/coach-mark-guide';
@@ -76,7 +82,6 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const matchId = params.matchId as string;
-  const firestore = useFirestore();
   const storage = useStorage();
   const { user: currentUser, isLoaded: isUserLoaded, updateUser } = useUser();
   const { t, language, supportedLanguages } = useLanguage();
@@ -101,47 +106,113 @@ export default function ChatPage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Data Fetching ---
-  const matchRef = useMemoFirebase(() => {
-    if (!matchId || !firestore) return null;
-    return doc(firestore, 'matches', matchId);
-  }, [firestore, matchId]);
-  
-  const { data: liveMatch, isLoading: isMatchLoading } = useDoc<Match>(matchRef);
-  
-  const otherUserId = useMemo(() => {
-    const m = liveMatch ?? (selectedChat?.match.id === matchId ? selectedChat.match : null);
-    if (!m || !currentUser?.id) return null;
-    return m.users.find(id => id !== currentUser.id);
-  }, [liveMatch, selectedChat, matchId, currentUser?.id]);
+  // --- Data Fetching via Supabase ---
+  const [liveMatch, setLiveMatch] = useState<Match | null>(null);
+  const [isMatchLoading, setIsMatchLoading] = useState(true);
+  const [liveOtherUser, setLiveOtherUser] = useState<User | null>(null);
+  const [isOtherUserLoading, setIsOtherUserLoading] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [areMessagesLoading, setAreMessagesLoading] = useState(true);
 
-  const otherUserRef = useMemoFirebase(() => {
-    if (!otherUserId || !firestore) return null;
-    return doc(firestore, 'users', otherUserId);
-  }, [firestore, otherUserId]);
-  const { data: liveOtherUser, isLoading: isOtherUserLoading } = useDoc<User>(otherUserRef);
+  // Load Match and Other User from Supabase
+  useEffect(() => {
+    if (!matchId) return;
 
-  const messagesColRef = useMemoFirebase(() => {
-    if (!matchId || !firestore) return null;
-    return collection(firestore, 'matches', matchId, 'messages') as CollectionReference;
-  }, [firestore, matchId]);
-  
-  const messagesQuery = useMemoFirebase(() => {
-    if (!messagesColRef) return null;
-    return query(messagesColRef, orderBy('timestamp', 'desc'), limit(30));
-  }, [messagesColRef]);
+    let isMounted = true;
+    const loadMatch = async () => {
+      if (!supabase) return;
+      try {
+        const { data: matchData } = await supabase
+          .from('matches')
+          .select('*')
+          .eq('id', matchId)
+          .maybeSingle();
 
-  const { data: messages, isLoading: areMessagesLoading } = useCollection<Message>(messagesQuery);
-  // --- End Data Fetching ---
+        if (matchData && isMounted) {
+          const m = fromSupabaseMatch(matchData);
+          setLiveMatch(m);
+          setIsMatchLoading(false);
+
+          const oId = m.users.find((id) => id !== currentUser?.id);
+          if (oId) {
+            const u = await fetchUserProfile(oId);
+            if (isMounted) {
+              setLiveOtherUser(u);
+              setIsOtherUserLoading(false);
+            }
+          }
+        } else if (isMounted) {
+          setIsMatchLoading(false);
+        }
+      } catch (err) {
+        console.error('Error loading match:', err);
+        if (isMounted) setIsMatchLoading(false);
+      }
+    };
+
+    loadMatch();
+
+    if (supabase) {
+      const matchChannel = supabase
+        .channel(`match-channel-${matchId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'matches', filter: `id=eq.${matchId}` },
+          (payload) => {
+            if (payload.new && isMounted) {
+              const updated = fromSupabaseMatch(payload.new);
+              setLiveMatch(updated);
+              if (updated.callStatus === 'active' || updated.callStatus === 'ringing') {
+                setIsCallActive(true);
+              } else {
+                setIsCallActive(false);
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        isMounted = false;
+        supabase?.removeChannel(matchChannel);
+      };
+    }
+  }, [matchId, currentUser?.id]);
+
+  // Load and Subscribe to Messages
+  useEffect(() => {
+    if (!matchId) return;
+
+    let isMounted = true;
+    setAreMessagesLoading(true);
+
+    fetchChatMessages(matchId, 100).then((msgs) => {
+      if (isMounted) {
+        setMessages(msgs);
+        setAreMessagesLoading(false);
+      }
+    });
+
+    const unsubscribe = subscribeChatMessages(matchId, (newMsg) => {
+      if (isMounted) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [matchId]);
 
   // Combine pre-loaded and live data for rendering
   const match = liveMatch ?? (selectedChat?.match.id === matchId ? selectedChat.match : null);
   const otherUser = liveOtherUser ?? (selectedChat?.match.id === matchId ? selectedChat.otherUser : null);
 
-  const orderedMessages = useMemo(() => {
-    if (!messages) return [];
-    return [...messages].reverse();
-  }, [messages]);
+  const orderedMessages = messages;
 
   const currentLanguageName = useMemo(() => {
     return supportedLanguages.find(lang => lang.code === language)?.name || '...';
@@ -162,29 +233,16 @@ export default function ChatPage() {
   }, [orderedMessages.length, recordingState]);
 
   useEffect(() => {
-    if (!firestore || !currentUser?.id || !matchRef) return;
+    if (!currentUser?.id || !supabase || !matchId) return;
     if (match && match.unreadCounts?.[currentUser.id] > 0) {
-      updateDoc(matchRef, { [`unreadCounts.${currentUser.id}`]: 0 }).catch(e => {
-        if (e.code === 'permission-denied') {
-          const contextualError = new FirestorePermissionError({
-            operation: 'update', path: matchRef.path, requestResourceData: { unreadCount: 0 }
-          });
-          errorEmitter.emit('permission-error', contextualError);
-        }
-      });
+      const updatedCounts = { ...(match.unreadCounts || {}), [currentUser.id]: 0 };
+      supabase
+        .from('matches')
+        .update({ unread_counts: updatedCounts })
+        .eq('id', matchId)
+        .then();
     }
-
-    const unsubscribe = onSnapshot(matchRef, (doc) => {
-        const data = doc.data() as Match | undefined;
-        if (data?.callStatus === 'active' || data?.callStatus === 'ringing') {
-            setIsCallActive(true);
-        } else {
-            setIsCallActive(false);
-        }
-    });
-
-    return () => unsubscribe();
-  }, [firestore, match, currentUser?.id, matchRef]);
+  }, [match, currentUser?.id, matchId]);
 
 
   useEffect(() => {
@@ -218,7 +276,7 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim() === '' || !firestore || !currentUser || !otherUser || isSending) return;
+    if (newMessage.trim() === '' || !currentUser || !otherUser || isSending) return;
   
     const messageToSend = newMessage;
     setIsSending(true);
@@ -237,7 +295,7 @@ export default function ChatPage() {
             text: messageToSend,
             targetLanguage: languageMap[otherUserLang] || 'English',
           });
-          if (result.translatedText) {
+          if (result?.translatedText) {
             translations = { [otherUserLang]: result.translatedText };
           }
         } catch (error) {
@@ -245,26 +303,20 @@ export default function ChatPage() {
         }
       }
   
-      const batch = writeBatch(firestore);
-  
-      const messageRef = doc(messagesColRef!);
-      const messageData: Omit<Message, 'id'> = {
+      const sent = await sendChatMessage({
+        matchId,
         senderId: currentUser.id,
         text: messageToSend,
-        timestamp: serverTimestamp(),
         senderLanguage: currentUserLang,
-        translations: translations,
-      };
-      batch.set(messageRef, messageData);
-  
-      const matchUpdateData = {
-        lastMessage: messageToSend,
-        lastMessageTimestamp: serverTimestamp(),
-        [`unreadCounts.${otherUser.id}`]: increment(1),
-      };
-      batch.update(matchRef!, matchUpdateData);
-  
-      await batch.commit();
+        translations,
+      });
+
+      if (sent) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === sent.id)) return prev;
+          return [...prev, sent];
+        });
+      }
   
       setSuggestions([]);
     } catch (error: any) {
@@ -275,23 +327,13 @@ export default function ChatPage() {
         title: t('chat_send_message_failed_title'),
         description: t('chat_send_message_failed_desc'),
       });
-  
-      if (error.code === 'permission-denied') {
-        const messageDataForError = { senderId: currentUser.id, text: messageToSend };
-        const matchUpdateForError = { lastMessage: messageToSend };
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          operation: 'write',
-          path: `matches/${matchId}`,
-          requestResourceData: { message: messageDataForError, matchUpdate: matchUpdateForError },
-        }));
-      }
     } finally {
       setIsSending(false);
     }
   };
 
   const handleSendAudio = async (audioBlob: Blob | null) => {
-    if (!audioBlob || !firestore || !currentUser || !otherUser || !storage || isSendingAudio) return;
+    if (!audioBlob || !currentUser || !otherUser || !storage || isSendingAudio) return;
 
     setIsSendingAudio(true);
     updateUser({ lastSeen: new Date().toISOString() });
@@ -299,37 +341,27 @@ export default function ChatPage() {
     const audioFileRef = storageRef(storage, `audio_messages/${matchId}/${new Date().getTime()}.webm`);
 
     try {
-        const snapshot = await uploadBytes(audioFileRef, audioBlob);
-        const downloadURL = await getDownloadURL(snapshot.ref);
+      const snapshot = await uploadBytes(audioFileRef, audioBlob);
+      const downloadURL = await getDownloadURL(snapshot.ref);
 
-        const batch = writeBatch(firestore);
-        const messageRef = doc(messagesColRef!);
-        const messageData: Omit<Message, 'id'> = {
-          senderId: currentUser.id, 
-          audioUrl: downloadURL, 
-          timestamp: serverTimestamp(),
-          senderLanguage: currentUser.language || 'ko',
-        };
-        batch.set(messageRef, messageData);
-    
-        const matchUpdateData = {
-            lastMessage: t('audio_message_label'), 
-            lastMessageTimestamp: serverTimestamp(),
-            [`unreadCounts.${otherUser.id}`]: increment(1)
-        };
-        batch.update(matchRef!, matchUpdateData);
-    
-        await batch.commit();
+      const sent = await sendChatMessage({
+        matchId,
+        senderId: currentUser.id,
+        audioUrl: downloadURL,
+        senderLanguage: currentUser.language || 'ko',
+      });
 
+      if (sent) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === sent.id)) return prev;
+          return [...prev, sent];
+        });
+      }
     } catch (error: any) {
-        console.error("Error uploading audio or sending message:", error);
-        if (error.code === 'storage/unauthorized' || error.code?.includes('permission-denied')) {
-             toast({ variant: "destructive", title: t('upload_failed_title'), description: t('audio_upload_permission_denied') });
-        } else {
-             toast({ variant: "destructive", title: t('audio_upload_failed_title'), description: t('general_error_desc') });
-        }
+      console.error("Error uploading audio or sending message:", error);
+      toast({ variant: "destructive", title: t('audio_upload_failed_title'), description: t('general_error_desc') });
     } finally {
-        setIsSendingAudio(false);
+      setIsSendingAudio(false);
     }
   };
 
@@ -425,9 +457,12 @@ export default function ChatPage() {
   };
 
   const handleInitiateCall = () => {
-    if(!currentUser || !firestore || !otherUser || !matchRef) return;
-    const callData = { callStatus: 'ringing' as const, callerId: currentUser.id };
-    updateDoc(matchRef, callData).catch((err) => console.error("DB 업데이트 실패 에러:", err));
+    if (!currentUser || !otherUser || !supabase) return;
+    supabase
+      .from('matches')
+      .update({ call_status: 'ringing', caller_id: currentUser.id })
+      .eq('id', matchId)
+      .then();
   };
 
   const handleEndCall = () => {

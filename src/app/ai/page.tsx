@@ -1,12 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AiPageClient from '@/components/ai-page-client';
 import { useUser } from '@/contexts/user-context';
 import type { User } from '@/lib/types';
-import { useFirestore } from '@/firebase';
-import { collection, query, getDocs, limit, where, startAfter, orderBy, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { fetchAllUsers } from '@/lib/supabaseDataService';
 import { Loader2, RefreshCw } from 'lucide-react';
 import Header from '@/components/layout/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,19 +26,17 @@ const UserGridSkeleton = () => (
     </div>
 );
 
-const FETCH_POOL_SIZE = 30; // Fetch a pool of users to find the best 6
+const FETCH_POOL_SIZE = 50; // Fetch a pool of users to find the best 6
 const DISPLAY_COUNT = 6;
 
 export default function AiPage() {
   const { user: currentUser, isLoaded: isUserLoaded } = useUser();
   const [recommendedUsers, setRecommendedUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const firestore = useFirestore();
-  const lastDocRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const { t } = useLanguage();
 
   const loadRecommendations = useCallback(async () => {
-      if (!currentUser || !firestore) {
+      if (!currentUser) {
         if (!isUserLoaded) return;
         setIsLoading(false);
         return;
@@ -47,39 +44,8 @@ export default function AiPage() {
       
       setIsLoading(true);
       try {
-        let usersQuery;
         const oppositeGender = currentUser.gender === '남성' ? '여성' : '남성';
-
-        // Query only by creation date to avoid needing a composite index
-        const baseQuery = query(
-          collection(firestore, 'users'), 
-          orderBy('createdAt', 'desc')
-        );
-
-        if (lastDocRef.current) {
-            usersQuery = query(baseQuery, startAfter(lastDocRef.current), limit(FETCH_POOL_SIZE));
-        } else {
-            usersQuery = query(baseQuery, limit(FETCH_POOL_SIZE));
-        }
-        
-        const usersSnapshot = await getDocs(usersQuery);
-        
-        if (usersSnapshot.empty) {
-            // If we're out of users, reset and try from the beginning
-            if (lastDocRef.current) {
-                lastDocRef.current = null;
-                // Recursive call to restart, which might cause issues, let's just show empty and let user click refresh.
-                setRecommendedUsers([]);
-            } else {
-                setRecommendedUsers([]);
-            }
-            setIsLoading(false);
-            return;
-        }
-        
-        lastDocRef.current = usersSnapshot.docs[usersSnapshot.docs.length - 1];
-        
-        const allUsers = usersSnapshot.docs.map(doc => doc.data() as User);
+        const allUsers = await fetchAllUsers(FETCH_POOL_SIZE);
         
         const filteredAndScoredUsers = allUsers
             .filter(user => {
@@ -106,7 +72,7 @@ export default function AiPage() {
       } finally {
         setIsLoading(false);
       }
-  }, [currentUser, firestore, isUserLoaded]);
+  }, [currentUser, isUserLoaded]);
 
   useEffect(() => {
     if (isUserLoaded) {

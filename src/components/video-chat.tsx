@@ -9,6 +9,7 @@ import { useFirestore } from '@/firebase';
 import { doc, updateDoc, onSnapshot, collection, addDoc, getDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { useLanguage } from '@/contexts/language-context';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { supabase } from '@/lib/supabaseClient';
 
 // WebRTC 설정: 다른 네트워크 간 연결을 위해 STUN/TURN 서버 필수
 const configuration = {
@@ -47,19 +48,28 @@ export default function VideoChat({ localUser, remoteUser, matchId, onEndCall }:
   const [isConnecting, setIsConnecting] = useState(true);
 
   const cleanupCallData = useCallback(async () => {
-    if (!firestore || !matchId) return;
+    if (!matchId) return;
     
     try {
-      const matchRef = doc(firestore, 'matches', matchId);
-      // 권한 에러가 날 수 있는 부분을 안전하게 처리
-      await updateDoc(matchRef, {
-        callStatus: 'idle',
-        offer: null,
-        answer: null,
-        callerId: null
-      });
+      if (supabase) {
+        await supabase
+          .from('matches')
+          .update({
+            call_status: 'idle',
+            caller_id: null,
+          })
+          .eq('id', matchId);
+      }
+      if (firestore) {
+        const matchRef = doc(firestore, 'matches', matchId);
+        await updateDoc(matchRef, {
+          callStatus: 'idle',
+          offer: null,
+          answer: null,
+          callerId: null
+        }).catch(() => {});
+      }
     } catch (error) {
-      // 권한 에러가 나더라도 콘솔에 경고만 찍고 앱이 튕기지 않게 함
       console.warn("전환 권한 부족 또는 데이터 정리 실패:", error);
     }
   }, [firestore, matchId]);

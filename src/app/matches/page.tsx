@@ -6,30 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MatchList from '@/components/match-list';
 import UserGrid from '@/components/user-grid';
 import { useUser } from '@/contexts/user-context';
-import { useFirestore } from '@/firebase'; // Import useFirestore
 import { Loader2 } from 'lucide-react';
 import type { User, Match } from '@/lib/types';
 import { useLanguage } from '@/contexts/language-context';
-import { collection, query, where, documentId, getDocs } from 'firebase/firestore'; // Import firestore functions
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { matchesGuide } from '@/lib/coachmark-steps';
-
-// This function can be moved to a utils file, but for now it's here.
-async function fetchUsersByIds(firestore: any, userIds: string[]): Promise<User[]> {
-  if (!userIds || userIds.length === 0) return [];
-  const users: User[] = [];
-  // Firestore 'in' query limit is 30
-  const CHUNK_SIZE = 30; 
-  for (let i = 0; i < userIds.length; i += CHUNK_SIZE) {
-    const chunk = userIds.slice(i, i + CHUNK_SIZE);
-    if (chunk.length > 0) {
-      const usersQuery = query(collection(firestore, 'users'), where(documentId(), 'in', chunk));
-      const userDocs = await getDocs(usersQuery);
-      users.push(...userDocs.docs.map(d => d.data() as User));
-    }
-  }
-  return users;
-}
+import { fetchUsersByIds } from '@/lib/supabaseDataService';
 
 export interface MatchWithUser {
   match: Match;
@@ -39,7 +21,6 @@ export interface MatchWithUser {
 export default function MatchesPage() {
   const { user: currentUser, isLoaded, matches, isMatchesLoading, peopleILiked, peopleWhoLikedMe, isLikesLoading } = useUser();
   const { t } = useLanguage();
-  const firestore = useFirestore();
   const [otherUsersForMatches, setOtherUsersForMatches] = useState<User[]>([]);
   const [areOtherUsersLoading, setAreOtherUsersLoading] = useState(true);
 
@@ -51,21 +32,24 @@ export default function MatchesPage() {
   }, [matches, currentUser]);
 
   useEffect(() => {
-    if (!firestore || otherUserIdsForMatches.length === 0) {
-        setAreOtherUsersLoading(false);
-        return;
+    if (otherUserIdsForMatches.length === 0) {
+      setOtherUsersForMatches([]);
+      setAreOtherUsersLoading(false);
+      return;
     }
     
     setAreOtherUsersLoading(true);
-    fetchUsersByIds(firestore, otherUserIdsForMatches)
+    fetchUsersByIds(otherUserIdsForMatches)
       .then(users => {
         setOtherUsersForMatches(users);
       })
-      .catch(console.error)
+      .catch(e => {
+        console.error("Failed to fetch other users for matches:", e);
+      })
       .finally(() => {
         setAreOtherUsersLoading(false);
       });
-  }, [firestore, otherUserIdsForMatches]);
+  }, [otherUserIdsForMatches]);
   
   const matchesWithUsers: MatchWithUser[] = useMemo(() => {
     if (!matches || !currentUser) return [];

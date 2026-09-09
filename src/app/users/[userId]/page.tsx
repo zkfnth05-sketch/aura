@@ -12,10 +12,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ImageCarouselDialog from '@/components/image-carousel-dialog';
 import ActionButtons from '@/components/action-buttons';
 import { getAIRecommendationReason } from '@/actions/ai-actions';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, getDocs, query, setDoc, serverTimestamp, where, addDoc } from 'firebase/firestore';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { fetchUserProfile, recordSwipe, submitUserReport, getClient } from '@/lib/supabaseDataService';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -117,18 +114,28 @@ function UserProfilePageContent() {
   const searchParams = useSearchParams();
   const userId = params.userId as string;
   const source = searchParams.get('from');
-  const firestore = useFirestore();
   const { toast } = useToast();
   const { t } = useLanguage();
 
   const { user: currentUser, isLoaded, matches, peopleILiked, updateUser } = useUser();
   
-  const userRef = useMemoFirebase(() => {
-    if (!userId || !firestore) return null;
-    return doc(firestore, 'users', userId);
-  }, [firestore, userId]);
+  const [user, setUser] = useState<User | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
-  const { data: user, isLoading: isUserLoading } = useDoc<User>(userRef);
+  useEffect(() => {
+    if (!userId) return;
+    let isMounted = true;
+    setIsUserLoading(true);
+    fetchUserProfile(userId).then(u => {
+      if (isMounted) {
+        setUser(u);
+        setIsUserLoading(false);
+      }
+    }).catch(() => {
+      if (isMounted) setIsUserLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, [userId]);
   
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -148,7 +155,7 @@ function UserProfilePageContent() {
 
 
   const handleAction = async (action: 'like' | 'dislike' | 'message') => {
-    if (!user || !currentUser || !firestore) return;
+    if (!user || !currentUser) return;
 
     const targetUserId = user.id;
 
@@ -158,88 +165,35 @@ function UserProfilePageContent() {
         return;
       }
 
-      // Fallback query if isAlreadyMatched is not yet available or stale
-      const matchQuery = query(
-        collection(firestore, 'matches'),
-        where('users', 'in', [[currentUser.id, targetUserId], [targetUserId, currentUser.id]])
-      );
+      // Deterministic match ID for users
+      const matchId = [currentUser.id, targetUserId].sort().join('_');
+      const now = new Date().toISOString();
+      const matchData = {
+        id: matchId,
+        users: [currentUser.id, targetUserId],
+        last_message: t('new_match_start_message'),
+        last_message_timestamp: now,
+        last_message_sender_id: 'system',
+        unread_counts: { [currentUser.id]: 0, [targetUserId]: 1 },
+        call_status: 'idle',
+        caller_id: null,
+        match_date: now,
+      };
 
-      const matchSnapshot = await getDocs(matchQuery);
-      const existingMatchDoc = matchSnapshot.docs[0];
-
-      if (existingMatchDoc) {
-        router.push(`/chat/${existingMatchDoc.id}`);
-      } else {
-        const newMatchRef = doc(collection(firestore, 'matches'));
-        const matchData = {
-          id: newMatchRef.id,
-          users: [currentUser.id, targetUserId],
-          matchDate: serverTimestamp(),
-          lastMessage: t('new_match_start_message'),
-          lastMessageTimestamp: serverTimestamp(),
-          lastMessageSenderId: 'system',
-          unreadCounts: { [currentUser.id]: 0, [targetUserId]: 1 },
-          callStatus: 'idle' as const,
-          callerId: null,
-        };
-
-        setDoc(newMatchRef, matchData)
-          .then(() => {
-            const messagesColRef = collection(newMatchRef, 'messages');
-            addDoc(messagesColRef, {
-              senderId: 'system',
-              text: t('new_match_start_message'),
-              timestamp: serverTimestamp(),
-            }).catch(e => {
-                if (e.code === 'permission-denied') {
-                  const contextualError = new FirestorePermissionError({
-                    operation: 'create',
-                    path: `matches/${newMatchRef.id}/messages`,
-                    requestResourceData: { senderId: 'system', text: '...'},
-                  });
-                  errorEmitter.emit('permission-error', contextualError);
-                }
-            });
-            router.push(`/chat/${newMatchRef.id}`);
-          })
-          .catch(e => {
-            if (e.code === 'permission-denied') {
-              const contextualError = new FirestorePermissionError({
-                operation: 'create',
-                path: `matches/${newMatchRef.id}`,
-                requestResourceData: matchData,
-              });
-              errorEmitter.emit('permission-error', contextualError);
-            } else {
-              console.error('Failed to create match:', e);
-            }
-          });
+      try {
+        await getClient().from('matches').upsert(matchData, { onConflict: 'id' });
+      } catch (e) {
+        console.error('Failed to create match:', e);
       }
+      router.push(`/chat/${matchId}`);
       return;
     }
 
-    const likeData = {
-      likerId: currentUser.id,
-      likeeId: targetUserId,
-      isLike: action === 'like',
-      timestamp: serverTimestamp(),
-    };
-    
-    const likesCollection = collection(firestore, 'likes');
-
-    // Non-blocking write to the new top-level 'likes' collection
-    addDoc(likesCollection, likeData).catch(e => {
-      if (e.code === 'permission-denied') {
-        const contextualError = new FirestorePermissionError({
-          operation: 'create',
-          path: 'likes',
-          requestResourceData: likeData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
-      } else {
-        console.error("Failed to record like:", e);
-      }
-    });
+    try {
+      await recordSwipe(currentUser.id, targetUserId, action === 'like');
+    } catch (e) {
+      console.error('Failed to record swipe:', e);
+    }
   
     router.back();
   };
@@ -265,18 +219,15 @@ function UserProfilePageContent() {
       });
       return;
     }
-    if (!firestore || !currentUser || !user) return;
+    if (!currentUser || !user) return;
   
     try {
-      const reportsCollection = collection(firestore, 'reports');
-      await addDoc(reportsCollection, {
+      await submitUserReport({
         reporterId: currentUser.id,
         reporterName: currentUser.name,
         reportedUserId: user.id,
         reportedUserName: user.name,
         reason: reportReason,
-        timestamp: serverTimestamp(),
-        status: 'new'
       });
   
       toast({

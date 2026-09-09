@@ -1,23 +1,17 @@
-
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useUser } from '@/contexts/user-context';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter } from 'next/navigation';
-import type { Match, User } from '@/lib/types';
+import type { Match } from '@/lib/types';
 import { useLanguage } from '@/contexts/language-context';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-
+import { fetchUserProfile, updateMatchCallStatus } from '@/lib/supabaseDataService';
 
 export function IncomingCallToast() {
-  const { user: currentUser } = useUser();
-  const firestore = useFirestore();
+  const { user: currentUser, matches } = useUser();
   const { toast, dismiss } = useToast();
   const router = useRouter();
   const { t } = useLanguage();
@@ -25,28 +19,14 @@ export function IncomingCallToast() {
   const knownRingingIds = useRef<Set<string>>(new Set());
   const isInitialLoad = useRef(true);
 
-  const activeMatchesQuery = useMemoFirebase(() => {
-    if (!currentUser?.id || !firestore) {
-      return null;
-    }
-    return query(
-      collection(firestore, 'matches'),
-      where('users', 'array-contains', currentUser.id),
-      where('callStatus', '==', 'ringing')
-    );
-  }, [firestore, currentUser?.id]);
-
-  const { data: ringingMatches } = useCollection<Match>(activeMatchesQuery);
+  const ringingMatches = (matches || []).filter(m => m.callStatus === 'ringing');
 
   const showCallToast = useCallback(async (incomingCall: Match) => {
-    if (!firestore || !incomingCall.callerId) return;
+    if (!incomingCall.callerId) return;
 
     try {
-      const callerRef = doc(firestore, 'users', incomingCall.callerId);
-      const callerSnap = await getDoc(callerRef);
-      if (!callerSnap.exists()) return;
-
-      const caller = callerSnap.data() as User;
+      const caller = await fetchUserProfile(incomingCall.callerId);
+      if (!caller) return;
 
       const notificationTitle = t('incoming_call_title');
       const notificationBody = t('incoming_call_desc').replace('%s', caller.name);
@@ -56,48 +36,39 @@ export function IncomingCallToast() {
           const notification = new Notification(notificationTitle, {
               body: notificationBody,
               icon: caller.photoUrls?.[0] || '/icon.svg',
-              tag: `call-${incomingCall.id}`, // Tag to prevent multiple notifications for same call
+              tag: `call-${incomingCall.id}`,
           });
           
           notification.onclick = () => {
               window.focus();
-              const matchRef = doc(firestore, 'matches', incomingCall.id);
-              const updateData = { callStatus: 'active' as const };
-              updateDoc(matchRef, updateData).catch(e => {
-                 if (e.code === 'permission-denied') errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: matchRef.path, requestResourceData: updateData }));
-              });
+              updateMatchCallStatus(incomingCall.id, 'active');
               router.push(`/chat/${incomingCall.id}`);
           };
       }
       
       // Always show an in-app toast
       const { id: toastId } = toast({
-          duration: 20000, // Ringing duration
+          duration: 20000,
           title: notificationTitle,
           description: (
             <div className="flex items-center gap-3 mt-2">
-              <Avatar className="h-10 w-10"><AvatarImage src={caller.photoUrls?.[0]} alt={caller.name} /><AvatarFallback>{caller.name?.charAt(0)}</AvatarFallback></Avatar>
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={caller.photoUrls?.[0]} alt={caller.name} />
+                <AvatarFallback>{caller.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
               <span>{notificationBody}</span>
             </div>
           ),
           action: (
             <div className="flex gap-2 mt-4">
               <Button variant="destructive" size="sm" onClick={() => {
-                  const matchRef = doc(firestore, 'matches', incomingCall.id);
-                  const updateData = { callStatus: 'idle' as const, callerId: null };
-                  updateDoc(matchRef, updateData).catch(e => {
-                     if (e.code === 'permission-denied') errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: matchRef.path, requestResourceData: updateData }));
-                  });
+                  updateMatchCallStatus(incomingCall.id, 'idle', null);
                   dismiss(toastId);
               }}>
                 {t('reject_call')}
               </Button>
               <Button variant="default" size="sm" onClick={() => {
-                  const matchRef = doc(firestore, 'matches', incomingCall.id);
-                  const updateData = { callStatus: 'active' as const };
-                  updateDoc(matchRef, updateData).catch(e => {
-                     if (e.code === 'permission-denied') errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'update', path: matchRef.path, requestResourceData: updateData }));
-                  });
+                  updateMatchCallStatus(incomingCall.id, 'active');
                   dismiss(toastId);
                   router.push(`/chat/${incomingCall.id}`);
               }}>
@@ -106,12 +77,11 @@ export function IncomingCallToast() {
             </div>
           ),
       });
-      
 
     } catch (error) {
         console.error("Failed to fetch caller's profile for toast:", error);
     }
-  }, [firestore, toast, dismiss, router, t]);
+  }, [toast, dismiss, router, t]);
 
   useEffect(() => {
     if (!ringingMatches || !currentUser?.id) {

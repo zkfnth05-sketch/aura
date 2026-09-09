@@ -5,8 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -19,8 +17,7 @@ import Image from 'next/image';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import type { User } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { saveUserProfile } from '@/lib/supabaseDataService';
 import { compressImage } from '@/lib/utils';
 import { useLanguage } from '@/contexts/language-context';
 
@@ -42,7 +39,6 @@ type EditUserDialogProps = {
 
 export default function EditUserDialog({ isOpen, onClose, onUserUpdated, user }: EditUserDialogProps) {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -92,7 +88,7 @@ export default function EditUserDialog({ isOpen, onClose, onUserUpdated, user }:
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!firestore || !user) return;
+    if (!user) return;
     
     setIsSubmitting(true);
     setIsEnhancing(true);
@@ -120,13 +116,12 @@ export default function EditUserDialog({ isOpen, onClose, onUserUpdated, user }:
             }
         }
 
-        const userRef = doc(firestore, 'users', user.id);
         const updatedPayload: Partial<User> = {
             ...values,
             photoUrls: finalPhotoUrl ? [finalPhotoUrl] : user.photoUrls,
         };
 
-        await updateDoc(userRef, updatedPayload);
+        await saveUserProfile({ id: user.id, ...updatedPayload });
 
         toast({
             title: t('admin_edit_user_success_title'),
@@ -135,21 +130,12 @@ export default function EditUserDialog({ isOpen, onClose, onUserUpdated, user }:
         onUserUpdated();
 
     } catch (error: any) {
-        if (error.code === 'permission-denied') {
-            const contextualError = new FirestorePermissionError({
-                operation: 'update',
-                path: doc(firestore, 'users', user.id).path,
-                requestResourceData: { /* payload */ },
-            });
-            errorEmitter.emit('permission-error', contextualError);
-        } else {
-            console.error("Error updating user:", error);
-            toast({
-                variant: "destructive",
-                title: t('admin_edit_user_failed_title'),
-                description: t('admin_edit_user_failed_desc'),
-            });
-        }
+        console.error("Error updating user:", error);
+        toast({
+            variant: "destructive",
+            title: t('admin_edit_user_failed_title'),
+            description: t('admin_edit_user_failed_desc'),
+        });
     } finally {
         setIsEnhancing(false);
         setIsSubmitting(false);

@@ -9,17 +9,16 @@ import Link from 'next/link';
 import type { User } from '@/lib/types';
 import { useUser } from '@/contexts/user-context';
 import { Loader2 } from 'lucide-react';
-import { useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/language-context';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { hotGuide } from '@/lib/coachmark-steps';
+import { supabase } from '@/lib/supabaseClient';
+import { fromSupabaseUser } from '@/lib/supabaseMappers';
 
 const UserCard = React.memo(({ user }: { user: User }) => {
   // Defensive check for photoUrls
   if (!user.photoUrls || user.photoUrls.length === 0) {
-    // Optionally, render a placeholder or null
     return null;
   }
 
@@ -56,7 +55,6 @@ const UserGridSkeleton = () => (
 
 export default function HotPage() {
   const { user: currentUser, isLoaded } = useUser();
-  const firestore = useFirestore();
   const { t } = useLanguage();
 
   const [newUsers, setNewUsers] = useState<User[]>([]);
@@ -64,52 +62,40 @@ export default function HotPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
-    if (!currentUser || !firestore) return;
+    if (!currentUser || !supabase) return;
     setIsLoading(true);
 
     try {
       const oppositeGender = currentUser.gender === '남성' ? '여성' : '남성';
-      const usersCollection = collection(firestore, 'users');
 
-      // Fetch latest users first, then filter by gender on the client to avoid composite index.
-      // Fetch a larger number to increase the chance of getting enough users of the opposite gender.
-      const newUsersQuery = query(usersCollection, orderBy('createdAt', 'desc'), limit(80));
-      
-      // For HOT, we can keep the simple filter. This query doesn't need a composite index.
-      const hotUsersQuery = query(usersCollection, where('gender', '==', oppositeGender), limit(20));
-      
-      const [newUsersSnap, hotUsersSnap] = await Promise.all([
-        getDocs(newUsersQuery),
-        getDocs(hotUsersQuery)
-      ]);
+      const { data: usersData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('gender', oppositeGender)
+        .neq('id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      const baseFilter = (u: User): boolean => 
-          u.id !== currentUser.id &&
-          u.photoUrls && u.photoUrls.length > 0 &&
-          !currentUser.blockedUsers?.includes(u.id) &&
-          !u.blockedUsers?.includes(currentUser.id);
+      if (error) {
+        console.error("Error fetching HOT/NEW users:", error);
+        return;
+      }
 
-      // Process New Users: apply gender filter on client
-      const newUsersData = newUsersSnap.docs
-        .map(d => d.data() as User)
-        .filter(u => baseFilter(u) && u.gender === oppositeGender); // client-side gender filter
+      const users = (usersData || []).map(fromSupabaseUser).filter(u =>
+        u.photoUrls && u.photoUrls.length > 0 &&
+        !currentUser.blockedUsers?.includes(u.id) &&
+        !u.blockedUsers?.includes(currentUser.id)
+      );
 
-      setNewUsers(newUsersData.slice(0, 20));
-
-      // Process Hot Users
-      const hotUsersData = hotUsersSnap.docs
-        .map(d => d.data() as User)
-        .filter(baseFilter) // apply base filters
-        .sort(() => 0.5 - Math.random()); // Shuffle for "hot" effect
-      
-      setHotUsers(hotUsersData.slice(0, 20));
+      setNewUsers(users.slice(0, 20));
+      setHotUsers([...users].sort(() => 0.5 - Math.random()).slice(0, 20));
 
     } catch (error) {
       console.error("Error fetching HOT/NEW users:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, firestore]);
+  }, [currentUser]);
 
   useEffect(() => {
     if (isLoaded && currentUser) {

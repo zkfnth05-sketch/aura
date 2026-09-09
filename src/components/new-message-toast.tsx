@@ -2,81 +2,69 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useUser } from '@/contexts/user-context';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp, getDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRouter, usePathname } from 'next/navigation';
-import type { Match, User } from '@/lib/types';
+import type { Match } from '@/lib/types';
 import { useLanguage } from '@/contexts/language-context';
+import { fetchUserProfile } from '@/lib/supabaseDataService';
 
 export function NewMessageToast() {
-  const { user: currentUser } = useUser();
-  const firestore = useFirestore();
+  const { user: currentUser, matches } = useUser();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLanguage();
 
-  const lastTimestampRef = useRef<Map<string, Timestamp>>(new Map());
+  const lastTimestampRef = useRef<Map<string, number>>(new Map());
   const isInitialLoad = useRef(true);
 
-  const matchesQuery = useMemoFirebase(() => {
-    if (!currentUser?.id || !firestore) {
-      return null;
-    }
-    return query(
-      collection(firestore, 'matches'),
-      where('users', 'array-contains', currentUser.id)
-    );
-  }, [firestore, currentUser]);
-
-  const { data: matches } = useCollection<Match>(matchesQuery);
-  
   const showToastForMatch = useCallback(async (match: Match) => {
-      if (!firestore || !currentUser || !match.lastMessageSenderId) return;
-      // Do not show toast for user's own messages
-      if (match.lastMessageSenderId === currentUser.id) return;
-      // Do not show toast if user is already in that chat
-      if (pathname === `/chat/${match.id}`) return;
+    if (!currentUser || !match.lastMessageSenderId) return;
+    if (match.lastMessageSenderId === currentUser.id) return;
+    if (pathname === `/chat/${match.id}`) return;
 
-      try {
-          const senderSnap = await getDoc(doc(firestore, 'users', match.lastMessageSenderId));
-          if (senderSnap.exists()) {
-              const sender = senderSnap.data() as User;
-              toast({
-                  duration: 5000,
-                  title: t('new_message_title').replace('%s', sender.name),
-                  description: (
-                  <div 
-                      className="w-full mt-2 cursor-pointer" 
-                      onClick={() => router.push(`/chat/${match.id}`)}
-                  >
-                      <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                          <AvatarImage src={sender.photoUrls?.[0]} alt={sender.name} />
-                          <AvatarFallback>{sender.name?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <span className="truncate">{match.lastMessage}</span>
-                      </div>
-                  </div>
-                  ),
-              });
-          }
-      } catch (error) {
-          console.error("Error fetching sender for new message toast:", error);
+    try {
+      const sender = await fetchUserProfile(match.lastMessageSenderId);
+      if (sender) {
+        toast({
+          duration: 5000,
+          title: t('new_message_title').replace('%s', sender.name),
+          description: (
+            <div 
+              className="w-full mt-2 cursor-pointer" 
+              onClick={() => router.push(`/chat/${match.id}`)}
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={sender.photoUrls?.[0]} alt={sender.name} />
+                  <AvatarFallback>{sender.name?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="truncate">{match.lastMessage}</span>
+              </div>
+            </div>
+          ),
+        });
       }
-  }, [firestore, currentUser, pathname, router, toast, t]);
+    } catch (error) {
+      console.error("Error fetching sender for new message toast:", error);
+    }
+  }, [currentUser, pathname, router, toast, t]);
 
   useEffect(() => {
-    if (!matches || !currentUser) {
-      return;
-    }
+    if (!matches || !currentUser) return;
+
+    const getMillis = (ts: any): number => {
+      if (!ts) return 0;
+      if (typeof ts.toMillis === 'function') return ts.toMillis();
+      if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+      return new Date(ts).getTime() || 0;
+    };
 
     if (isInitialLoad.current) {
       matches.forEach(m => {
         if (m.lastMessageTimestamp) {
-          lastTimestampRef.current.set(m.id, m.lastMessageTimestamp);
+          lastTimestampRef.current.set(m.id, getMillis(m.lastMessageTimestamp));
         }
       });
       isInitialLoad.current = false;
@@ -84,19 +72,12 @@ export function NewMessageToast() {
     }
     
     matches.forEach(match => {
-      const newTimestamp = match.lastMessageTimestamp;
-      const oldTimestamp = lastTimestampRef.current.get(match.id);
+      const newTime = getMillis(match.lastMessageTimestamp);
+      const oldTime = lastTimestampRef.current.get(match.id) || 0;
       
-      const isNewer = newTimestamp && oldTimestamp 
-          ? newTimestamp.seconds > oldTimestamp.seconds 
-          : !!newTimestamp && !oldTimestamp;
-
-      if (isNewer) {
+      if (newTime > oldTime) {
         showToastForMatch(match);
-      }
-
-      if (newTimestamp) {
-        lastTimestampRef.current.set(match.id, newTimestamp);
+        lastTimestampRef.current.set(match.id, newTime);
       }
     });
 
