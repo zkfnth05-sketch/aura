@@ -29,8 +29,8 @@ export default function RootLayout({
   return (
     <html lang="ko" className="dark h-full" suppressHydrationWarning>
       <head>
-        <title>Aura - 새로운 만남의 시작</title>
-        <meta name="description" content="Aura와 함께 당신의 인연을 찾아보세요." />
+        <title>Aura - 50:50 성비 맞춤 & AI 데이팅</title>
+        <meta name="description" content="50:50 성비 맞춤과 AI 사진 보정, 취향 저격 매칭부터 데이트 코스까지. 당신의 연애를 AI가 가이드합니다." />
         
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
