@@ -33,7 +33,7 @@ const AdminSidebarContent = () => {
         <>
             <div className="flex-shrink-0 mb-8 px-4">
                  <Link href="/" className="flex items-center justify-center gap-2">
-                    <span className="font-headline text-3xl font-bold text-primary">
+                    <span className="font-headline text-3xl font-extrabold bg-gradient-to-r from-[#FFF3D1] via-[#E5A934] to-[#C98718] bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(229,169,52,0.35)]">
                         Aura
                     </span>
                     <span className="text-xl font-semibold">Admin</span>
@@ -86,7 +86,7 @@ const AdminHeader = () => {
                 </SheetContent>
             </Sheet>
             <Link href="/" className="flex items-center justify-center gap-2">
-                <span className="font-headline text-2xl font-bold text-primary">Aura</span>
+                <span className="font-headline text-2xl font-extrabold bg-gradient-to-r from-[#FFF3D1] via-[#E5A934] to-[#C98718] bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(229,169,52,0.35)]">Aura</span>
                 <span className="text-lg font-semibold">Admin</span>
             </Link>
             <div className="w-8"></div>

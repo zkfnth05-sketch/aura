@@ -64,7 +64,7 @@ export default function SignupPage() {
       </div>
 
       <div className="flex-grow flex flex-col items-center justify-center text-center w-full max-w-sm">
-        <span className="font-headline text-5xl sm:text-6xl font-bold text-primary drop-shadow-sm scale-y-[.85]">
+        <span className="font-headline text-5xl sm:text-6xl font-extrabold bg-gradient-to-b from-[#FFF3D1] via-[#E5A934] to-[#B3791B] bg-clip-text text-transparent drop-shadow-[0_2px_16px_rgba(229,169,52,0.4)] scale-y-[.85]">
           {t('app_title')}
         </span>
         <p className="mt-4 mb-6 text-sm sm:text-base text-neutral-300">
@@ -80,7 +80,7 @@ export default function SignupPage() {
           <Button
             onClick={() => router.push('/signup/phone')}
             variant="secondary"
-            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base relative shadow-lg"
+            className="w-full h-13 bg-gradient-to-r from-[#E5A934] via-[#DE9F2B] to-[#C7871E] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold text-base relative shadow-[0_4px_24px_rgba(229,169,52,0.35)] transition-all rounded-full hover:scale-[1.01] active:scale-[0.99]"
           >
             <PhoneIcon />
             {t('continue_with_phone')}

@@ -3,7 +3,13 @@
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&amp;display=swap');
     </style>
+    <linearGradient id="goldGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF1C5"/>
+      <stop offset="45%" stop-color="#E5A934"/>
+      <stop offset="75%" stop-color="#C98718"/>
+      <stop offset="100%" stop-color="#945B0A"/>
+    </linearGradient>
   </defs>
   <rect width="512" height="512" fill="#000000"/>
-  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="700" font-size="140" fill="#FFD700">Aura</text>
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="700" font-size="140" fill="url(#goldGradMask)">Aura</text>
 </svg>

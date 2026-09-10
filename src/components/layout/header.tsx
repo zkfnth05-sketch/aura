@@ -46,7 +46,7 @@ export default function Header() {
           onTouchEnd={handlePressEnd}
         >
             <Link href="/" className="flex items-center justify-center gap-2">
-                <span className="font-headline text-3xl font-bold text-primary">
+                <span className="font-headline text-3xl font-extrabold bg-gradient-to-r from-[#FFF3D1] via-[#E5A934] to-[#C98718] bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(229,169,52,0.35)]">
                     Aura
                 </span>
             </Link>

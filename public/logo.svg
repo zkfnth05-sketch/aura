@@ -1,4 +1,12 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#121212"/>
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Poppins, sans-serif" font-size="120" font-weight="700" fill="#FFD700">Aura</text>
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF1C5"/>
+      <stop offset="45%" stop-color="#E5A934"/>
+      <stop offset="75%" stop-color="#C98718"/>
+      <stop offset="100%" stop-color="#945B0A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#000000"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Poppins, sans-serif" font-size="120" font-weight="700" fill="url(#goldGrad)">Aura</text>
 </svg>
