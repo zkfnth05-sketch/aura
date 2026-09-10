@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/user-context';
 import { useLanguage } from '@/contexts/language-context';
@@ -17,7 +17,13 @@ export default function OtpPage() {
   const { phoneAuth } = useUser();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const { phoneNumber, countryCode, verifyOtp, isVerifyingOtp, sendVerificationCode, isSendingOtp } = phoneAuth;
+  const { phoneNumber, countryCode, verifyOtp, isVerifyingOtp, sendVerificationCode, isSendingOtp, mockOtp } = phoneAuth;
+
+  useEffect(() => {
+    if (mockOtp && !otp) {
+      setOtp(mockOtp);
+    }
+  }, [mockOtp]);
 
   const handleVerify = async () => {
     if (otp.length === 6) {
@@ -40,6 +46,19 @@ export default function OtpPage() {
 
       <main className="flex-1 flex flex-col justify-center">
         <div className="space-y-8">
+          {mockOtp && (
+            <div 
+              onClick={() => setOtp(mockOtp)}
+              className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl text-xs text-amber-400 font-medium leading-relaxed cursor-pointer hover:bg-amber-500/20 transition-all flex items-center justify-between"
+            >
+              <div>
+                <span className="font-bold">🧪 테스트 인증번호:</span>{' '}
+                <span className="font-mono font-extrabold text-white underline tracking-widest text-sm ml-1">{mockOtp}</span>
+              </div>
+              <span className="text-[10px] text-amber-300/80 bg-amber-500/20 px-2 py-0.5 rounded-full">클릭 시 자동입력</span>
+            </div>
+          )}
+
           <div>
             <label htmlFor="otp" className="text-sm font-medium text-zinc-400">
               {countryCode}{phoneNumber.startsWith('0') ? phoneNumber.substring(1) : phoneNumber}{t('otp_description')}

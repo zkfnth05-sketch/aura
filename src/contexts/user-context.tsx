@@ -48,6 +48,8 @@ interface PhoneAuthState {
   reauthenticate: (otp: string) => Promise<void>;
   isSendingOtp: boolean;
   isVerifyingOtp: boolean;
+  mockOtp: string | null;
+  setMockOtp: (otp: string | null) => void;
 }
 
 interface UserContextType {
@@ -120,6 +122,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [reauthVerificationId, setReauthVerificationId] = useState<string | null>(null);
+  const [mockOtp, setMockOtp] = useState<string | null>(null);
   
   const [peopleILiked, setPeopleILiked] = useState<User[] | null>(null);
   const [peopleWhoLikedMe, setPeopleWhoLikedMe] = useState<User[] | null>(null);
@@ -542,12 +545,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
           title: '인증번호 발송',
           description: data.message || '인증번호가 발송되었습니다.',
         });
-        if (data.testAuthCode) {
+        const detectedCode = data.testAuthCode || data.code;
+        if (detectedCode) {
+          setMockOtp(detectedCode);
           toast({
             title: '🧪 테스트 모드 인증번호',
-            description: `[ ${data.testAuthCode} ] 입력 후 인증을 진행해 주세요.`,
+            description: `[ ${detectedCode} ] 입력 후 인증을 진행해 주세요.`,
             duration: 10000,
           });
+        } else {
+          setMockOtp(null);
         }
         if (!phoneNumberOverride) {
           router.push('/signup/otp');
@@ -792,6 +799,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       reauthenticate,
       isSendingOtp,
       isVerifyingOtp,
+      mockOtp,
+      setMockOtp,
     },
     isSignupFlowActive,
     setIsSignupFlowActive,

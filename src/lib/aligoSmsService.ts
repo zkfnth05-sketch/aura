@@ -51,13 +51,13 @@ export class AligoSmsService {
 
     const apiKey = process.env.ALIGO_API_KEY || '8oikzy8391zwuczt60s1tl0a11s0rv5z';
     const userId = process.env.ALIGO_USER_ID || 'rlaghddlf01';
-    const sender = process.env.ALIGO_SENDER || '01048468575';
+    const sender = process.env.ALIGO_SENDER || '0808081088';
     const isExplicitTestMode = process.env.ALIGO_TEST_MODE === 'Y' || testMode;
 
     // 파라미터 준비
     const params = new URLSearchParams();
     params.append('key', apiKey);
-    params.append('user_id', userId);
+    params.append('userid', userId); // Note: Aligo expects 'userid' not 'user_id'
     params.append('sender', sender.replace(/[^0-9]/g, ''));
     params.append('receiver', cleanPhone);
     params.append('msg', smsMessage);

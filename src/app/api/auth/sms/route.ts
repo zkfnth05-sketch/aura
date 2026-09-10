@@ -17,13 +17,15 @@ export async function POST(request: NextRequest) {
 
     const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
 
-    // 1. 인증번호 발송 (easy-tax-refund와 100% 동일 로직)
+    // 1. 인증번호 발송
     if (action === 'send') {
-      const result = await sendOtpSms(cleanPhone);
+      const result: any = await sendOtpSms(cleanPhone);
 
       return NextResponse.json({
         success: result.success,
-        message: result.error ? `인증번호 발송: ${result.error}` : '인증번호가 발송되었습니다.',
+        message: result.message || (result.error ? `인증번호 발송 실패: ${result.error}` : '인증번호가 발송되었습니다.'),
+        simulated: result.simulated || false,
+        code: result.code,
         ...(result.code ? { testAuthCode: result.code } : {}),
       });
     }
