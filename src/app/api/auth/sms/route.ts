@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendOtpSms, verifyOtpSms } from '@/ai/flows/aligo-sms';
+import { normalizePhone } from '@/lib/phoneUtils';
 import { supabaseAdmin } from '@/lib/supabaseServer';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -55,10 +56,11 @@ export async function POST(request: NextRequest) {
       const db = supabaseAdmin || supabase;
       if (db) {
         try {
+          const { domestic, standard } = normalizePhone(cleanPhone);
           const { data: user } = await db
             .from('users')
             .select('*')
-            .eq('phone_number', cleanPhone)
+            .or(`phone_number.eq.${domestic},phone_number.eq.${standard}`)
             .maybeSingle();
 
           if (user) {

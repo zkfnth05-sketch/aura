@@ -8,6 +8,7 @@ import { SelectedChatProvider } from '@/contexts/selected-chat-context';
 import { EscapeCallProvider } from '@/contexts/escape-call-context';
 import EscapeCallConfigDialog from '@/components/escape-call/escape-call-config-dialog';
 import IncomingEscapeCallModal from '@/components/escape-call/incoming-escape-call-modal';
+import InAppBrowserEscape from '@/components/in-app-browser-escape';
 import { useEffect } from 'react';
 
 
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body className="font-body antialiased h-full bg-background text-foreground" suppressHydrationWarning>
         <UserProvider>
           <LanguageProvider>
+            <InAppBrowserEscape />
             <SelectedChatProvider>
               <EscapeCallProvider>
                 <AppLayout>

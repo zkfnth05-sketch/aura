@@ -742,6 +742,21 @@ export const translations = {
     'profile_escape_desc': '만남 자리가 어색하거나 곤란할 때, 진짜 전화 수신 화면과 음성 대본으로 자연스럽게 자리를 벗어날 수 있습니다. 미리 테스트해보세요!',
     'profile_escape_btn': '가짜 탈출 전화 사전 체험 및 예약하기',
     'escape_nav_btn': '안심 탈출',
+    // --- PWA & In-App Escape Keys ---
+    'install_app_btn': '앱 설치',
+    'install_app_toast_title': 'Aura 앱 설치 완료',
+    'install_app_toast_desc': '홈 화면에 Aura가 추가되었습니다. 언제든 빠르게 실행하세요!',
+    'ios_install_title': '홈 화면에 Aura 앱 추가하기',
+    'ios_install_step1': '하단 브라우저 메뉴의 [공유] 아이콘을 누릅니다.',
+    'ios_install_step2': '메뉴를 올려 [홈 화면에 추가]를 선택합니다.',
+    'ios_install_step3': '우측 상단의 [추가]를 누르면 바탕화면에 설치됩니다!',
+    'inapp_escape_title': '원활한 이용과 앱 설치 안내',
+    'inapp_escape_desc': '인스타그램, 카카오톡 인앱 브라우저에서는 앱 설치가 제한됩니다. 우측 상단 [···]을 눌러 Safari 또는 Chrome으로 열어주세요.',
+    'inapp_escape_copy': '링크 복사하기',
+    'inapp_escape_copied': '링크가 복사되었습니다. 브라우저 주소창에 붙여넣으세요!',
+    'inapp_escape_open_chrome': 'Chrome으로 바로 열기',
+    'inapp_escape_dismiss': '웹으로 계속 보기',
+
 
 
   },
@@ -1472,6 +1487,21 @@ export const translations = {
     'profile_escape_desc': 'When a date feels awkward or unsafe, easily excuse yourself with a realistic incoming call screen and voice script. Test it in advance!',
     'profile_escape_btn': 'Test & Schedule Fake Escape Call',
     'escape_nav_btn': 'Escape Call',
+    // --- PWA & In-App Escape Keys ---
+    'install_app_btn': 'Install App',
+    'install_app_toast_title': 'Aura App Installed',
+    'install_app_toast_desc': 'Aura has been added to your home screen. Launch it anytime!',
+    'ios_install_title': 'Add Aura to Home Screen',
+    'ios_install_step1': 'Tap the [Share] icon in the browser menu below.',
+    'ios_install_step2': 'Scroll down and select [Add to Home Screen].',
+    'ios_install_step3': 'Tap [Add] in the top right to install on your home screen!',
+    'inapp_escape_title': 'Open in Browser for Full Access',
+    'inapp_escape_desc': 'In-app browsers restrict app installation. Tap [···] at the top right to open in Safari or Chrome.',
+    'inapp_escape_copy': 'Copy Link',
+    'inapp_escape_copied': 'Link copied! Paste it in Safari or Chrome.',
+    'inapp_escape_open_chrome': 'Open in Chrome',
+    'inapp_escape_dismiss': 'Continue in Web',
+
 
 
   },
@@ -2202,6 +2232,21 @@ export const translations = {
     'profile_escape_desc': 'デートの場が気まずい時や困った時、本物の着信画面と音声台本で自然に席を外せます。事前にお試しください！',
     'profile_escape_btn': 'フェイク脱出電話の事前体験・予約',
     'escape_nav_btn': '脱出電話',
+    // --- PWA & In-App Escape Keys ---
+    'install_app_btn': 'アプリ設置',
+    'install_app_toast_title': 'Auraアプリ設置完了',
+    'install_app_toast_desc': 'ホーム画面にAuraが追加されました。いつでも素早く起動できます！',
+    'ios_install_title': 'ホーム画面にAuraを追加',
+    'ios_install_step1': '下部メニューの[共有]アイコンをタップします。',
+    'ios_install_step2': 'スクロールして[ホーム画面に追加]を選択します。',
+    'ios_install_step3': '右上の[追加]をタップするとホーム画面に設置されます！',
+    'inapp_escape_title': '快適なご利用とアプリ設置のご案内',
+    'inapp_escape_desc': 'アプリ内ブラウザではアプリ設置が制限されます。右上の[···]からSafariまたはChromeで開いてください。',
+    'inapp_escape_copy': 'リンクをコピー',
+    'inapp_escape_copied': 'リンクをコピーしました！ブラウザのアドレスバーに貼り付けてください。',
+    'inapp_escape_open_chrome': 'Chromeですぐ開く',
+    'inapp_escape_dismiss': 'ウェブで続ける',
+
 
 
   },
@@ -2931,6 +2976,21 @@ export const translations = {
     'profile_escape_desc': 'Cuando una cita sea incómoda o difícil, sal de forma natural con una llamada entrante realista y guión de voz. ¡Pruébalo ahora!',
     'profile_escape_btn': 'Probar y Programar Llamada de Escape',
     'escape_nav_btn': 'Llamada Escape',
+    // --- PWA & In-App Escape Keys ---
+    'install_app_btn': 'Instalar App',
+    'install_app_toast_title': 'Aura instalada',
+    'install_app_toast_desc': 'Aura se ha añadido a tu pantalla de inicio. ¡Ábrela cuando quieras!',
+    'ios_install_title': 'Añadir Aura a pantalla de inicio',
+    'ios_install_step1': 'Toca el icono [Compartir] en el menú inferior.',
+    'ios_install_step2': 'Desplázate y selecciona [Añadir a pantalla de inicio].',
+    'ios_install_step3': '¡Toca [Añadir] arriba a la derecha para instalar!',
+    'inapp_escape_title': 'Abrir en el navegador para acceso completo',
+    'inapp_escape_desc': 'Los navegadores integrados restringen la instalación. Toca [···] arriba a la derecha para abrir en Safari o Chrome.',
+    'inapp_escape_copy': 'Copiar Enlace',
+    'inapp_escape_copied': '¡Enlace copiado! Pégalo en Safari o Chrome.',
+    'inapp_escape_open_chrome': 'Abrir en Chrome',
+    'inapp_escape_dismiss': 'Continuar en la web',
+
 
 
   },

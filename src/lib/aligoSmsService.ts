@@ -45,7 +45,12 @@ export class AligoSmsService {
     title,
     testMode = false,
   }: SendSmsOptions): Promise<{ success: boolean; message: string; isLiveSent?: boolean; testAuthCode?: string }> {
-    const cleanPhone = receiver.replace(/[^0-9]/g, '');
+    let cleanPhone = receiver.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('82') && cleanPhone.length >= 11) {
+      cleanPhone = '0' + cleanPhone.slice(2);
+    } else if (!cleanPhone.startsWith('0') && (cleanPhone.length === 10 || cleanPhone.length === 11)) {
+      cleanPhone = '0' + cleanPhone;
+    }
     const smsMessage = msg || `[AURA] 인증번호는 [${code}] 입니다. 타인에게 노출하지 마세요.`;
     const messageTitle = title || 'AURA 본인인증';
 
