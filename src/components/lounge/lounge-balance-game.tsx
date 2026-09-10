@@ -227,21 +227,21 @@ export function LoungeBalanceGame() {
       <div className="absolute top-0 right-0 w-36 h-36 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header Info Bar */}
-      <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-1.5">
-          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center gap-1">
+      <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center gap-1 flex-shrink-0">
             <Flame className="w-3 h-3 text-orange-400 fill-orange-400" />
             오늘의 연애 밸런스
           </span>
-          <span className="text-[11px] text-zinc-400 font-medium">
+          <span className="text-[11px] text-zinc-400 font-medium truncate max-w-[130px] sm:max-w-none">
             {game.tag}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="inline-flex items-center gap-1 text-[10px] text-amber-400/90 font-medium">
             <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-            Gemini AI 자동출제
+            Gemini AI 출제
           </span>
           <button
             onClick={() => loadGame(true)}
@@ -354,32 +354,38 @@ export function LoungeBalanceGame() {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               나와 같은 선택을 한 추천 회원
             </span>
-            <span className="text-[11px] text-zinc-400">
+            <span className="text-[11px] text-zinc-400 font-medium">
               취향 일치도 100%
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {/* Mobile-Optimized List Layout */}
+          <div className="flex flex-col gap-2">
             {matchingMembers.map((member) => (
               <div
                 key={member.id}
-                className="flex items-center justify-between p-2.5 rounded-2xl bg-zinc-900/90 border border-zinc-800/90 hover:border-amber-500/40 transition-all group"
+                className="flex items-center justify-between p-2.5 sm:p-3 rounded-2xl bg-zinc-900/90 border border-zinc-800/80 hover:border-amber-500/40 transition-all group"
               >
                 <div 
                   onClick={() => router.push(`/users/${member.id}`)}
-                  className="flex items-center gap-2 cursor-pointer min-w-0"
+                  className="flex items-center gap-3 cursor-pointer min-w-0 flex-1 mr-2"
                 >
-                  <Avatar className="w-9 h-9 border border-amber-500/40 group-hover:scale-105 transition-transform flex-shrink-0">
+                  <Avatar className="w-10 h-10 border border-amber-500/40 group-hover:scale-105 transition-transform flex-shrink-0">
                     <AvatarImage src={member.avatar} alt={member.name} className="object-cover" />
-                    <AvatarFallback className="text-[10px] bg-zinc-800 text-amber-300">
+                    <AvatarFallback className="text-xs bg-zinc-800 text-amber-300 font-bold">
                       {member.name[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 text-left">
-                    <div className="text-xs font-bold text-white truncate group-hover:text-amber-300">
-                      {member.name}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-amber-300">
+                        {member.name}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold flex-shrink-0">
+                        {selectedChoice} 픽
+                      </span>
                     </div>
-                    <div className="text-[10px] text-zinc-400">
+                    <div className="text-[11px] text-zinc-400 mt-0.5">
                       {member.age}세 · {member.location}
                     </div>
                   </div>
@@ -387,12 +393,11 @@ export function LoungeBalanceGame() {
 
                 <Button
                   size="sm"
-                  variant="ghost"
                   onClick={() => handleConnectWithMember(member)}
-                  className="h-7 px-2 text-[11px] rounded-full text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 font-bold flex items-center gap-1 flex-shrink-0"
+                  className="h-8 px-3 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/50 text-amber-300 hover:text-amber-200 text-xs font-extrabold flex items-center gap-1 flex-shrink-0 transition-all active:scale-95 shadow-sm"
                 >
-                  <MessageSquareHeart className="w-3 h-3 text-amber-400" />
-                  <span>대화</span>
+                  <MessageSquareHeart className="w-3.5 h-3.5 text-amber-400" />
+                  <span>대화하기</span>
                 </Button>
               </div>
             ))}
