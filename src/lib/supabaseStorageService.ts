@@ -18,7 +18,7 @@ export interface UploadResult {
  */
 export async function uploadDataUri(
   dataUri: string,
-  folder: 'profiles' | 'videos' | 'audio' = 'profiles',
+  folder: 'profiles' | 'videos' | 'audio' | 'lounge' = 'profiles',
   filename?: string
 ): Promise<string> {
   // If already an HTTP/HTTPS URL, return as-is
@@ -57,7 +57,7 @@ export async function uploadDataUri(
  */
 export async function uploadMediaFile(
   fileOrBlob: File | Blob,
-  folder: 'profiles' | 'videos' | 'audio' = 'profiles',
+  folder: 'profiles' | 'videos' | 'audio' | 'lounge' = 'profiles',
   filename?: string
 ): Promise<string> {
   const formData = new FormData();

@@ -112,7 +112,13 @@ import {
     DailyBalanceGameOutput,
 } from '@/ai/flows/daily-balance-game-flow';
 
-export type { AuraCharmInput, AuraCharmOutput, DailyBalanceGameInput, DailyBalanceGameOutput };
+import {
+    translateLoungeText,
+    LoungeTranslationInput,
+    LoungeTranslationOutput,
+} from '@/ai/flows/translate-lounge-flow';
+
+export type { AuraCharmInput, AuraCharmOutput, DailyBalanceGameInput, DailyBalanceGameOutput, LoungeTranslationInput, LoungeTranslationOutput };
 
 export async function getAuraCharmReport(
     input: AuraCharmInput
@@ -137,5 +143,18 @@ export async function getDailyBalanceGameAction(
         throw new Error('Failed to generate daily balance game.');
     }
 }
+
+export async function getLoungeTranslationAction(
+    text: string
+): Promise<LoungeTranslationOutput> {
+    try {
+        const result = await translateLoungeText({ text });
+        return result;
+    } catch (error) {
+        console.error('AI Lounge translation action failed:', error);
+        return { en: text, ja: text, es: text };
+    }
+}
+
 
 

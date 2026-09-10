@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoungePost } from '@/lib/lounge-types';
 import { LoungeStore } from '@/lib/lounge-store';
@@ -18,10 +18,14 @@ import {
   Check,
   X,
   VenetianMask as Mask,
-  Lock
+  Lock,
+  Globe,
+  Loader2
 } from 'lucide-react';
 import { ANONYMOUS_AVATAR } from '@/lib/lounge-types';
 import { useUser } from '@/contexts/user-context';
+import { useLanguage } from '@/contexts/language-context';
+import { getLoungeTranslationAction } from '@/actions/ai-actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -39,6 +43,7 @@ export function LoungePostCard({
 }) {
   const router = useRouter();
   const { user } = useUser();
+  const { language } = useLanguage();
   const { toast } = useToast();
 
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
@@ -49,13 +54,59 @@ export function LoungePostCard({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isCommentAnonymous, setIsCommentAnonymous] = useState(false);
 
+  // Multilingual auto-translation states
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [currentTranslation, setCurrentTranslation] = useState<string | null>(
+    language !== 'ko' ? (post.translations?.[language] || null) : null
+  );
+
+  // Sync translation when language changes or if translation is missing
+  useEffect(() => {
+    if (language === 'ko') {
+      setCurrentTranslation(null);
+      return;
+    }
+
+    if (post.translations?.[language]) {
+      setCurrentTranslation(post.translations[language]);
+      return;
+    }
+
+    // Auto-fetch missing translation via Gemini AI
+    let isMounted = true;
+    const fetchTranslation = async () => {
+      setIsTranslating(true);
+      try {
+        const res = await getLoungeTranslationAction(post.content);
+        if (isMounted && res && res[language]) {
+          setCurrentTranslation(res[language]);
+          LoungeStore.updatePostTranslations(post.id, {
+            en: res.en || post.content,
+            ja: res.ja || post.content,
+            es: res.es || post.content,
+          });
+        }
+      } catch (e) {
+        console.warn('Lounge post translation error:', e);
+      } finally {
+        if (isMounted) setIsTranslating(false);
+      }
+    };
+
+    fetchTranslation();
+    return () => {
+      isMounted = false;
+    };
+  }, [post.id, post.content, post.translations, language]);
+
   // DM / Profile Dialog states
   const [isDmDialogOpen, setIsDmDialogOpen] = useState(false);
   const [dmMessage, setDmMessage] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   const handleLike = () => {
-    const nextState = LoungeStore.toggleLike(post.id);
+    const nextState = LoungeStore.toggleLike(post.id, user?.id);
     setIsLiked(nextState);
     setLikesCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
     if (onUpdated) onUpdated();
@@ -261,11 +312,46 @@ export function LoungePostCard({
           </Button>
         </div>
 
-        {/* Content Body */}
+        {/* Content Body with Automatic Multilingual Translation */}
         <div className="text-left mb-3.5">
           <p className="text-sm sm:text-base text-zinc-200 leading-relaxed whitespace-pre-line break-words">
-            {post.content}
+            {language !== 'ko' && !showOriginal
+              ? (currentTranslation || post.translations?.[language] || post.content)
+              : post.content}
           </p>
+
+          {/* Multilingual Translation Status & Show Original Toggle */}
+          {language !== 'ko' && (
+            <div className="mt-2.5 flex items-center justify-between py-1.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+              <div className="flex items-center gap-1.5 text-amber-300">
+                <Globe className="w-3.5 h-3.5 text-amber-400" />
+                {isTranslating ? (
+                  <span className="flex items-center gap-1.5 text-amber-400/80">
+                    <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                    Gemini AI 번역 중...
+                  </span>
+                ) : (
+                  <span className="font-medium text-[11px] sm:text-xs">
+                    {language === 'en'
+                      ? 'Translated by Gemini AI (EN)'
+                      : language === 'ja'
+                      ? 'Gemini AI 翻訳 (JA)'
+                      : 'Traducido por Gemini AI (ES)'}
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowOriginal(!showOriginal)}
+                className="text-amber-400 hover:text-amber-200 underline font-semibold transition-colors cursor-pointer text-[11px]"
+              >
+                {showOriginal
+                  ? (language === 'en' ? 'Show Translation' : language === 'ja' ? '翻訳を表示' : 'Ver traducción')
+                  : (language === 'en' ? 'Show Original (Korean)' : language === 'ja' ? '原文（韓国語）を見る' : 'Ver original (Coreano)')}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Attached Photos */}

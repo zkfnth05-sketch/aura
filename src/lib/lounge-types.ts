@@ -12,6 +12,7 @@ export interface LoungeComment {
   createdAt: string;
   isAnonymous?: boolean;
   anonymousAlias?: string;
+  translations?: Record<string, string>;
 }
 
 export interface LoungePost {
@@ -34,6 +35,8 @@ export interface LoungePost {
   auraScore?: number;
   isAnonymous?: boolean;
   anonymousAlias?: string;
+  category?: LoungeCategory;
+  translations?: Record<string, string>;
 }
 
 export type LoungeCategory = 'all' | 'hot' | 'popular' | 'anonymous' | 'cafe' | 'workout' | 'fitness' | 'pet' | 'daily' | 'travel' | 'culture';

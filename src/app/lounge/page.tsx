@@ -7,6 +7,7 @@ import { LoungePostCard } from '@/components/lounge/lounge-post-card';
 import { LoungeBalanceGame } from '@/components/lounge/lounge-balance-game';
 import { LoungeStore } from '@/lib/lounge-store';
 import { LoungePost, LoungeCategory } from '@/lib/lounge-types';
+import { useUser } from '@/contexts/user-context';
 import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw, PenSquare, VenetianMask as Mask } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -35,6 +36,7 @@ const ROLLING_NOTICES = [
 ];
 
 export default function LoungePage() {
+  const { user } = useUser();
   const [posts, setPosts] = useState<LoungePost[]>([]);
   const [activeCategory, setActiveCategory] = useState<LoungeCategory>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -57,10 +59,10 @@ export default function LoungePage() {
     const loaded = LoungeStore.getPosts();
     setPosts(loaded);
 
-    // Sync with database virtual members
-    const synced = await LoungeStore.syncWithRealMembers();
+    // Sync with database virtual members & Supabase lounge_posts
+    const synced = await LoungeStore.syncWithRealMembers(user?.id);
     setPosts(synced);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     loadPosts();
