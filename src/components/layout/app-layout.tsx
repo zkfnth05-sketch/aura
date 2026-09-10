@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   const noBottomNavPaths = ['/signup', '/profile/edit', '/filter', '/chat'];
   
-  const showBottomNav = authUser && user && !noBottomNavPaths.some(path => pathname.startsWith(path));
+  const showBottomNav = !isAdminPage && !noBottomNavPaths.some(path => pathname.startsWith(path));
 
   if (showSplash) {
     return <SplashScreen />;

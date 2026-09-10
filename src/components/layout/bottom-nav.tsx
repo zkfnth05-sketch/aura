@@ -49,10 +49,10 @@ export default function BottomNav() {
     <div className={cn(
       "fixed bottom-0 left-0 right-0 z-50 max-w-screen-sm mx-auto",
       isTranslucent
-        ? "bg-background/80 backdrop-blur-sm" 
-        : "bg-background border-t border-border/40"
+        ? "bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/90 shadow-[0_-4px_24px_rgba(0,0,0,0.7)]" 
+        : "bg-zinc-950/95 border-t border-border/60 shadow-[0_-4px_24px_rgba(0,0,0,0.7)]"
     )}>
-      <nav className="flex justify-around items-center h-20">
+      <nav className="flex justify-around items-center h-20 px-1 pb-safe">
         {navItems.map((item) => {
           const isActive =
             item.href === '/' ? pathname === item.href : pathname.startsWith(item.href);
