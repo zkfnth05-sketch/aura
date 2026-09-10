@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from '@/components/layout/header';
 import { LoungeComposer } from '@/components/lounge/lounge-composer';
 import { LoungePostCard } from '@/components/lounge/lounge-post-card';
+import { LoungeBalanceGame } from '@/components/lounge/lounge-balance-game';
 import { LoungeStore } from '@/lib/lounge-store';
 import { LoungePost, LoungeCategory } from '@/lib/lounge-types';
-import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw, PenSquare } from 'lucide-react';
+import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw, PenSquare, VenetianMask as Mask } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CategoryTab {
@@ -17,6 +18,7 @@ interface CategoryTab {
 
 const CATEGORY_TABS: CategoryTab[] = [
   { id: 'all', label: '전체' },
+  { id: 'anonymous', label: '익명고민', icon: <Mask className="w-3.5 h-3.5 text-purple-400" /> },
   { id: 'popular', label: '인기', icon: <Flame className="w-3.5 h-3.5 text-orange-400" /> },
   { id: 'cafe', label: '카페·맛집', icon: <Coffee className="w-3.5 h-3.5 text-amber-400" /> },
   { id: 'fitness', label: '오운완', icon: <Dumbbell className="w-3.5 h-3.5 text-emerald-400" /> },
@@ -71,6 +73,16 @@ export default function LoungePage() {
     if (activeCategory === 'popular') {
       // Sort by likes descending or filter posts with at least 5 likes
       return [...posts].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+    }
+
+    if (activeCategory === 'anonymous') {
+      return posts.filter(
+        (post) =>
+          post.isAnonymous ||
+          post.tags?.some((t) => t.includes('익명') || t.includes('고민')) ||
+          post.content.includes('고민') ||
+          post.content.includes('속마음')
+      );
     }
 
     // Filter by tag keyword mapping
@@ -155,6 +167,9 @@ export default function LoungePage() {
             );
           })}
         </div>
+
+        {/* Daily Romance Balance Game (Gemini AI generated) */}
+        <LoungeBalanceGame />
 
         {/* Post Creation Box */}
         <LoungeComposer onPostCreated={loadPosts} />

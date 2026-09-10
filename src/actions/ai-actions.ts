@@ -106,8 +106,13 @@ import {
     AuraCharmInput,
     AuraCharmOutput,
 } from '@/ai/flows/aura-charm-report-flow';
+import {
+    generateDailyBalanceGame,
+    DailyBalanceGameInput,
+    DailyBalanceGameOutput,
+} from '@/ai/flows/daily-balance-game-flow';
 
-export type { AuraCharmInput, AuraCharmOutput };
+export type { AuraCharmInput, AuraCharmOutput, DailyBalanceGameInput, DailyBalanceGameOutput };
 
 export async function getAuraCharmReport(
     input: AuraCharmInput
@@ -120,4 +125,17 @@ export async function getAuraCharmReport(
         throw new Error('Failed to generate Aura charm report.');
     }
 }
+
+export async function getDailyBalanceGameAction(
+    dateStr?: string
+): Promise<DailyBalanceGameOutput> {
+    try {
+        const result = await generateDailyBalanceGame(dateStr ? { date: dateStr } : undefined);
+        return result;
+    } catch (error) {
+        console.error('AI Daily Balance Game generation failed:', error);
+        throw new Error('Failed to generate daily balance game.');
+    }
+}
+
 

@@ -1,3 +1,5 @@
+export const ANONYMOUS_AVATAR = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&auto=format&fit=crop&q=80';
+
 export interface LoungeComment {
   id: string;
   postId: string;
@@ -8,6 +10,8 @@ export interface LoungeComment {
   userGender?: '남성' | '여성' | '기타';
   content: string;
   createdAt: string;
+  isAnonymous?: boolean;
+  anonymousAlias?: string;
 }
 
 export interface LoungePost {
@@ -28,9 +32,12 @@ export interface LoungePost {
   createdAt: string;
   isVip?: boolean;
   auraScore?: number;
+  isAnonymous?: boolean;
+  anonymousAlias?: string;
 }
 
-export type LoungeCategory = 'all' | 'hot' | 'popular' | 'cafe' | 'workout' | 'fitness' | 'pet' | 'daily' | 'travel' | 'culture';
+export type LoungeCategory = 'all' | 'hot' | 'popular' | 'anonymous' | 'cafe' | 'workout' | 'fitness' | 'pet' | 'daily' | 'travel' | 'culture';
+
 
 export const INITIAL_LOUNGE_POSTS: LoungePost[] = [
   {
@@ -305,6 +312,88 @@ export const INITIAL_LOUNGE_POSTS: LoungePost[] = [
         userGender: '남성',
         content: '저도 퇴근하면서 봤는데 오늘 노을 정말 환상적이었죠. 하루 마무리 편안하게 하세요!',
         createdAt: '5시간 전'
+      }
+    ]
+  },
+  {
+    id: 'post-9',
+    userId: 'anon-user-1',
+    userName: '익명의 오라',
+    userAvatar: ANONYMOUS_AVATAR,
+    userLocation: '비밀 공간',
+    content: '소개팅하고 헤어져서 지하철 탔는데, 20분 만에 상대방한테 "오늘 너무 즐거웠어요 조심히 들어가세요!" 하고 선톡 오면 호감 신호 맞겠죠...? 괜히 설레서 답장 어떻게 보낼지 15분째 고민 중이에요 ㅠㅠ 다들 소개팅 후 연락 텀 어떻게 하시나요? 💌',
+    tags: ['익명고민', '소개팅후기', '썸신호', '연애고민'],
+    likesCount: 84,
+    isLiked: false,
+    commentsCount: 2,
+    createdAt: '30분 전',
+    isVip: true,
+    auraScore: 99,
+    isAnonymous: true,
+    anonymousAlias: '설레는마음',
+    comments: [
+      {
+        id: 'c-9-1',
+        postId: 'post-9',
+        userId: 'anon-c-1',
+        userName: '익명 조언러 1',
+        userAvatar: ANONYMOUS_AVATAR,
+        content: '20분 만에 온 거면 100% 호감 신호입니다!! 바로 답장하시고 상대방이 맘 편히 애프터 신청할 수 있게 "저도 오늘 시간 가는 줄 몰랐어요" 해주세요 ㅎㅎ',
+        createdAt: '25분 전',
+        isAnonymous: true,
+        anonymousAlias: '연애상담소장'
+      },
+      {
+        id: 'c-9-2',
+        postId: 'post-9',
+        userId: 'anon-c-2',
+        userName: '익명 조언러 2',
+        userAvatar: ANONYMOUS_AVATAR,
+        content: '남자 입장에서 말씀드리면, 집 갈 때까지도 못 참고 보낸 거라 진짜 마음에 쏙 든 상태입니다. 축하드려요!',
+        createdAt: '15분 전',
+        isAnonymous: true,
+        anonymousAlias: '공감봇'
+      }
+    ]
+  },
+  {
+    id: 'post-10',
+    userId: 'anon-user-2',
+    userName: '익명의 오라',
+    userAvatar: ANONYMOUS_AVATAR,
+    userLocation: '비밀 공간',
+    content: '만나서는 세상에서 제일 다정하고 눈에서 꿀 떨어지는데, 카톡 연락만 하면 답장이 2~3시간씩 걸리는 사람... 성향 차이일까요, 아니면 마음의 크기 문제일까요? 혼자 속앓이하다가 솔직한 의견 듣고 싶어서 글 남겨봅니다 😢',
+    tags: ['익명고민', '연락속도', '연애상담', '속마음'],
+    likesCount: 92,
+    isLiked: false,
+    commentsCount: 2,
+    createdAt: '2시간 전',
+    isVip: true,
+    auraScore: 97,
+    isAnonymous: true,
+    anonymousAlias: '생각많은밤',
+    comments: [
+      {
+        id: 'c-10-1',
+        postId: 'post-10',
+        userId: 'anon-c-3',
+        userName: '익명 조언러 1',
+        userAvatar: ANONYMOUS_AVATAR,
+        content: '일할 때 폰 잘 안 보는 타입일 수 있어요! 만났을 때 진심이 느껴진다면 너무 카톡에 얽매이지 마시고 가볍게 전화 통화해 보세요.',
+        createdAt: '1시간 전',
+        isAnonymous: true,
+        anonymousAlias: '따뜻한위로'
+      },
+      {
+        id: 'c-10-2',
+        postId: 'post-10',
+        userId: 'anon-c-4',
+        userName: '익명 조언러 2',
+        userAvatar: ANONYMOUS_AVATAR,
+        content: '저도 연락 때문에 스트레스 많이 받았는데, 감정적으로 따지지 말고 "퇴근하고 잠깐 목소리 듣고 싶다"고 편하게 조율하는 게 제일 좋더라구요.',
+        createdAt: '40분 전',
+        isAnonymous: true,
+        anonymousAlias: '현실조언'
       }
     ]
   }

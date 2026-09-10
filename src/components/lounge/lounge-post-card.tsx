@@ -16,8 +16,11 @@ import {
   Crown, 
   MessageSquareHeart,
   Check,
-  X
+  X,
+  VenetianMask as Mask,
+  Lock
 } from 'lucide-react';
+import { ANONYMOUS_AVATAR } from '@/lib/lounge-types';
 import { useUser } from '@/contexts/user-context';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -44,6 +47,7 @@ export function LoungePostCard({
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState(post.comments || []);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isCommentAnonymous, setIsCommentAnonymous] = useState(false);
 
   // DM / Profile Dialog states
   const [isDmDialogOpen, setIsDmDialogOpen] = useState(false);
@@ -64,8 +68,10 @@ export function LoungePostCard({
     const newComment = LoungeStore.addComment({
       postId: post.id,
       userId: user?.id || 'guest',
-      userName: user?.name || '나',
-      userAvatar: user?.photoUrls?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
+      userName: isCommentAnonymous ? '익명의 오라' : (user?.name || '나'),
+      userAvatar: isCommentAnonymous
+        ? ANONYMOUS_AVATAR
+        : (user?.photoUrls?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80'),
       userGender: (user?.gender as any) || '여성',
       content: commentText.trim(),
     });
@@ -74,8 +80,10 @@ export function LoungePostCard({
       setComments((prev) => [...prev, newComment]);
       setCommentText('');
       toast({
-        title: '댓글 등록',
-        description: '소중한 의견이 등록되었습니다.',
+        title: isCommentAnonymous ? '🎭 익명 댓글 등록' : '댓글 등록',
+        description: isCommentAnonymous
+          ? '프로필이 안전하게 보호된 채로 공감 댓글이 등록되었습니다.'
+          : '소중한 의견이 등록되었습니다.',
       });
       if (onUpdated) onUpdated();
     }
@@ -115,7 +123,7 @@ export function LoungePostCard({
           await supabase.from('messages').insert({
             match_id: matchId,
             sender_id: currentUserId,
-            content: `[스레드 인용: "${post.content.slice(0, 30)}..."]\n${dmMessage.trim()}`,
+            content: `[${post.isAnonymous ? '익명 고민 인용' : '스레드 인용'}: "${post.content.slice(0, 30)}..."]\n${dmMessage.trim()}`,
             created_at: now,
           });
         }
@@ -125,7 +133,7 @@ export function LoungePostCard({
     }
 
     toast({
-      title: `💌 ${post.userName}님께 메시지 전송 완료`,
+      title: post.isAnonymous ? '💌 익명 작성자에게 비밀 쪽지 전송 완료' : `💌 ${post.userName}님께 메시지 전송 완료`,
       description: '회원님의 메시지가 상대방의 대화창으로 발송되었습니다!',
     });
 
@@ -154,7 +162,13 @@ export function LoungePostCard({
 
   return (
     <>
-      <article className="w-full bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 border border-zinc-800/80 hover:border-amber-500/30 rounded-3xl p-5 mb-4 shadow-xl backdrop-blur-md transition-all">
+      <article
+        className={`w-full bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 border ${
+          post.isAnonymous
+            ? 'border-purple-500/40 hover:border-purple-400/60 shadow-[0_4px_24px_rgba(168,85,247,0.1)]'
+            : 'border-zinc-800/80 hover:border-amber-500/30 shadow-xl'
+        } rounded-3xl p-5 mb-4 backdrop-blur-md transition-all`}
+      >
         {/* Top Header: Author Info */}
         <div className="flex items-center justify-between mb-3.5">
           <div 
@@ -162,13 +176,19 @@ export function LoungePostCard({
             className="flex items-center gap-3 cursor-pointer group"
           >
             <div className="relative">
-              <Avatar className="w-11 h-11 border-2 border-amber-500/40 group-hover:border-amber-400 shadow-md transition-all group-hover:scale-105">
+              <Avatar
+                className={`w-11 h-11 border-2 ${
+                  post.isAnonymous
+                    ? 'border-purple-500/50 group-hover:border-purple-400'
+                    : 'border-amber-500/40 group-hover:border-amber-400'
+                } shadow-md transition-all group-hover:scale-105`}
+              >
                 <AvatarImage src={post.userAvatar} alt={post.userName} className="object-cover" />
                 <AvatarFallback className="bg-zinc-800 text-amber-300 font-bold">
-                  {post.userName?.[0] || 'U'}
+                  {post.isAnonymous ? '?' : (post.userName?.[0] || 'U')}
                 </AvatarFallback>
               </Avatar>
-              {post.isVip && (
+              {post.isVip && !post.isAnonymous && (
                 <span className="absolute -bottom-1 -right-1 bg-amber-500 text-black p-0.5 rounded-full ring-2 ring-zinc-900">
                   <Crown className="w-2.5 h-2.5 fill-black" />
                 </span>
@@ -177,28 +197,48 @@ export function LoungePostCard({
 
             <div className="text-left">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-white text-sm group-hover:text-amber-300 transition-colors">
+                <span
+                  className={`font-bold text-sm transition-colors ${
+                    post.isAnonymous ? 'text-purple-300 group-hover:text-purple-200' : 'text-white group-hover:text-amber-300'
+                  }`}
+                >
                   {post.userName}
                 </span>
-                {post.userAge && (
-                  <span className="text-xs text-zinc-400 font-normal">
-                    · {post.userAge}세
+                {post.isAnonymous ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                    <Mask className="w-3 h-3 text-purple-400" />
+                    익명 고민
                   </span>
-                )}
-                {post.userGender && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                    post.userGender === '여성' ? 'bg-rose-500/20 text-rose-300' : 'bg-cyan-500/20 text-cyan-300'
-                  }`}>
-                    {post.userGender}
-                  </span>
+                ) : (
+                  <>
+                    {post.userAge && (
+                      <span className="text-xs text-zinc-400 font-normal">
+                        · {post.userAge}세
+                      </span>
+                    )}
+                    {post.userGender && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                        post.userGender === '여성' ? 'bg-rose-500/20 text-rose-300' : 'bg-cyan-500/20 text-cyan-300'
+                      }`}>
+                        {post.userGender}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
               <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-0.5">
-                {post.userLocation && (
-                  <span className="flex items-center gap-0.5">
-                    <MapPin className="w-3 h-3 text-zinc-500" />
-                    {post.userLocation}
+                {post.isAnonymous ? (
+                  <span className="flex items-center gap-1 text-purple-400/80">
+                    <Lock className="w-3 h-3" />
+                    완벽 비밀보장 속마음
                   </span>
+                ) : (
+                  post.userLocation && (
+                    <span className="flex items-center gap-0.5">
+                      <MapPin className="w-3 h-3 text-zinc-500" />
+                      {post.userLocation}
+                    </span>
+                  )
                 )}
                 <span>· {post.createdAt}</span>
               </div>
@@ -210,10 +250,14 @@ export function LoungePostCard({
             size="sm"
             variant="outline"
             onClick={() => setIsDmDialogOpen(true)}
-            className="h-8 px-3 rounded-full border-amber-500/40 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95"
+            className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 ${
+              post.isAnonymous
+                ? 'border-purple-500/40 hover:border-purple-400 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-purple-200'
+                : 'border-amber-500/40 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200'
+            }`}
           >
-            <MessageSquareHeart className="w-3.5 h-3.5 text-amber-400" />
-            <span>대화하기</span>
+            <MessageSquareHeart className={`w-3.5 h-3.5 ${post.isAnonymous ? 'text-purple-400' : 'text-amber-400'}`} />
+            <span>{post.isAnonymous ? '비밀쪽지' : '대화하기'}</span>
           </Button>
         </div>
 
@@ -332,25 +376,51 @@ export function LoungePostCard({
             )}
 
             {/* New Comment Input */}
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddComment();
-                }}
-                placeholder="따뜻한 공감 댓글을 남겨보세요..."
-                className="flex-1 h-9 px-3.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-500/50"
-              />
-              <Button
-                size="sm"
-                onClick={handleAddComment}
-                disabled={isSubmittingComment || !commentText.trim()}
-                className="h-9 px-3.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs"
-              >
-                등록
-              </Button>
+            <div className="flex flex-col gap-2 pt-1">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddComment();
+                  }}
+                  placeholder={
+                    isCommentAnonymous
+                      ? '익명으로 따뜻한 위로와 조언을 남겨보세요...'
+                      : '따뜻한 공감 댓글을 남겨보세요...'
+                  }
+                  className={`flex-1 h-9 px-3.5 rounded-full bg-zinc-900 border ${
+                    isCommentAnonymous ? 'border-purple-500/50' : 'border-zinc-800'
+                  } text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-amber-500/50`}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAddComment}
+                  disabled={isSubmittingComment || !commentText.trim()}
+                  className={`h-9 px-3.5 rounded-full font-bold text-xs ${
+                    isCommentAnonymous
+                      ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm shadow-purple-500/20'
+                      : 'bg-amber-500 hover:bg-amber-400 text-black'
+                  }`}
+                >
+                  등록
+                </Button>
+              </div>
+
+              {/* Anonymous Comment Toggle */}
+              <div className="flex items-center justify-between px-1">
+                <button
+                  type="button"
+                  onClick={() => setIsCommentAnonymous(!isCommentAnonymous)}
+                  className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors ${
+                    isCommentAnonymous ? 'text-purple-400 font-bold' : 'text-zinc-500 hover:text-zinc-400'
+                  }`}
+                >
+                  <Mask className="w-3.5 h-3.5" />
+                  <span>{isCommentAnonymous ? '🎭 익명 댓글 모드 ON (프로필 숨김)' : '익명으로 댓글 작성하기'}</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -358,31 +428,42 @@ export function LoungePostCard({
 
       {/* 1:1 DM Dialog (Direct Message quoting this post) */}
       <Dialog open={isDmDialogOpen} onOpenChange={setIsDmDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-zinc-950 border border-amber-500/40 text-white rounded-3xl p-6 shadow-2xl">
+        <DialogContent className={`sm:max-w-md bg-zinc-950 border ${post.isAnonymous ? 'border-purple-500/50' : 'border-amber-500/40'} text-white rounded-3xl p-6 shadow-2xl`}>
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>{post.userName}님과 1:1 대화 시작하기</span>
+              {post.isAnonymous ? (
+                <>
+                  <Mask className="w-5 h-5 text-purple-400" />
+                  <span>익명 작성자에게 비밀 쪽지 보내기</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>{post.userName}님과 1:1 대화 시작하기</span>
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 pt-2 text-left">
             {/* Quoted Post Card */}
-            <div className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800">
+            <div className={`p-3.5 rounded-2xl bg-zinc-900/80 border ${post.isAnonymous ? 'border-purple-500/30' : 'border-zinc-800'}`}>
               <div className="flex items-center gap-2 mb-1.5">
-                <Avatar className="w-6 h-6 border border-amber-500/30">
+                <Avatar className={`w-6 h-6 border ${post.isAnonymous ? 'border-purple-500/40' : 'border-amber-500/30'}`}>
                   <AvatarImage src={post.userAvatar} />
-                  <AvatarFallback className="text-[10px]">{post.userName[0]}</AvatarFallback>
+                  <AvatarFallback className="text-[10px]">{post.isAnonymous ? '?' : post.userName[0]}</AvatarFallback>
                 </Avatar>
-                <span className="text-xs font-bold text-amber-300">{post.userName}님의 스레드 글</span>
+                <span className={`text-xs font-bold ${post.isAnonymous ? 'text-purple-300' : 'text-amber-300'}`}>
+                  {post.isAnonymous ? '익명 회원의 속마음 고민' : `${post.userName}님의 스레드 글`}
+                </span>
               </div>
               <p className="text-xs text-zinc-300 line-clamp-2 italic">
                 "{post.content}"
               </p>
             </div>
 
-            {/* View Full Profile Link */}
-            {post.userId && post.userId !== 'guest' && (
+            {/* View Full Profile Link (Only for Non-Anonymous) */}
+            {!post.isAnonymous && post.userId && post.userId !== 'guest' && (
               <button
                 type="button"
                 onClick={() => {
@@ -399,14 +480,20 @@ export function LoungePostCard({
             {/* Message Input */}
             <div>
               <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
-                첫 메시지 작성:
+                {post.isAnonymous ? '비밀 쪽지 내용:' : '첫 메시지 작성:'}
               </label>
               <textarea
                 rows={3}
                 value={dmMessage}
                 onChange={(e) => setDmMessage(e.target.value)}
-                placeholder={`${post.userName}님의 일상에 공감하며 자연스럽게 대화를 시작해보세요!`}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/50 resize-none leading-relaxed"
+                placeholder={
+                  post.isAnonymous
+                    ? '고민에 공감하고 위로가 되는 따뜻한 비밀 쪽지를 보내보세요. 안전하게 전달됩니다.'
+                    : `${post.userName}님의 일상에 공감하며 자연스럽게 대화를 시작해보세요!`
+                }
+                className={`w-full bg-zinc-900 border ${
+                  post.isAnonymous ? 'border-purple-500/40 focus:border-purple-400' : 'border-zinc-800 focus:border-amber-500/50'
+                } rounded-2xl p-3 text-sm text-white placeholder:text-zinc-600 focus:outline-none resize-none leading-relaxed`}
               />
             </div>
 
@@ -422,9 +509,13 @@ export function LoungePostCard({
               <Button
                 onClick={handleSendDirectMessage}
                 disabled={!dmMessage.trim()}
-                className="flex-1 rounded-full bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold shadow-lg shadow-amber-500/20"
+                className={`flex-1 rounded-full ${
+                  post.isAnonymous
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold shadow-lg shadow-purple-500/20'
+                    : 'bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold shadow-lg shadow-amber-500/20'
+                }`}
               >
-                메시지 전송 🚀
+                {post.isAnonymous ? '비밀 쪽지 전송 💌' : '메시지 전송 🚀'}
               </Button>
             </div>
           </div>

@@ -1,9 +1,9 @@
 'use client';
 
-import { LoungePost, LoungeComment, INITIAL_LOUNGE_POSTS } from './lounge-types';
+import { LoungePost, LoungeComment, INITIAL_LOUNGE_POSTS, ANONYMOUS_AVATAR } from './lounge-types';
 import { supabase } from './supabaseClient';
 
-const STORAGE_KEY = 'aura_lounge_posts_v3';
+const STORAGE_KEY = 'aura_lounge_posts_v4';
 
 export class LoungeStore {
   public static getPosts(): LoungePost[] {
@@ -52,6 +52,11 @@ export class LoungeStore {
           let modified = false;
 
           const updatedPosts = currentPosts.map((post, idx) => {
+            // Keep anonymous posts strictly anonymous!
+            if (post.isAnonymous) {
+              return post;
+            }
+
             // If post user is a dummy or not from db, link it to a real virtual user
             const matchingDbUser = validUsers.find(u => u.id === post.userId);
             if (matchingDbUser) {
@@ -113,6 +118,8 @@ export class LoungeStore {
     content,
     imageUrls,
     tags,
+    isAnonymous,
+    anonymousAlias,
   }: {
     userId: string;
     userName: string;
@@ -123,15 +130,21 @@ export class LoungeStore {
     content: string;
     imageUrls?: string[];
     tags?: string[];
+    isAnonymous?: boolean;
+    anonymousAlias?: string;
   }): LoungePost {
+    const finalUserName = isAnonymous ? '익명의 오라' : userName;
+    const finalAvatar = isAnonymous ? ANONYMOUS_AVATAR : (userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80');
+    const finalLocation = isAnonymous ? '비밀 공간' : (userLocation || '서울');
+
     const newPost: LoungePost = {
       id: `post-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      userId,
-      userName,
-      userAvatar: userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
-      userAge: userAge || 26,
-      userGender: userGender || '여성',
-      userLocation: userLocation || '서울',
+      userId: isAnonymous ? `anon-${Date.now()}` : userId,
+      userName: finalUserName,
+      userAvatar: finalAvatar,
+      userAge: isAnonymous ? undefined : (userAge || 26),
+      userGender: isAnonymous ? undefined : (userGender || '여성'),
+      userLocation: finalLocation,
       content,
       imageUrls: imageUrls || [],
       tags: tags || ['일상'],
@@ -142,6 +155,8 @@ export class LoungeStore {
       createdAt: '방금 전',
       isVip: true,
       auraScore: 95,
+      isAnonymous: Boolean(isAnonymous),
+      anonymousAlias: anonymousAlias || (isAnonymous ? '익명회원' : undefined),
     };
 
     const currentPosts = this.getPosts();
@@ -169,6 +184,8 @@ export class LoungeStore {
     userAvatar,
     userGender,
     content,
+    isAnonymous,
+    anonymousAlias,
   }: {
     postId: string;
     userId: string;
@@ -176,20 +193,27 @@ export class LoungeStore {
     userAvatar: string;
     userGender?: '남성' | '여성' | '기타';
     content: string;
+    isAnonymous?: boolean;
+    anonymousAlias?: string;
   }): LoungeComment | null {
     const posts = this.getPosts();
     const target = posts.find((p) => p.id === postId);
     if (!target) return null;
 
+    const finalName = isAnonymous ? (anonymousAlias || `익명 조언러 ${(target.comments?.length || 0) + 1}`) : userName;
+    const finalAvatar = isAnonymous ? ANONYMOUS_AVATAR : (userAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80');
+
     const newComment: LoungeComment = {
       id: `comment-${Date.now()}`,
       postId,
-      userId,
-      userName,
-      userAvatar: userAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80',
-      userGender,
+      userId: isAnonymous ? `anon-${Date.now()}` : userId,
+      userName: finalName,
+      userAvatar: finalAvatar,
+      userGender: isAnonymous ? undefined : userGender,
       content,
       createdAt: '방금 전',
+      isAnonymous: Boolean(isAnonymous),
+      anonymousAlias: finalName,
     };
 
     if (!target.comments) target.comments = [];
