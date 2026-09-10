@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Map, MessageSquare, User } from 'lucide-react';
+import { Search, Map, MessageSquare, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/user-context';
 import { useLanguage } from '@/contexts/language-context';
@@ -38,10 +38,11 @@ export default function BottomNav() {
     { href: '/map', label: t('map_nav'), icon: Map },
     { href: '/hot', label: t('hot_nav'), icon: HotIcon },
     { href: '/matches', label: t('matches_nav'), icon: MessageSquare },
+    { href: '/lounge', label: t('lounge_nav'), icon: Sparkles },
     { href: '/profile', label: t('profile_nav'), icon: User },
   ];
 
-  const translucentPages = ['/', '/map', '/hot', '/matches'];
+  const translucentPages = ['/', '/map', '/hot', '/matches', '/lounge'];
   const isTranslucent = translucentPages.includes(pathname);
 
   return (
