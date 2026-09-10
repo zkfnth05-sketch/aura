@@ -28,10 +28,30 @@ const CATEGORY_TABS: CategoryTab[] = [
   { id: 'culture', label: '문화·전시', icon: <Palette className="w-3.5 h-3.5 text-purple-400" /> },
 ];
 
+const ROLLING_NOTICES = [
+  { icon: '🛡️', text: '100% 프로필 검증을 마친 프라이빗 공간' },
+  { icon: '🔒', text: '안심하고 속마음을 털어놓는 시크릿 라운지' },
+  { icon: '✨', text: '상호 매너를 지키는 프리미엄 멤버스' },
+];
+
 export default function LoungePage() {
   const [posts, setPosts] = useState<LoungePost[]>([]);
   const [activeCategory, setActiveCategory] = useState<LoungeCategory>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [noticeIndex, setNoticeIndex] = useState(0);
+  const [fadeAnim, setFadeAnim] = useState(true);
+
+  // Ticker for rolling notices
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFadeAnim(false);
+      setTimeout(() => {
+        setNoticeIndex((prev) => (prev + 1) % ROLLING_NOTICES.length);
+        setFadeAnim(true);
+      }, 250);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, []);
 
   const loadPosts = useCallback(async () => {
     const loaded = LoungeStore.getPosts();
@@ -138,12 +158,21 @@ export default function LoungePage() {
             회원들의 소소한 일상과 취향을 나누는 프라이빗 공간
           </p>
 
-          <div className="mt-3.5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-500">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>지금 142명의 회원이 접속 중</span>
-            </span>
-            <span className="text-amber-400/80 font-medium">✨ 아바타 클릭 시 1:1 대화</span>
+          <div className="mt-3.5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-400">
+            <div className="flex items-center gap-1.5 overflow-hidden h-5 min-w-0 pr-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+              <div
+                className={`flex items-center gap-1.5 transition-all duration-300 transform whitespace-nowrap ${
+                  fadeAnim ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1.5'
+                }`}
+              >
+                <span className="text-xs">{ROLLING_NOTICES[noticeIndex].icon}</span>
+                <span className="text-zinc-300 font-medium truncate">
+                  {ROLLING_NOTICES[noticeIndex].text}
+                </span>
+              </div>
+            </div>
+            <span className="text-amber-400/90 font-medium flex-shrink-0">✨ 아바타 클릭 시 1:1 대화</span>
           </div>
         </section>
 
