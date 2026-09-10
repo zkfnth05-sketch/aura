@@ -75,8 +75,25 @@ export default function PwaInstallButton() {
   }
 
   const handleInstallClick = async () => {
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isInApp = /kakaotalk|instagram|fbav|fban|line|naver|twitter|tiktok|snapchat|micromessenger/.test(ua);
+    const isAndroidDevice = /android/.test(ua);
+
+    // 1. 안드로이드 인앱(인스타/카톡)인 경우: 설명창 없이 즉시 구글 크롬으로 강제 점프!
+    if (isInApp && isAndroidDevice) {
+      const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
+      window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+      return;
+    }
+
+    // 2. iOS 인앱인 경우: 사파리 열기 및 홈 화면 추가 안내 모달 표시
+    if (isIos) {
+      setShowIosGuide(true);
+      return;
+    }
+
+    // 3. 브라우저 네이티브 PWA 설치 프롬프트가 준비된 경우 (가장 이상적)
     if (deferredPrompt) {
-      // Android / Chrome native prompt
       try {
         await deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
@@ -91,13 +108,18 @@ export default function PwaInstallButton() {
       } catch (err) {
         console.error('Error invoking PWA install prompt:', err);
       }
-    } else if (isIos) {
-      // iOS Guide
-      setShowIosGuide(true);
-    } else {
-      // Generic browser guidance
-      setShowGenericGuide(true);
+      return;
     }
+
+    // 4. 안드로이드 일반 브라우저에서 프롬프트 대기 중일 때: 크롬 앱으로 직접 연결
+    if (isAndroidDevice) {
+      const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
+      window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+      return;
+    }
+
+    // 5. PC 데스크톱 환경 등 기타 브라우저: 안내 모달
+    setShowGenericGuide(true);
   };
 
   return (
