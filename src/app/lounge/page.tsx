@@ -6,7 +6,7 @@ import { LoungeComposer } from '@/components/lounge/lounge-composer';
 import { LoungePostCard } from '@/components/lounge/lounge-post-card';
 import { LoungeStore } from '@/lib/lounge-store';
 import { LoungePost, LoungeCategory } from '@/lib/lounge-types';
-import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw } from 'lucide-react';
+import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw, PenSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CategoryTab {
@@ -188,6 +188,22 @@ export default function LoungePage() {
             </div>
           )}
         </section>
+
+        {/* Floating Write Button */}
+        <button
+          onClick={() => {
+            const el = document.getElementById('lounge-composer');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              const textarea = el.querySelector('textarea');
+              if (textarea) textarea.focus();
+            }
+          }}
+          className="fixed bottom-24 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold text-xs shadow-xl shadow-amber-500/30 active:scale-95 transition-all"
+        >
+          <PenSquare className="w-4 h-4 text-black" />
+          <span>글쓰기</span>
+        </button>
       </main>
     </div>
   );
