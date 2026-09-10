@@ -34,7 +34,7 @@ export async function sendOtpSms(phone: string) {
 
     const apiKey = process.env.ALIGO_API_KEY || '8oikzy8391zwuczt60s1tl0a11s0rv5z';
     const userId = process.env.ALIGO_USER_ID || 'rlaghddlf01';
-    const sender = process.env.ALIGO_SENDER || '0808081088';
+    const sender = process.env.ALIGO_SENDER || '01048468575';
 
     if (!apiKey || !userId || !sender) {
       console.warn('⚠️ 알리고 API 키 미설정으로 시뮬레이션 발송 처리됩니다.');
