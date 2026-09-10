@@ -7,12 +7,12 @@ import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 
-export const DailyBalanceGameInputSchema = z.object({
+const DailyBalanceGameInputSchema = z.object({
   date: z.string().describe('The date string YYYY-MM-DD to generate the question for.'),
 });
 export type DailyBalanceGameInput = z.infer<typeof DailyBalanceGameInputSchema>;
 
-export const DailyBalanceGameOutputSchema = z.object({
+const DailyBalanceGameOutputSchema = z.object({
   id: z.string().describe('Unique ID for the question, e.g. balance-YYYY-MM-DD.'),
   date: z.string().describe('The date string YYYY-MM-DD.'),
   category: z.string().describe('Category of the balance game, e.g. 데이트, 연락/썸, 연애관, 라이프스타일.'),

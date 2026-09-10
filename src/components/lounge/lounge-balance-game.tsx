@@ -75,14 +75,33 @@ const CHOICE_B_MEMBERS: MatchingMember[] = [
   },
 ];
 
+const DEFAULT_INITIAL_GAME: DailyBalanceGameOutput = {
+  id: 'balance-default',
+  date: 'today',
+  category: '데이트',
+  question: '첫 데이트 코스로 더 호감 가는 분위기는?',
+  optionA: {
+    text: '성수동 조용하고 감성 가득한 와인바 🍷',
+    emoji: '🍷',
+    initialVotesPercent: 58,
+  },
+  optionB: {
+    text: '탁 트인 한강 야경 보며 치맥 & 산책 🍗',
+    emoji: '🍗',
+    initialVotesPercent: 42,
+  },
+  tag: '#첫데이트',
+  discussionPrompt: '여러분의 첫 데이트 로망은 어느 쪽인가요?',
+};
+
 export function LoungeBalanceGame() {
   const router = useRouter();
   const { user } = useUser();
   const { toast } = useToast();
 
-  const [game, setGame] = useState<DailyBalanceGameOutput | null>(null);
+  const [game, setGame] = useState<DailyBalanceGameOutput>(DEFAULT_INITIAL_GAME);
   const [selectedChoice, setSelectedChoice] = useState<'A' | 'B' | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingNew, setIsGeneratingNew] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -98,7 +117,6 @@ export function LoungeBalanceGame() {
         if (cached) {
           setGame(JSON.parse(cached));
           if (savedVote) setSelectedChoice(savedVote);
-          setIsLoading(false);
           return;
         }
       } catch {}
@@ -107,14 +125,15 @@ export function LoungeBalanceGame() {
     try {
       setIsGeneratingNew(true);
       const generated = await getDailyBalanceGameAction(todayStr);
-      setGame(generated);
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(generated));
-      } catch {}
+      if (generated && generated.question) {
+        setGame(generated);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(generated));
+        } catch {}
+      }
     } catch (err) {
       console.warn('Failed to load Gemini balance game:', err);
     } finally {
-      setIsLoading(false);
       setIsGeneratingNew(false);
     }
   }, [todayStr]);
@@ -186,17 +205,8 @@ export function LoungeBalanceGame() {
     }, 400);
   };
 
-  if (isLoading || !game) {
-    return (
-      <div className="w-full bg-zinc-900/60 border border-zinc-800 rounded-3xl p-5 mb-5 animate-pulse">
-        <div className="h-4 bg-zinc-800 rounded-full w-1/3 mb-3" />
-        <div className="h-6 bg-zinc-800 rounded-full w-3/4 mb-4" />
-        <div className="grid grid-cols-2 gap-3">
-          <div className="h-20 bg-zinc-800/80 rounded-2xl" />
-          <div className="h-20 bg-zinc-800/80 rounded-2xl" />
-        </div>
-      </div>
-    );
+  if (!game) {
+    return null;
   }
 
   const percentA = selectedChoice === 'A' 
