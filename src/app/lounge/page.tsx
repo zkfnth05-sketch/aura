@@ -176,15 +176,15 @@ export default function LoungePage() {
           </div>
         </section>
 
-        {/* Category Horizontal Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none no-scrollbar -mx-1 px-1">
+        {/* Category Filter Chips (2-Row Wrap Layout) */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-4">
           {CATEGORY_TABS.map((tab) => {
             const isActive = activeCategory === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveCategory(tab.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-[#E5A934] to-[#C98718] text-black shadow-md shadow-amber-500/20 scale-105'
                     : 'bg-zinc-900/90 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 hover:border-zinc-700'
