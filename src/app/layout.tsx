@@ -34,9 +34,32 @@ export default function RootLayout({
         <meta name="description" content="50:50 성비 맞춤과 AI 사진 보정, 취향 저격 매칭부터 데이트 코스까지. 당신의 연애를 AI가 가이드합니다." />
         
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="apple-touch-icon" href="/icon.png" />
         <meta name="theme-color" content="#E5A934" />
+
+        {/* Open Graph / KakaoTalk / Facebook / Instagram */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Aura" />
+        <meta property="og:title" content="Aura - 50:50 성비 맞춤 & 프리미엄 AI 데이팅" />
+        <meta property="og:description" content="남녀 50:50 성비 보장, AI 사진 보정과 맞춤 매칭부터 데이트 코스까지. 지금 바로 시작하세요." />
+        <meta property="og:url" content="https://aura-ai-dating.vercel.app" />
+        <meta property="og:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
+        <meta property="og:image:secure_url" content="https://aura-ai-dating.vercel.app/og-image.png" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Aura - 50:50 성비 맞춤 & 프리미엄 AI 데이팅" />
+        <meta property="og:locale" content="ko_KR" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@Aura" />
+        <meta name="twitter:title" content="Aura - 50:50 성비 맞춤 & 프리미엄 AI 데이팅" />
+        <meta name="twitter:description" content="남녀 50:50 성비 보장, AI 사진 보정과 맞춤 매칭부터 데이트 코스까지. 지금 바로 시작하세요." />
+        <meta name="twitter:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
