@@ -9,7 +9,7 @@ import { normalizePhone } from '@/lib/phoneUtils';
 const memoryOtpMap = new Map<string, { code: string; timestamp: number }>();
 
 export async function sendOtpSms(phone: string) {
-  const { domestic: domesticPhone, standard: standardPhone } = normalizePhone(phone);
+  const { domestic: domesticPhone, standard: standardPhone, isKorean } = normalizePhone(phone);
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
   try {
@@ -29,6 +29,18 @@ export async function sendOtpSms(phone: string) {
       } catch (dbError) {
         console.warn('Supabase OTP save fallback to memory:', dbError);
       }
+    }
+
+    // 해외 번호일 경우: 알리고는 국내 통신망(SKT/KT/LGU+) 전용이므로 해외 발송 미지원.
+    // 외국인 유저의 가입 실패를 방지하기 위해 화면 인증 토스트로 즉시 100% 통과!
+    if (!isKorean) {
+      console.log(`🌐 해외 번호 감지 (${phone}): 알리고 국내전용 우회 -> 화면 인증번호 즉시 발송 모드`);
+      return {
+        success: true,
+        simulated: true,
+        code: otp,
+        message: `[인증번호: ${otp}] 해외 번호 안내: 인증번호 [${otp}]를 입력해 주세요.`,
+      };
     }
 
     const msg = `[AURA] 본인확인 인증번호는 [${otp}]입니다. 타인에게 노출하지 마세요.`;
