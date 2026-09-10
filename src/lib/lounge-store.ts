@@ -1,8 +1,9 @@
 'use client';
 
 import { LoungePost, LoungeComment, INITIAL_LOUNGE_POSTS } from './lounge-types';
+import { supabase } from './supabaseClient';
 
-const STORAGE_KEY = 'aura_lounge_posts_v1';
+const STORAGE_KEY = 'aura_lounge_posts_v3';
 
 export class LoungeStore {
   public static getPosts(): LoungePost[] {
@@ -22,11 +23,73 @@ export class LoungeStore {
       console.warn('Failed to load lounge posts from storage:', e);
     }
 
-    // Default initialize
+    // Default initialize with real database virtual member posts
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_LOUNGE_POSTS));
     } catch {}
     return INITIAL_LOUNGE_POSTS;
+  }
+
+  /**
+   * Sync and hydrate lounge posts with registered virtual members from Supabase.
+   */
+  public static async syncWithRealMembers(): Promise<LoungePost[]> {
+    if (typeof window === 'undefined' || !supabase) {
+      return this.getPosts();
+    }
+
+    try {
+      const { data: dbUsers, error } = await supabase
+        .from('users')
+        .select('id, name, age, gender, location, photo_urls')
+        .not('photo_urls', 'is', null)
+        .limit(30);
+
+      if (!error && dbUsers && dbUsers.length > 0) {
+        const validUsers = dbUsers.filter(u => u.photo_urls && u.photo_urls.length > 0);
+        if (validUsers.length > 0) {
+          const currentPosts = this.getPosts();
+          let modified = false;
+
+          const updatedPosts = currentPosts.map((post, idx) => {
+            // If post user is a dummy or not from db, link it to a real virtual user
+            const matchingDbUser = validUsers.find(u => u.id === post.userId);
+            if (matchingDbUser) {
+              return {
+                ...post,
+                userName: matchingDbUser.name || post.userName,
+                userAge: matchingDbUser.age || post.userAge,
+                userGender: matchingDbUser.gender || post.userGender,
+                userLocation: matchingDbUser.location || post.userLocation,
+                userAvatar: matchingDbUser.photo_urls[0] || post.userAvatar,
+              };
+            }
+
+            // Otherwise assign from valid users round-robin
+            const assignedUser = validUsers[idx % validUsers.length];
+            modified = true;
+            return {
+              ...post,
+              userId: assignedUser.id,
+              userName: assignedUser.name || post.userName,
+              userAge: assignedUser.age || post.userAge,
+              userGender: assignedUser.gender || post.userGender,
+              userLocation: assignedUser.location || post.userLocation,
+              userAvatar: assignedUser.photo_urls[0] || post.userAvatar,
+            };
+          });
+
+          if (modified) {
+            this.savePosts(updatedPosts);
+            return updatedPosts;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Lounge real member sync error:', err);
+    }
+
+    return this.getPosts();
   }
 
   public static savePosts(posts: LoungePost[]): void {

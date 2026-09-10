@@ -82,7 +82,7 @@ export function LoungePostCard({
     setIsSubmittingComment(false);
   };
 
-  const handleSendDirectMessage = () => {
+  const handleSendDirectMessage = async () => {
     if (!dmMessage.trim()) {
       toast({
         variant: 'destructive',
@@ -91,18 +91,55 @@ export function LoungePostCard({
       return;
     }
 
+    const currentUserId = user?.id;
+    const targetUserId = post.userId;
+
+    if (currentUserId && targetUserId && currentUserId !== targetUserId) {
+      const matchId = [currentUserId, targetUserId].sort().join('_');
+      const now = new Date().toISOString();
+      try {
+        const { supabase } = await import('@/lib/supabaseClient');
+        if (supabase) {
+          await supabase.from('matches').upsert({
+            id: matchId,
+            users: [currentUserId, targetUserId],
+            last_message: dmMessage.trim(),
+            last_message_timestamp: now,
+            last_message_sender_id: currentUserId,
+            unread_counts: { [currentUserId]: 0, [targetUserId]: 1 },
+            call_status: 'idle',
+            caller_id: null,
+            match_date: now,
+          }, { onConflict: 'id' });
+
+          await supabase.from('messages').insert({
+            match_id: matchId,
+            sender_id: currentUserId,
+            content: `[스레드 인용: "${post.content.slice(0, 30)}..."]\n${dmMessage.trim()}`,
+            created_at: now,
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to upsert match message:', err);
+      }
+    }
+
     toast({
-      title: `💌 ${post.userName}님께 답장 전송 완료`,
+      title: `💌 ${post.userName}님께 메시지 전송 완료`,
       description: '회원님의 메시지가 상대방의 대화창으로 발송되었습니다!',
     });
 
     setIsDmDialogOpen(false);
     setDmMessage('');
 
-    // If matches page is used, redirect to matches
     setTimeout(() => {
-      router.push('/matches');
-    }, 600);
+      if (currentUserId && targetUserId) {
+        const matchId = [currentUserId, targetUserId].sort().join('_');
+        router.push(`/chat/${matchId}`);
+      } else {
+        router.push('/matches');
+      }
+    }, 500);
   };
 
   const handleShare = () => {
@@ -343,6 +380,21 @@ export function LoungePostCard({
                 "{post.content}"
               </p>
             </div>
+
+            {/* View Full Profile Link */}
+            {post.userId && post.userId !== 'guest' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDmDialogOpen(false);
+                  router.push(`/users/${post.userId}`);
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-amber-500/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>👤</span>
+                <span>{post.userName}님의 상세 프로필 및 사진 보기</span>
+              </button>
+            )}
 
             {/* Message Input */}
             <div>

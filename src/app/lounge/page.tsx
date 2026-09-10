@@ -31,9 +31,13 @@ export default function LoungePage() {
   const [activeCategory, setActiveCategory] = useState<LoungeCategory>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadPosts = useCallback(() => {
+  const loadPosts = useCallback(async () => {
     const loaded = LoungeStore.getPosts();
     setPosts(loaded);
+
+    // Sync with database virtual members
+    const synced = await LoungeStore.syncWithRealMembers();
+    setPosts(synced);
   }, []);
 
   useEffect(() => {
