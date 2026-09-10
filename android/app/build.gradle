@@ -71,7 +71,7 @@ android {
     defaultConfig {
         applicationId "app.web.aura"
         minSdkVersion 21
-        targetSdkVersion 35
+        targetSdkVersion 36
         versionCode 11
         versionName "11"
 
