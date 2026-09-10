@@ -17,6 +17,7 @@ import type { QuestPin, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 import { useUser } from '@/contexts/user-context';
+import { useLanguage } from '@/contexts/language-context';
 
 interface QuestDetailModalProps {
   quest: QuestPin | null;
@@ -41,6 +42,7 @@ export default function QuestDetailModal({
   onOpenChange,
   onQuestDeleted,
 }: QuestDetailModalProps) {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const { requireActiveAdmission } = useUser();
   const router = useRouter();
@@ -57,6 +59,17 @@ export default function QuestDetailModal({
     0,
     Math.round((new Date(quest.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60))
   );
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'coffee': return t('quest_cat_coffee');
+      case 'food': return t('quest_cat_food');
+      case 'drink': return t('quest_cat_drink');
+      case 'walk': return t('quest_cat_walk');
+      case 'activity': return t('quest_cat_activity');
+      default: return category;
+    }
+  };
 
   const catInfo = CATEGORY_LABELS[quest.category] || { label: '번개', icon: Zap };
   const CategoryIcon = catInfo.icon;
@@ -129,11 +142,11 @@ export default function QuestDetailModal({
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-semibold">
               <CategoryIcon className="w-3.5 h-3.5" />
-              <span>{catInfo.label}</span>
+              <span>{getCategoryLabel(quest.category)}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-zinc-400">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>{remainingHours}시간 뒤 자동 소멸</span>
+              <span>{remainingHours}{t('quest_hours_left')}</span>
             </div>
           </div>
 
@@ -211,7 +224,7 @@ export default function QuestDetailModal({
               ) : (
                 <>
                   <Trash2 className="w-4 h-4" />
-                  내가 올린 번개 퀘스트 삭제하기
+                  {t('quest_delete_btn')}
                 </>
               )}
             </Button>
@@ -229,7 +242,7 @@ export default function QuestDetailModal({
               ) : (
                 <>
                   <MessageCircle className="w-5 h-5" />
-                  1:1 대화 시작하기
+                  {t('quest_start_chat')}
                 </>
               )}
             </Button>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useEscapeCall, ESCAPE_PERSONAS } from '@/contexts/escape-call-context';
+import { useLanguage } from '@/contexts/language-context';
 import {
   Phone,
   PhoneOff,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function IncomingEscapeCallModal() {
+  const { t } = useLanguage();
   const { isRinging, isInCall, personaKey, acceptCall, endCall } = useEscapeCall();
   const [callDuration, setCallDuration] = useState(0);
 
@@ -73,7 +75,7 @@ export default function IncomingEscapeCallModal() {
         {isRinging ? (
           <div className="flex items-center gap-2 text-pink-400 text-sm font-medium animate-pulse pt-1">
             <PhoneCall className="w-4 h-4" />
-            <span>수신 전화 오는 중...</span>
+            <span>{t('escape_incoming')}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 text-emerald-400 text-sm font-mono font-medium pt-1">
@@ -93,7 +95,7 @@ export default function IncomingEscapeCallModal() {
               <span>수화기에서 실제 음성이 재생 중입니다</span>
             </div>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">
-              통화 연결됨
+              {t('escape_connected')}
             </span>
           </div>
 
@@ -101,7 +103,7 @@ export default function IncomingEscapeCallModal() {
           <div className="bg-gradient-to-b from-amber-500/15 to-amber-900/10 border-2 border-amber-500/40 rounded-3xl p-5 shadow-2xl space-y-2.5">
             <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
               <Sparkles className="w-4 h-4" />
-              <span>상대방에게 이렇게 말씀하고 자연스럽게 일어나세요:</span>
+              <span>{t('escape_script_hint')}</span>
             </div>
             <p className="text-base sm:text-lg font-bold text-amber-100 leading-relaxed bg-black/40 p-3.5 rounded-2xl border border-amber-500/20">
               &ldquo;{activePersona.teleprompterScript}&rdquo;
@@ -117,19 +119,19 @@ export default function IncomingEscapeCallModal() {
               <div className="w-12 h-12 rounded-full bg-zinc-800/80 flex items-center justify-center">
                 <MicOff className="w-5 h-5" />
               </div>
-              <span>소리 끔</span>
+              <span>{t('escape_mute')}</span>
             </div>
             <div className="flex flex-col items-center gap-1 text-zinc-400 text-xs">
               <div className="w-12 h-12 rounded-full bg-zinc-800/80 flex items-center justify-center">
                 <Grid className="w-5 h-5" />
               </div>
-              <span>키패드</span>
+              <span>{t('escape_keypad')}</span>
             </div>
             <div className="flex flex-col items-center gap-1 text-emerald-400 text-xs">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
                 <Volume2 className="w-5 h-5" />
               </div>
-              <span>스피커</span>
+              <span>{t('escape_speaker')}</span>
             </div>
           </div>
         </div>
@@ -138,10 +140,10 @@ export default function IncomingEscapeCallModal() {
         <div className="my-auto max-w-sm mx-auto text-center space-y-2 px-4">
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-pink-500/15 border border-pink-500/30 text-pink-300 text-xs font-medium">
             <ShieldCheck className="w-4 h-4" />
-            <span>AURA 여성 안심 탈출 시스템 작동 중</span>
+            <span>{t('escape_system_running')}</span>
           </div>
           <p className="text-zinc-400 text-xs leading-relaxed">
-            초록색 통화 버튼을 누르면 화면에 <strong>읽을 대본</strong>이 뜨고, 스피커에서 실제 다급한 목소리가 흘러나옵니다.
+            {t('escape_system_cue')}
           </p>
         </div>
       )}
@@ -160,7 +162,7 @@ export default function IncomingEscapeCallModal() {
               >
                 <PhoneOff className="w-7 h-7 sm:w-8 sm:h-8" />
               </button>
-              <span className="text-xs text-zinc-400 font-medium">거절</span>
+              <span className="text-xs text-zinc-400 font-medium">{t('escape_decline')}</span>
             </div>
 
             {/* Accept Button with Glowing Pulse */}
@@ -173,7 +175,7 @@ export default function IncomingEscapeCallModal() {
               >
                 <Phone className="w-7 h-7 sm:w-8 sm:h-8" />
               </button>
-              <span className="text-xs text-emerald-400 font-bold">통화 수락</span>
+              <span className="text-xs text-emerald-400 font-bold">{t('escape_accept')}</span>
             </div>
           </div>
         ) : (
@@ -185,10 +187,10 @@ export default function IncomingEscapeCallModal() {
               className="w-full max-w-xs py-4 rounded-3xl bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold text-base flex items-center justify-center gap-2 shadow-2xl shadow-red-600/40 transition-all"
             >
               <PhoneOff className="w-5 h-5" />
-              <span>통화 종료 및 탈출 완료</span>
+              <span>{t('escape_hangup')}</span>
             </button>
             <span className="text-[11px] text-zinc-400">
-              통화를 종료하면 화면이 닫히며 원래 페이지로 돌아갑니다.
+              {t('escape_hangup_desc')}
             </span>
           </div>
         )}

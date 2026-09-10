@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { ShieldCheck, Clock, Zap, Coffee, Utensils, Wine, Footprints, Sparkles, 
 import { useToast } from '@/hooks/use-toast';
 import { createQuestPin, sendRadarPushToNearbyUsers, fetchUserProfile } from '@/lib/supabaseDataService';
 import type { QuestCategory, QuestPin, User } from '@/lib/types';
+import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 
 interface CreateQuestDialogProps {
@@ -51,12 +52,44 @@ export default function CreateQuestDialog({
   currentLng,
   onQuestCreated,
 }: CreateQuestDialogProps) {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [category, setCategory] = useState<QuestCategory>('coffee');
   const [title, setTitle] = useState('');
-  const [meetupTime, setMeetupTime] = useState('오늘 저녁 7시 30분');
+  const [meetupTime, setMeetupTime] = useState(t('quest_default_time'));
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!meetupTime) {
+      setMeetupTime(t('quest_default_time'));
+    }
+  }, [t]);
+
+  const presets = [
+    t('quest_preset_1'),
+    t('quest_preset_2'),
+    t('quest_preset_3'),
+    t('quest_preset_4'),
+  ];
+
+  const timePresets = [
+    t('quest_time_preset_1'),
+    t('quest_time_preset_2'),
+    t('quest_time_preset_3'),
+    t('quest_time_preset_4'),
+  ];
+
+  const getCategoryLabel = (id: QuestCategory) => {
+    switch (id) {
+      case 'coffee': return t('quest_cat_coffee');
+      case 'food': return t('quest_cat_food');
+      case 'drink': return t('quest_cat_drink');
+      case 'walk': return t('quest_cat_walk');
+      case 'activity': return t('quest_cat_activity');
+      default: return id;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,10 +168,10 @@ export default function CreateQuestDialog({
             <span className="p-2 rounded-xl bg-primary/20 text-primary">
               <Zap className="w-5 h-5 fill-current" />
             </span>
-            24시간 즉석 번개 퀘스트 등록
+            {t('quest_create_title')}
           </DialogTitle>
           <DialogDescription className="text-zinc-400 text-xs">
-            오늘 당장 함께하고 싶은 즐거운 활동을 지도에 올려보세요!
+            {t('quest_create_desc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -146,25 +179,25 @@ export default function CreateQuestDialog({
         <div className="bg-primary/10 border border-primary/20 rounded-2xl p-3.5 space-y-2 text-xs">
           <div className="flex items-center gap-2 text-primary font-semibold">
             <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-            <span>500m 안심 프라이버시 보호</span>
+            <span>{t('quest_privacy_title')}</span>
           </div>
           <p className="text-zinc-300 leading-relaxed">
-            회원님의 실제 상세 주소가 아닌, <strong>반경 500m 안심 영역</strong>에 무작위로 핀이 배치됩니다.
+            {t('quest_privacy_desc')}
           </p>
           <div className="flex items-center gap-1.5 text-zinc-400 pt-0.5 text-[11px]">
             <Clock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span>등록 후 <strong>정확히 24시간 뒤 DB에서 흔적 없이 자동 삭제</strong>됩니다.</span>
+            <span>{t('quest_privacy_24h')}</span>
           </div>
           <div className="flex items-center gap-1.5 text-pink-400 pt-0.5 text-[11px]">
             <Radio className="w-3.5 h-3.5 text-pink-400 flex-shrink-0 animate-pulse" />
-            <span>등록 즉시 <strong>반경 5km 이내 이성 회원</strong> 스마트폰으로 실시간 번개 레이더 푸시가 발송됩니다.</span>
+            <span>{t('quest_radar_desc')}</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           {/* Category Selector */}
           <div>
-            <label className="text-xs font-semibold text-zinc-400 mb-1.5 block">카테고리 선택</label>
+            <label className="text-xs font-semibold text-zinc-400 mb-1.5 block">{t('quest_category_label')}</label>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((cat) => {
                 const Icon = cat.icon;
@@ -182,7 +215,7 @@ export default function CreateQuestDialog({
                     )}
                   >
                     <Icon className="w-4 h-4" />
-                    <span>{cat.label}</span>
+                    <span>{getCategoryLabel(cat.id)}</span>
                   </button>
                 );
               })}
@@ -191,9 +224,9 @@ export default function CreateQuestDialog({
 
           {/* Preset Quick Titles */}
           <div>
-            <label className="text-xs font-semibold text-zinc-400 mb-1.5 block">추천 제목 칩</label>
+            <label className="text-xs font-semibold text-zinc-400 mb-1.5 block">{t('quest_chips_label')}</label>
             <div className="flex flex-wrap gap-1.5">
-              {PRESETS.map((preset, idx) => (
+              {presets.map((preset, idx) => (
                 <button
                   key={idx}
                   type="button"
@@ -208,11 +241,11 @@ export default function CreateQuestDialog({
 
           {/* Title Input */}
           <div>
-            <label className="text-xs font-semibold text-zinc-400 mb-1 block">퀘스트 한 줄 제목 *</label>
+            <label className="text-xs font-semibold text-zinc-400 mb-1 block">{t('quest_title_input_label')}</label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: 오늘 저녁 7시 성수동 카페 가실 분!"
+              placeholder={t('quest_title_placeholder')}
               className="bg-zinc-900 border-zinc-800 text-white rounded-xl h-11 text-sm focus-visible:ring-primary"
               maxLength={60}
               required
@@ -222,11 +255,11 @@ export default function CreateQuestDialog({
           {/* Meetup Time with Quick Presets */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-zinc-300">약속 시간 *</label>
-              <span className="text-[11px] text-zinc-500">언제 만날까요?</span>
+              <label className="text-xs font-semibold text-zinc-300">{t('quest_time_label')}</label>
+              <span className="text-[11px] text-zinc-500">{t('quest_time_hint')}</span>
             </div>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {['오늘 19:00', '오늘 20:00', '지금 바로(1시간 내)', '내일 점심 12:30'].map((timePreset, idx) => (
+              {timePresets.map((timePreset, idx) => (
                 <button
                   key={idx}
                   type="button"
@@ -245,7 +278,7 @@ export default function CreateQuestDialog({
             <Input
               value={meetupTime}
               onChange={(e) => setMeetupTime(e.target.value)}
-              placeholder="예: 오늘 저녁 7시 30분, 내일 오후 2시"
+              placeholder={t('quest_time_placeholder')}
               className="bg-zinc-900 border-zinc-800 text-white rounded-xl h-11 text-sm focus-visible:ring-primary"
               required
             />
@@ -254,13 +287,13 @@ export default function CreateQuestDialog({
           {/* Activity Content (만나서 뭘 할 건지) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-zinc-300">만나서 뭘 할 건지 (활동 내용) *</label>
-              <span className="text-[11px] text-zinc-500">상세 플랜</span>
+              <label className="text-xs font-semibold text-zinc-300">{t('quest_desc_label')}</label>
+              <span className="text-[11px] text-zinc-500">{t('quest_desc_hint')}</span>
             </div>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="예: 성수동 신상 디저트 카페에서 소금빵 먹으면서 가볍게 대화 나눠요! 취미나 여행 이야기 환영합니다 :)"
+              placeholder={t('quest_desc_placeholder')}
               className="bg-zinc-900 border-zinc-800 text-white rounded-xl text-sm min-h-[75px] focus-visible:ring-primary leading-relaxed"
               maxLength={200}
               required
@@ -276,10 +309,10 @@ export default function CreateQuestDialog({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                안심 핀 등록 중...
+                {t('quest_submitting')}
               </>
             ) : (
-              '⚡ 지도에 번개 핀 올리기'
+              t('quest_create_submit')
             )}
           </Button>
         </form>

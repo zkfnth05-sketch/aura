@@ -149,13 +149,13 @@ export default function ProfilePage() {
                       <div>
                         <span className="text-xs font-bold text-white">
                           {currentUser.admissionStatus === 'queued'
-                            ? `50:50 성비 대기열 [${currentUser.queuePosition || 1}번째]`
-                            : 'AURA 50:50 성비 보장 VIP 정회원'}
+                            ? t('profile_vip_queue_badge').replace('{pos}', String(currentUser.queuePosition || 1))
+                            : t('profile_vip_member_badge')}
                         </span>
                         <p className="text-[11px] text-zinc-400">
                           {currentUser.admissionStatus === 'queued'
-                            ? '여사친 1명 초대 시 즉시 0순위 프리패스 승격'
-                            : '1:1 완벽 매칭 및 번개 퀘스트 무제한 이용 가능'}
+                            ? t('profile_vip_queue_hint')
+                            : t('profile_vip_member_hint')}
                         </p>
                       </div>
                     </div>
@@ -166,13 +166,13 @@ export default function ProfilePage() {
                       onClick={() => openActionGate('1:1 대화 및 초대')}
                       className="border-amber-500/40 text-amber-300 hover:bg-amber-500/20 text-xs h-8 px-3 rounded-lg"
                     >
-                      {currentUser.admissionStatus === 'queued' ? '여사친 초대' : '초대 코드'}
+                      {currentUser.admissionStatus === 'queued' ? t('profile_invite_friend_btn') : t('profile_invite_code_btn')}
                     </Button>
                   </div>
 
                   {currentUser.referralCode && (
                     <div className="mt-3 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs">
-                      <span className="text-zinc-500 font-medium">내 고유 VIP 초대 코드:</span>
+                      <span className="text-zinc-500 font-medium">{t('profile_my_invite_code_label')}</span>
                       <span className="font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                         {currentUser.referralCode}
                       </span>
@@ -191,15 +191,15 @@ export default function ProfilePage() {
                       </span>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white">나의 아우라(Aura) 매력 진단</span>
+                          <span className="text-xs font-bold text-white">{t('charm_title')}</span>
                           <span className="text-[10px] bg-gradient-to-r from-pink-500 to-rose-500 text-white font-extrabold px-1.5 py-0.2 rounded-full shadow-sm">
-                            인스타 핫템
+                            {t('profile_charm_insta_hot')}
                           </span>
                         </div>
                         <p className="text-[11px] text-zinc-400">
                           {savedAuraReport
                             ? `아우라 ${savedAuraReport.auraScore}점 [${savedAuraReport.title}]`
-                            : '내 사진과 프로필을 분석한 1장짜리 인스타 화보 카드'}
+                            : t('profile_charm_banner_desc')}
                         </p>
                       </div>
                     </div>
@@ -213,8 +213,8 @@ export default function ProfilePage() {
                     <Sparkles className="w-4 h-4" />
                     <span>
                       {savedAuraReport
-                        ? '👑 나의 아우라 화보 카드 보기 & 인스타 공유'
-                        : '🔮 3초 만에 나의 아우라 매력 진단받기'}
+                        ? t('profile_charm_view_btn')
+                        : t('profile_charm_diagnose_btn')}
                     </span>
                   </Button>
                 </div>
@@ -319,16 +319,16 @@ export default function ProfilePage() {
                     </span>
                     <div>
                       <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                        <span>여성 안심 탈출 라운지</span>
+                        <span>{t('profile_escape_title')}</span>
                         <span className="text-[10px] bg-pink-500 text-white font-bold px-1.5 py-0.2 rounded-full">HOT</span>
                       </h3>
-                      <p className="text-xs text-zinc-400">오프라인 첫 만남 비상 탈출 가짜 전화</p>
+                      <p className="text-xs text-zinc-400">{t('profile_escape_subtitle')}</p>
                     </div>
                   </div>
                 </div>
 
                 <p className="text-xs text-zinc-300 leading-relaxed">
-                  만남 자리가 어색하거나 곤란할 때, <strong>진짜 전화 수신 화면과 음성 대본</strong>으로 자연스럽게 자리를 벗어날 수 있습니다. 미리 테스트해보세요!
+                  {t('profile_escape_desc')}
                 </p>
 
                 <div className="pt-1">
@@ -338,7 +338,7 @@ export default function ProfilePage() {
                     className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-xs rounded-2xl py-5 shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2"
                   >
                     <PhoneCall className="w-4 h-4" />
-                    <span>가짜 탈출 전화 사전 체험 및 예약하기</span>
+                    <span>{t('profile_escape_btn')}</span>
                   </Button>
                 </div>
               </div>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchGenderEquilibriumRatio } from '@/lib/supabaseDataService';
 import { Sparkles, ShieldCheck } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 
 interface GenderRatioWidgetProps {
   compact?: boolean;
@@ -10,6 +11,7 @@ interface GenderRatioWidgetProps {
 }
 
 export function GenderRatioWidget({ compact = false, className = '' }: GenderRatioWidgetProps) {
+  const { t } = useLanguage();
   const [ratioData, setRatioData] = useState<{
     malePercent: number;
     femalePercent: number;
@@ -19,7 +21,7 @@ export function GenderRatioWidget({ compact = false, className = '' }: GenderRat
     malePercent: 50,
     femalePercent: 50,
     isEquilibrium: true,
-    statusLabel: '50:50 성비 균형 완벽 유지 중',
+    statusLabel: '50:50 Equilibrium',
   });
 
   useEffect(() => {
@@ -34,10 +36,10 @@ export function GenderRatioWidget({ compact = false, className = '' }: GenderRat
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
         <span className="text-[11px] font-semibold tracking-wide text-zinc-300">
-          남 <span className="text-cyan-400 font-bold">{ratioData.malePercent}%</span> : 여 <span className="text-rose-400 font-bold">{ratioData.femalePercent}%</span>
+          {t('gender_male_label')} <span className="text-cyan-400 font-bold">{ratioData.malePercent}%</span> : {t('gender_female_label')} <span className="text-rose-400 font-bold">{ratioData.femalePercent}%</span>
         </span>
         <span className="text-[10px] text-emerald-400 font-medium hidden sm:inline">
-          (균형 보장)
+          ({t('gender_balance_label')})
         </span>
       </div>
     );
@@ -59,7 +61,7 @@ export function GenderRatioWidget({ compact = false, className = '' }: GenderRat
         </div>
         <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-medium">
           <Sparkles className="w-3 h-3 text-amber-400" />
-          <span>실시간 품질 관리</span>
+          <span>{t('gender_realtime_qa')}</span>
         </div>
       </div>
 
@@ -89,17 +91,17 @@ export function GenderRatioWidget({ compact = false, className = '' }: GenderRat
       <div className="flex justify-between items-center mt-2.5 text-xs">
         <div className="flex items-center gap-1.5 font-bold">
           <span className="w-2 h-2 rounded-full bg-cyan-400" />
-          <span className="text-zinc-400">남성 회원</span>
+          <span className="text-zinc-400">{t('gender_male_label')}</span>
           <span className="text-cyan-400 font-extrabold">{ratioData.malePercent}%</span>
         </div>
         
         <span className="text-[11px] text-zinc-400 bg-zinc-900/80 px-2 py-0.5 rounded-full border border-zinc-800">
-          완벽 균형
+          {t('gender_balance_label')}
         </span>
 
         <div className="flex items-center gap-1.5 font-bold">
           <span className="text-rose-400 font-extrabold">{ratioData.femalePercent}%</span>
-          <span className="text-zinc-400">여성 회원</span>
+          <span className="text-zinc-400">{t('gender_female_label')}</span>
           <span className="w-2 h-2 rounded-full bg-rose-400" />
         </div>
       </div>

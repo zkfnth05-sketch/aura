@@ -659,7 +659,7 @@ export default function ChatPage() {
               ? "bg-pink-500/20 border-pink-500 text-pink-300 animate-pulse"
               : "bg-zinc-900/80 border-pink-500/40 text-pink-400 hover:bg-pink-500/10 hover:border-pink-400"
           )}
-          title="여성 안심 탈출 가짜 전화"
+          title={t('escape_title')}
         >
           {escapeCountdown !== null ? (
             <>
@@ -669,7 +669,7 @@ export default function ChatPage() {
           ) : (
             <>
               <ShieldAlert className="h-4 w-4 text-pink-400" />
-              <span className="hidden sm:inline">안심 탈출</span>
+              <span className="hidden sm:inline">{t('escape_nav_btn')}</span>
             </>
           )}
         </Button>

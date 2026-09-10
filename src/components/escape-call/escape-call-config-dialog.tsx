@@ -22,6 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useEscapeCall, ESCAPE_PERSONAS, EscapePersonaKey } from '@/contexts/escape-call-context';
+import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 
 const TIME_OPTIONS = [
@@ -32,6 +33,7 @@ const TIME_OPTIONS = [
 ];
 
 export default function EscapeCallConfigDialog() {
+  const { t } = useLanguage();
   const {
     isConfigOpen,
     closeConfigModal,
@@ -59,10 +61,10 @@ export default function EscapeCallConfigDialog() {
             <span className="p-2 rounded-2xl bg-gradient-to-tr from-pink-600 to-rose-500 text-white shadow-lg shadow-pink-500/20">
               <ShieldAlert className="w-5 h-5" />
             </span>
-            <span>여성 안심 탈출 가짜 전화</span>
+            <span>{t('escape_title')}</span>
           </DialogTitle>
           <DialogDescription className="text-zinc-400 text-xs leading-relaxed">
-            첫 만남 자리가 어색하거나 위험할 때, 통화 수신과 음성 대본으로 상대방 기분 상하지 않게 100% 자연스럽게 빠져나갈 수 있는 안심 비상벨입니다.
+            {t('escape_desc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -73,10 +75,10 @@ export default function EscapeCallConfigDialog() {
               <PhoneCall className="w-5 h-5 text-pink-400 animate-bounce" />
               <div>
                 <p className="text-xs font-semibold text-pink-300">
-                  [{activePersona.callerName}] 전화 대기 중
+                  [{activePersona.callerName}] {t('escape_waiting')}
                 </p>
                 <p className="text-lg font-mono font-bold text-white">
-                  {countdown}초 뒤 자동 수신
+                  {countdown}{t('escape_countdown')}
                 </p>
               </div>
             </div>
@@ -87,7 +89,7 @@ export default function EscapeCallConfigDialog() {
               className="text-xs text-zinc-400 hover:text-white hover:bg-zinc-800"
             >
               <XCircle className="w-4 h-4 mr-1 text-red-400" />
-              예약 취소
+              {t('escape_cancel')}
             </Button>
           </div>
         )}
@@ -101,7 +103,7 @@ export default function EscapeCallConfigDialog() {
           >
             <div className="flex items-center gap-2 text-xs font-bold text-pink-400">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>실패 확률 0%! 3단계 실전 탈출 요령</span>
+              <span>{t('escape_guide_title')}</span>
             </div>
             {isGuideExpanded ? (
               <ChevronUp className="w-4 h-4 text-zinc-400" />
@@ -152,7 +154,7 @@ export default function EscapeCallConfigDialog() {
         {/* Step 1: Persona Selection */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-            <span>1. 발신자 선택 (상황 맞춤 핑계)</span>
+            <span>{t('escape_step1_title')}</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
             {(Object.keys(ESCAPE_PERSONAS) as EscapePersonaKey[]).map((key) => {
@@ -193,7 +195,7 @@ export default function EscapeCallConfigDialog() {
         <div className="space-y-2">
           <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-pink-400" />
-            <span>2. 언제 전화가 걸려오게 할까요?</span>
+            <span>{t('escape_step2_title')}</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
             {TIME_OPTIONS.map((opt) => {
@@ -214,7 +216,7 @@ export default function EscapeCallConfigDialog() {
                     <span className="text-xs font-bold">{opt.label}</span>
                     {opt.recommended && (
                       <span className="text-[9px] bg-pink-500 text-white px-1.5 py-0.2 rounded-full font-bold">
-                        추천
+                        {t('escape_recommend')}
                       </span>
                     )}
                   </div>
@@ -233,7 +235,7 @@ export default function EscapeCallConfigDialog() {
             className="w-full py-6 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white font-bold text-sm shadow-xl shadow-pink-500/25 hover:opacity-95 transition-all flex items-center justify-center gap-2"
           >
             <PhoneCall className="w-5 h-5 animate-pulse" />
-            <span>{selectedSeconds}초 뒤 탈출 전화 예약하기</span>
+            <span>{selectedSeconds}{t('escape_btn_schedule')}</span>
           </Button>
 
           <Button
@@ -242,7 +244,7 @@ export default function EscapeCallConfigDialog() {
             onClick={closeConfigModal}
             className="w-full text-zinc-400 hover:text-zinc-200 text-xs py-2"
           >
-            닫기
+            {t('escape_close')}
           </Button>
         </div>
       </DialogContent>

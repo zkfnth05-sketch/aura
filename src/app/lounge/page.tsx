@@ -8,6 +8,7 @@ import { LoungeBalanceGame } from '@/components/lounge/lounge-balance-game';
 import { LoungeStore } from '@/lib/lounge-store';
 import { LoungePost, LoungeCategory } from '@/lib/lounge-types';
 import { useUser } from '@/contexts/user-context';
+import { useLanguage } from '@/contexts/language-context';
 import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw, PenSquare, VenetianMask as Mask } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -17,43 +18,44 @@ interface CategoryTab {
   icon?: React.ReactNode;
 }
 
-const CATEGORY_TABS: CategoryTab[] = [
-  { id: 'all', label: '전체' },
-  { id: 'anonymous', label: '익명고민', icon: <Mask className="w-3.5 h-3.5 text-purple-400" /> },
-  { id: 'popular', label: '인기', icon: <Flame className="w-3.5 h-3.5 text-orange-400" /> },
-  { id: 'cafe', label: '카페·맛집', icon: <Coffee className="w-3.5 h-3.5 text-amber-400" /> },
-  { id: 'fitness', label: '오운완', icon: <Dumbbell className="w-3.5 h-3.5 text-emerald-400" /> },
-  { id: 'pet', label: '반려견', icon: <Dog className="w-3.5 h-3.5 text-yellow-400" /> },
-  { id: 'daily', label: '일상', icon: <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> },
-  { id: 'travel', label: '여행', icon: <Compass className="w-3.5 h-3.5 text-sky-400" /> },
-  { id: 'culture', label: '문화·전시', icon: <Palette className="w-3.5 h-3.5 text-purple-400" /> },
-];
-
-const ROLLING_NOTICES = [
-  { icon: '🛡️', text: '100% 프로필 검증을 마친 프라이빗 공간' },
-  { icon: '🔒', text: '안심하고 속마음을 털어놓는 시크릿 라운지' },
-  { icon: '✨', text: '상호 매너를 지키는 프리미엄 멤버스' },
-];
-
 export default function LoungePage() {
   const { user } = useUser();
+  const { t } = useLanguage();
   const [posts, setPosts] = useState<LoungePost[]>([]);
   const [activeCategory, setActiveCategory] = useState<LoungeCategory>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [noticeIndex, setNoticeIndex] = useState(0);
   const [fadeAnim, setFadeAnim] = useState(true);
 
+  const categoryTabs: CategoryTab[] = useMemo(() => [
+    { id: 'all', label: t('lounge_cat_all') },
+    { id: 'anonymous', label: t('lounge_cat_anonymous'), icon: <Mask className="w-3.5 h-3.5 text-purple-400" /> },
+    { id: 'popular', label: t('lounge_cat_popular'), icon: <Flame className="w-3.5 h-3.5 text-orange-400" /> },
+    { id: 'cafe', label: t('lounge_cat_cafe'), icon: <Coffee className="w-3.5 h-3.5 text-amber-400" /> },
+    { id: 'fitness', label: t('lounge_cat_fitness'), icon: <Dumbbell className="w-3.5 h-3.5 text-emerald-400" /> },
+    { id: 'pet', label: t('lounge_cat_pet'), icon: <Dog className="w-3.5 h-3.5 text-yellow-400" /> },
+    { id: 'daily', label: t('lounge_cat_daily'), icon: <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> },
+    { id: 'travel', label: t('lounge_cat_travel'), icon: <Compass className="w-3.5 h-3.5 text-sky-400" /> },
+    { id: 'culture', label: t('lounge_cat_culture'), icon: <Palette className="w-3.5 h-3.5 text-purple-400" /> },
+  ], [t]);
+
+  const rollingNotices = useMemo(() => [
+    { icon: '🛡️', text: t('lounge_notice_1') },
+    { icon: '🔒', text: t('lounge_notice_2') },
+    { icon: '✨', text: t('lounge_notice_3') },
+  ], [t]);
+
   // Ticker for rolling notices
   useEffect(() => {
     const timer = setInterval(() => {
       setFadeAnim(false);
       setTimeout(() => {
-        setNoticeIndex((prev) => (prev + 1) % ROLLING_NOTICES.length);
+        setNoticeIndex((prev) => (prev + 1) % (rollingNotices.length || 3));
         setFadeAnim(true);
       }, 250);
     }, 3800);
     return () => clearInterval(timer);
-  }, []);
+  }, [rollingNotices.length]);
 
   const loadPosts = useCallback(async () => {
     const loaded = LoungeStore.getPosts();
@@ -154,10 +156,10 @@ export default function LoungePage() {
           </div>
 
           <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-[#FFF3D1] via-[#E5A934] to-[#C98718] bg-clip-text text-transparent">
-            AURA 라운지
+            {t('lounge_title')}
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed">
-            회원들의 소소한 일상과 취향을 나누는 프라이빗 공간
+            {t('lounge_subtitle')}
           </p>
 
           <div className="mt-3.5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-400">
@@ -168,19 +170,19 @@ export default function LoungePage() {
                   fadeAnim ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1.5'
                 }`}
               >
-                <span className="text-xs">{ROLLING_NOTICES[noticeIndex].icon}</span>
+                <span className="text-xs">{rollingNotices[noticeIndex].icon}</span>
                 <span className="text-zinc-300 font-medium truncate">
-                  {ROLLING_NOTICES[noticeIndex].text}
+                  {rollingNotices[noticeIndex].text}
                 </span>
               </div>
             </div>
-            <span className="text-amber-400/90 font-medium flex-shrink-0">✨ 아바타 클릭 시 1:1 대화</span>
+            <span className="text-amber-400/90 font-medium flex-shrink-0">{t('lounge_avatar_chat_hint')}</span>
           </div>
         </section>
 
         {/* Category Filter Chips (2-Row Wrap Layout) */}
         <div className="flex flex-wrap items-center gap-1.5 mb-4">
-          {CATEGORY_TABS.map((tab) => {
+          {categoryTabs.map((tab) => {
             const isActive = activeCategory === tab.id;
             return (
               <button
@@ -219,17 +221,17 @@ export default function LoungePage() {
             <div className="p-8 text-center bg-zinc-900/40 rounded-3xl border border-zinc-800/60 mt-4">
               <Sparkles className="w-8 h-8 text-amber-400/60 mx-auto mb-2.5 animate-bounce" />
               <p className="text-sm font-bold text-zinc-300 mb-1">
-                아직 이 카테고리에 글이 없어요
+                {t('lounge_empty_title')}
               </p>
               <p className="text-xs text-zinc-500 mb-4">
-                가장 먼저 소소한 일상이나 사진을 공유해보세요!
+                {t('lounge_empty_desc')}
               </p>
               <Button
                 size="sm"
                 onClick={() => setActiveCategory('all')}
                 className="rounded-full bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 font-semibold"
               >
-                전체 피드 보기
+                {t('lounge_view_all')}
               </Button>
             </div>
           )}
@@ -248,7 +250,7 @@ export default function LoungePage() {
           className="fixed bottom-24 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold text-xs shadow-xl shadow-amber-500/30 active:scale-95 transition-all"
         >
           <PenSquare className="w-4 h-4 text-black" />
-          <span>글쓰기</span>
+          <span>{t('lounge_write_post')}</span>
         </button>
       </main>
     </div>

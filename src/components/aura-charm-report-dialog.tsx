@@ -23,6 +23,7 @@ import {
 import type { User } from '@/lib/types';
 import { getAuraCharmReport, type AuraCharmOutput } from '@/actions/ai-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 import Image from 'next/image';
 
 interface AuraCharmReportDialogProps {
@@ -40,6 +41,7 @@ export default function AuraCharmReportDialog({
   initialReport,
   onReportSaved,
 }: AuraCharmReportDialogProps) {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [report, setReport] = useState<AuraCharmOutput | null>(initialReport || null);
   const [isLoading, setIsLoading] = useState(false);
@@ -349,10 +351,10 @@ export default function AuraCharmReportDialog({
             <span className="p-1.5 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-400 text-white shadow-lg shadow-pink-500/25">
               <Sparkles className="w-4 h-4" />
             </span>
-            <span>나의 아우라(Aura) 매력 진단</span>
+            <span>{t('charm_title')}</span>
           </DialogTitle>
           <DialogDescription className="text-zinc-400 text-xs">
-            제미나이 AI 비전이 내 사진과 프로필을 정밀 분석한 1장짜리 화보 리포트
+            {t('charm_subtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -363,7 +365,7 @@ export default function AuraCharmReportDialog({
               <Sparkles className="w-6 h-6 text-pink-400 absolute inset-0 m-auto animate-pulse" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-bold text-white">제미나이 AI가 회원님의 매력을 분석 중입니다...</p>
+              <p className="text-sm font-bold text-white">{t('charm_analyzing')}</p>
               <p className="text-xs text-zinc-400">사진의 분위기, 표정, 프로필 취향을 읽어내는 중 💫</p>
             </div>
           </div>
@@ -395,14 +397,14 @@ export default function AuraCharmReportDialog({
                     />
                   </div>
                   <div className="absolute -bottom-2 inset-x-0 mx-auto w-max px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-600 to-rose-500 text-white text-[10px] font-bold shadow-md">
-                    상위 {report.percentile}% 아우라
+                    {t('charm_percentile').replace('{p}', String(report.percentile))}
                   </div>
                 </div>
 
                 <div className="space-y-0.5 pt-1">
                   <div className="flex items-center justify-center gap-1.5 text-amber-400 font-bold text-sm">
                     <Crown className="w-4 h-4 fill-current" />
-                    <span>아우라 지수: {report.auraScore}점</span>
+                    <span>{t('charm_score_label')} {report.auraScore}</span>
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                     [ {report.title} ]
@@ -429,7 +431,7 @@ export default function AuraCharmReportDialog({
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-3 space-y-1 text-xs">
                 <div className="flex items-center gap-1.5 text-rose-400 font-bold text-[11px]">
                   <Heart className="w-3.5 h-3.5 fill-current" />
-                  <span>나와 궁합 99% 최고의 이성 스타일</span>
+                  <span>{t('charm_best_style')}</span>
                 </div>
                 <p className="text-white font-medium pl-5">{report.bestMatchStyle}</p>
               </div>
@@ -438,7 +440,7 @@ export default function AuraCharmReportDialog({
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 space-y-1 text-xs">
                 <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px]">
                   <Coffee className="w-3.5 h-3.5" />
-                  <span>추천 첫 데이트 무드</span>
+                  <span>{t('charm_date_mood')}</span>
                 </div>
                 <p className="text-white font-medium pl-5">{report.dateRecommendation}</p>
               </div>
@@ -462,7 +464,7 @@ export default function AuraCharmReportDialog({
                 ) : (
                   <Share2 className="w-4 h-4" />
                 )}
-                <span>📸 인스타그램 스토리에 공유하기</span>
+                <span>{t('charm_share_story')}</span>
               </Button>
 
               <div className="grid grid-cols-2 gap-2">
@@ -474,7 +476,7 @@ export default function AuraCharmReportDialog({
                   className="py-4 rounded-xl border-zinc-800 bg-zinc-900 text-xs font-semibold text-zinc-200 hover:bg-zinc-800 flex items-center justify-center gap-1.5"
                 >
                   <Download className="w-4 h-4" />
-                  <span>화보 이미지 저장</span>
+                  <span>{t('charm_save_image')}</span>
                 </Button>
 
                 <Button
@@ -485,7 +487,7 @@ export default function AuraCharmReportDialog({
                   className="py-4 rounded-xl text-zinc-400 hover:text-white text-xs flex items-center justify-center gap-1.5"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>다시 진단받기</span>
+                  <span>{t('charm_retry')}</span>
                 </Button>
               </div>
             </div>

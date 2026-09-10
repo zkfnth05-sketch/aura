@@ -6,6 +6,7 @@ import type { QuestPin } from '@/lib/types';
 import { Coffee, Utensils, Wine, Footprints, Sparkles, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useLanguage } from '@/contexts/language-context';
 
 interface QuestPinMarkerProps {
   quest: QuestPin;
@@ -20,7 +21,6 @@ const CATEGORY_CONFIG: Record<
     bgGradient: string;
     neonColor: string;
     border: string;
-    label: string;
   }
 > = {
   coffee: {
@@ -28,35 +28,30 @@ const CATEGORY_CONFIG: Record<
     bgGradient: 'from-amber-500 to-orange-600',
     neonColor: 'shadow-[0_0_15px_rgba(245,158,11,0.6)]',
     border: 'border-amber-400',
-    label: '카페',
   },
   food: {
     icon: Utensils,
     bgGradient: 'from-rose-500 to-red-600',
     neonColor: 'shadow-[0_0_15px_rgba(244,63,94,0.6)]',
     border: 'border-rose-400',
-    label: '맛집',
   },
   drink: {
     icon: Wine,
     bgGradient: 'from-purple-500 to-indigo-600',
     neonColor: 'shadow-[0_0_15px_rgba(168,85,247,0.6)]',
     border: 'border-purple-400',
-    label: '한잔',
   },
   walk: {
     icon: Footprints,
     bgGradient: 'from-emerald-500 to-teal-600',
     neonColor: 'shadow-[0_0_15px_rgba(16,185,129,0.6)]',
     border: 'border-emerald-400',
-    label: '산책',
   },
   activity: {
     icon: Sparkles,
     bgGradient: 'from-cyan-500 to-blue-600',
     neonColor: 'shadow-[0_0_15px_rgba(6,182,212,0.6)]',
     border: 'border-cyan-400',
-    label: '놀거리',
   },
 };
 
@@ -65,6 +60,7 @@ export const QuestPinMarker = React.memo(function QuestPinMarker({
   isMyQuest,
   onClick,
 }: QuestPinMarkerProps) {
+  const { t } = useLanguage();
   if (typeof quest.approxLat !== 'number' || typeof quest.approxLng !== 'number') return null;
 
   const config = CATEGORY_CONFIG[quest.category] || {
@@ -72,7 +68,17 @@ export const QuestPinMarker = React.memo(function QuestPinMarker({
     bgGradient: 'from-primary to-orange-500',
     neonColor: 'shadow-[0_0_15px_rgba(255,100,50,0.6)]',
     border: 'border-primary',
-    label: '번개',
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'coffee': return t('quest_cat_coffee');
+      case 'food': return t('quest_cat_food');
+      case 'drink': return t('quest_cat_drink');
+      case 'walk': return t('quest_cat_walk');
+      case 'activity': return t('quest_cat_activity');
+      default: return '';
+    }
   };
 
   const Icon = config.icon;
@@ -131,9 +137,9 @@ export const QuestPinMarker = React.memo(function QuestPinMarker({
               {quest.title}
             </span>
             <div className="flex items-center gap-1 text-[10px] text-zinc-300">
-              <span className="font-semibold text-primary">⚡ {config.label}</span>
+              <span className="font-semibold text-primary">⚡ {getCategoryLabel(quest.category)}</span>
               <span>•</span>
-              <span className="text-zinc-400">{remainingHours}h 남음</span>
+              <span className="text-zinc-400">{t('quest_hours_left_short').replace('{hours}', String(remainingHours))}</span>
             </div>
           </div>
         </div>

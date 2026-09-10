@@ -43,7 +43,7 @@ export function LoungePostCard({
 }) {
   const router = useRouter();
   const { user } = useUser();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { toast } = useToast();
 
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
@@ -258,13 +258,13 @@ export function LoungePostCard({
                 {post.isAnonymous ? (
                   <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
                     <Mask className="w-3 h-3 text-purple-400" />
-                    익명 고민
+                    {t('lounge_card_anonymous_badge')}
                   </span>
                 ) : (
                   <>
                     {post.userAge && (
                       <span className="text-xs text-zinc-400 font-normal">
-                        · {post.userAge}세
+                        · {post.userAge}
                       </span>
                     )}
                     {post.userGender && (
@@ -281,7 +281,7 @@ export function LoungePostCard({
                 {post.isAnonymous ? (
                   <span className="flex items-center gap-1 text-purple-400/80">
                     <Lock className="w-3 h-3" />
-                    완벽 비밀보장 속마음
+                    {t('lounge_card_anonymous_hint')}
                   </span>
                 ) : (
                   post.userLocation && (
@@ -308,7 +308,7 @@ export function LoungePostCard({
             }`}
           >
             <MessageSquareHeart className={`w-3.5 h-3.5 ${post.isAnonymous ? 'text-purple-400' : 'text-amber-400'}`} />
-            <span>{post.isAnonymous ? '비밀쪽지' : '대화하기'}</span>
+            <span>{post.isAnonymous ? t('lounge_card_secret_note') : t('lounge_card_direct_message')}</span>
           </Button>
         </div>
 
@@ -456,8 +456,8 @@ export function LoungePostCard({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-zinc-500 py-1 text-center">
-                첫 번째 댓글의 주인공이 되어보세요!
+              <p className="text-xs text-zinc-500 py-3">
+                {t('lounge_card_first_comment')}
               </p>
             )}
 
@@ -473,8 +473,8 @@ export function LoungePostCard({
                   }}
                   placeholder={
                     isCommentAnonymous
-                      ? '익명으로 따뜻한 위로와 조언을 남겨보세요...'
-                      : '따뜻한 공감 댓글을 남겨보세요...'
+                      ? t('lounge_card_comment_placeholder_anon')
+                      : t('lounge_card_comment_placeholder_normal')
                   }
                   className={`flex-1 h-9 px-3.5 rounded-full bg-zinc-900 border ${
                     isCommentAnonymous ? 'border-purple-500/50' : 'border-zinc-800'
@@ -490,7 +490,7 @@ export function LoungePostCard({
                       : 'bg-amber-500 hover:bg-amber-400 text-black'
                   }`}
                 >
-                  등록
+                  {t('lounge_card_comment_submit')}
                 </Button>
               </div>
 
@@ -504,7 +504,7 @@ export function LoungePostCard({
                   }`}
                 >
                   <Mask className="w-3.5 h-3.5" />
-                  <span>{isCommentAnonymous ? '🎭 익명 댓글 모드 ON (프로필 숨김)' : '익명으로 댓글 작성하기'}</span>
+                  <span>{isCommentAnonymous ? t('lounge_card_comment_anon_on') : t('lounge_card_comment_anon_toggle')}</span>
                 </button>
               </div>
             </div>
@@ -520,7 +520,7 @@ export function LoungePostCard({
               {post.isAnonymous ? (
                 <>
                   <Mask className="w-5 h-5 text-purple-400" />
-                  <span>익명 작성자에게 비밀 쪽지 보내기</span>
+                  <span>{t('lounge_card_dm_dialog_title_anon')}</span>
                 </>
               ) : (
                 <>
@@ -590,7 +590,7 @@ export function LoungePostCard({
                 onClick={() => setIsDmDialogOpen(false)}
                 className="flex-1 rounded-full text-zinc-400 hover:text-white"
               >
-                취소
+                {t('lounge_card_cancel')}
               </Button>
               <Button
                 onClick={handleSendDirectMessage}
@@ -601,7 +601,7 @@ export function LoungePostCard({
                     : 'bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold shadow-lg shadow-amber-500/20'
                 }`}
               >
-                {post.isAnonymous ? '비밀 쪽지 전송 💌' : '메시지 전송 🚀'}
+                {post.isAnonymous ? t('lounge_card_dm_send_anon') : t('lounge_card_dm_send_normal')}
               </Button>
             </div>
           </div>

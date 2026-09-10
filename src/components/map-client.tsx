@@ -10,6 +10,7 @@ import QuestDetailModal from './quest-detail-modal';
 import { Button } from './ui/button';
 import { Zap, Users, Sparkles } from 'lucide-react';
 import { useUser } from '@/contexts/user-context';
+import { useLanguage } from '@/contexts/language-context';
 import { VipWaitingBanner } from './vip-waiting-banner';
 
 interface MapClientProps {
@@ -155,6 +156,7 @@ export default function MapClient({
   setQuestPins,
 }: MapClientProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const { requireActiveAdmission, openActionGate } = useUser();
   const [zoom, setZoom] = useState(11);
   const [viewMode, setViewMode] = useState<'all' | 'users' | 'quests'>('all');
@@ -213,7 +215,7 @@ export default function MapClient({
             )}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>전체</span>
+            <span>{t('map_filter_all')}</span>
           </button>
           <button
             onClick={() => setViewMode('users')}
@@ -223,7 +225,7 @@ export default function MapClient({
             )}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>프로필</span>
+            <span>{t('map_filter_profiles')}</span>
           </button>
           <button
             onClick={() => setViewMode('quests')}
@@ -233,7 +235,7 @@ export default function MapClient({
             )}
           >
             <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>번개 ({questPins.length})</span>
+            <span>{t('map_filter_quests').replace('{count}', String(questPins.length))}</span>
           </button>
         </div>
       </div>
@@ -243,7 +245,7 @@ export default function MapClient({
         <div className="absolute top-0 left-0 right-0 z-30">
           <VipWaitingBanner
             queuePosition={currentUser.queuePosition || 1}
-            onOpenInviteModal={() => openActionGate('번개 퀘스트 및 1:1 대화')}
+            onOpenInviteModal={() => openActionGate(t('map_quest_gate_title'))}
           />
         </div>
       )}
@@ -253,13 +255,13 @@ export default function MapClient({
         <div className="absolute bottom-6 right-6 z-20">
           <Button
             onClick={() => {
-              const allowed = requireActiveAdmission(() => setIsCreateOpen(true), '번개 퀘스트 등록');
+              const allowed = requireActiveAdmission(() => setIsCreateOpen(true), t('map_quest_register_gate'));
               if (allowed) setIsCreateOpen(true);
             }}
             className="h-14 px-5 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-bold shadow-2xl shadow-primary/40 hover:scale-105 transition-all flex items-center gap-2 border border-white/20"
           >
             <Zap className="w-5 h-5 fill-current animate-bounce" />
-            <span className="text-sm tracking-wide">번개 퀘스트 올리기</span>
+            <span className="text-sm tracking-wide">{t('map_fab_quest')}</span>
           </Button>
         </div>
       )}

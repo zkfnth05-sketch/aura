@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Lock, Sparkles, Copy, Check, MessageCircle, AlertCircle, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 
 interface VipActionGateModalProps {
   isOpen: boolean;
@@ -25,9 +26,10 @@ export function VipActionGateModal({
   onClose,
   queuePosition = 1,
   referralCode = 'AURA-VIP',
-  actionTitle = '1:1 대화 및 매칭',
+  actionTitle = '1:1 Chat & Match',
 }: VipActionGateModalProps) {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   // 초대 링크 URL
@@ -42,15 +44,15 @@ export function VipActionGateModal({
       }
       setCopied(true);
       toast({
-        title: '초대 링크 복사 완료!',
-        description: '여사친에게 링크를 공유해보세요. 가입 즉시 대기열이 풀립니다.',
+        title: t('vip_copied'),
+        description: t('vip_copy_link'),
       });
       setTimeout(() => setCopied(false), 3000);
     } catch {
       toast({
         variant: 'destructive',
-        title: '복사 실패',
-        description: '초대 코드를 직접 복사해주세요: ' + referralCode,
+        title: 'Error',
+        description: referralCode,
       });
     }
   };
@@ -60,14 +62,14 @@ export function VipActionGateModal({
     if (typeof navigator !== 'undefined' && (navigator as any).share) {
       (navigator as any)
         .share({
-          title: 'AURA 50:50 프라이빗 라운지 초대',
+          title: 'AURA 50:50',
           text: shareMessage,
           url: inviteUrl,
         })
         .then(() => {
           toast({
-            title: '초대장 전송 완료!',
-            description: '여사친이 가입을 완료하면 실시간으로 프리패스가 발급됩니다.',
+            title: t('vip_copied'),
+            description: t('vip_copy_link'),
           });
         })
         .catch(() => {
@@ -94,24 +96,24 @@ export function VipActionGateModal({
           </div>
 
           <DialogTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center justify-center gap-1.5">
-            <span>🔒 성비 50:50 프리미엄 라운지 전용</span>
+            <span>{t('vip_gate_title')}</span>
           </DialogTitle>
 
           <DialogDescription className="text-xs text-zinc-400 mt-1">
-            남녀 1:1 완벽 균형 유지를 위해 현재 관전 모드로 둘러보시는 중입니다.
+            {t('vip_gate_desc')}
           </DialogDescription>
         </DialogHeader>
 
         {/* Status Callout */}
         <div className="my-3 p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-center">
           <p className="text-xs text-zinc-400 font-medium">
-            회원님의 현재 입장 대기 순번
+            {t('vip_queue_title')}
           </p>
           <p className="text-2xl font-black text-amber-400 tracking-wider mt-1 drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]">
-            대기 [{queuePosition}번째]
+            [{t('vip_queue_position')} {queuePosition}]
           </p>
           <p className="text-[11px] text-zinc-400 mt-1">
-            여사친 1명을 초대하시면 <span className="text-white font-semibold">{actionTitle}</span>을(를) 지금 즉시 시작할 수 있습니다!
+            {t('vip_invite_callout')}
           </p>
         </div>
 
@@ -119,7 +121,7 @@ export function VipActionGateModal({
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
           <div className="text-left">
             <span className="text-[10px] uppercase font-bold text-amber-400/90 tracking-wider">
-              내 고유 VIP 초대 코드
+              {t('vip_invite_code')}
             </span>
             <div className="text-base font-extrabold text-amber-300 font-mono tracking-widest">
               {referralCode}
@@ -133,7 +135,7 @@ export function VipActionGateModal({
             className="border-amber-500/40 text-amber-300 hover:bg-amber-500/20 text-xs gap-1.5 h-8 px-3 rounded-lg"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? '복사됨' : '코드 복사'}</span>
+            <span>{copied ? t('vip_copied') : t('vip_copy_code')}</span>
           </Button>
         </div>
 
@@ -145,7 +147,7 @@ export function VipActionGateModal({
             className="w-full h-12 bg-[#FEE500] text-[#191919] hover:bg-[#FDD800] font-bold text-sm rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             <MessageCircle className="w-4 h-4 fill-[#191919]" />
-            카카오톡으로 여사친 초대하고 즉시 열기
+            {t('vip_invite_kakao')}
           </Button>
 
           {/* Copy Link Button */}
@@ -155,14 +157,14 @@ export function VipActionGateModal({
             className="w-full h-10 border border-zinc-800 text-zinc-300 hover:bg-zinc-900 font-medium text-xs rounded-xl flex items-center justify-center gap-2"
           >
             <Share2 className="w-3.5 h-3.5" />
-            초대 링크 복사하기
+            {t('vip_copy_link')}
           </Button>
         </div>
 
         {/* 14-Day Expiry Notice Footer */}
         <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 justify-center pt-2 border-t border-zinc-900">
           <AlertCircle className="w-3.5 h-3.5 text-amber-500/80 flex-shrink-0" />
-          <span>성비 균형 유지를 위해 <strong>14일 동안 앱 미접속 시 대기열이 자동 만료</strong>됩니다.</span>
+          <span>{t('vip_expiry_notice')}</span>
         </div>
       </DialogContent>
     </Dialog>

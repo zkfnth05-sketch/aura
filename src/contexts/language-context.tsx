@@ -62,7 +62,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    const fallbackLang = (typeof window !== 'undefined' ? localStorage.getItem('aura-lang') : defaultLang) as LanguageCode || defaultLang;
+    const lang = (['ko', 'en', 'es', 'ja'].includes(fallbackLang) ? fallbackLang : defaultLang) as LanguageCode;
+    return {
+      language: lang,
+      setLanguage: () => {},
+      t: (key: TranslationKeys) => translations[lang]?.[key] || translations[defaultLang]?.[key] || key,
+      supportedLanguages,
+    };
   }
   return context;
 }

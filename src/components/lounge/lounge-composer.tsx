@@ -8,6 +8,7 @@ import { ImagePlus, X, Sparkles, Send, ShieldCheck, VenetianMask as Mask, Loader
 import { LoungeStore } from '@/lib/lounge-store';
 import { ANONYMOUS_AVATAR } from '@/lib/lounge-types';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/language-context';
 import { compressImage } from '@/lib/image-compression';
 import { uploadDataUri } from '@/lib/supabaseStorageService';
 
@@ -15,6 +16,7 @@ const POPULAR_TAGS = ['일상', '익명고민', '카페', '오운완', '반려�
 
 export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }) {
   const { user } = useUser();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [content, setContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -134,10 +136,10 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       toast({
-        title: isAnonymous ? '🎭 익명 고민 등록 완료' : '✨ 라운지 등록 완료',
+        title: isAnonymous ? t('lounge_compose_anon_toast_title') : t('lounge_compose_success_title'),
         description: isAnonymous
-          ? '프로필이 철저히 보호되며 라운지 고민소에 전달되었습니다.'
-          : '슈퍼베이스 DB 저장 및 Gemini 4개국어 번역이 동기화되었습니다!',
+          ? t('lounge_compose_anon_toast_desc')
+          : t('lounge_compose_success_desc'),
       });
 
       if (onPostCreated) {
@@ -178,16 +180,16 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
           {isAnonymous ? (
             <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
               <Mask className="w-3.5 h-3.5 text-purple-400" />
-              익명 속마음·연애 고민소
+              {t('lounge_compose_anonymous_title')}
             </span>
           ) : (
             <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              내 일상 공유하기
+              {t('lounge_compose_daily_title')}
             </span>
           )}
           <span className="text-[11px] text-zinc-400">
-            · {isAnonymous ? '철저한 비밀 보장' : `${user?.name || '회원'}님의 이야기`}
+            · {isAnonymous ? '100% Confidential' : (user?.name || 'AURA')}
           </span>
         </div>
 
@@ -202,7 +204,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
             }`}
           >
             <Mask className="w-3.5 h-3.5 text-purple-400" />
-            <span>{isAnonymous ? '🎭 익명 모드 ON' : '🎭 익명 등록'}</span>
+            <span>{isAnonymous ? t('lounge_compose_anonymous_on') : t('lounge_compose_anonymous_btn')}</span>
           </button>
         </div>
       </div>
@@ -221,8 +223,8 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
             onChange={(e) => setContent(e.target.value)}
             placeholder={
               isAnonymous
-                ? '누구에게도 말 못 한 연애 고민이나 솔직한 속마음을 털어놓아 보세요. 프로필은 완벽히 비밀로 보호됩니다...'
-                : '오늘 어떤 하루를 보내셨나요? 사진과 함께 남겨보세요...'
+                ? t('lounge_compose_placeholder_anon')
+                : t('lounge_compose_placeholder_daily')
             }
             rows={3}
             className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-sm sm:text-base text-white placeholder:text-zinc-500 resize-none leading-relaxed"
@@ -232,7 +234,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
           {isCompressing && (
             <div className="flex items-center gap-2 p-3 my-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
               <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-              <span>사진 초고화질 압축 중... (용량 90% 최적화)</span>
+              <span>{t('lounge_compose_compressing')}</span>
             </div>
           )}
 
@@ -246,7 +248,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
               />
               <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[10px] font-medium text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm">
                 <Zap className="w-3 h-3 text-emerald-400" />
-                <span>90% 용량 최적화</span>
+                <span>{t('lounge_compose_optimized_badge')}</span>
               </div>
               <button
                 type="button"
@@ -264,7 +266,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
           {/* Hashtag Selectors */}
           <div className="flex flex-wrap items-center gap-1.5 pt-2 pb-3 border-t border-zinc-800/60">
             <span className="text-[11px] text-zinc-400 font-medium mr-1 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-400" /> 태그:
+              <Sparkles className="w-3 h-3 text-amber-400" /> {t('lounge_compose_tags_label')}
             </span>
             {POPULAR_TAGS.map((tag) => {
               const isSelected = selectedTags.includes(tag);
@@ -301,7 +303,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-medium cursor-pointer transition-all active:scale-95"
               >
                 <ImagePlus className="w-4 h-4 text-amber-400" />
-                <span>사진 첨부</span>
+                <span>{t('lounge_compose_attach_photo')}</span>
               </label>
             </div>
 
@@ -311,7 +313,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
               className="h-9 px-4 rounded-full bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>게시</span>
+              <span>{t('lounge_compose_submit')}</span>
             </Button>
           </div>
         </div>
