@@ -26,7 +26,7 @@ interface MatchingMember {
   location: string;
 }
 
-// Representative virtual members to pair with choices (8+ members each)
+// Real virtual members directly from Supabase Database
 const CHOICE_A_MEMBERS: MatchingMember[] = [
   {
     id: '96RQydIg34IX1DPxoDWv',
@@ -45,71 +45,36 @@ const CHOICE_A_MEMBERS: MatchingMember[] = [
     avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/EOq5OEHehqt7bSfq8IlF_0_1788952694630.jpg',
   },
   {
-    id: 'IZGZp2KPihOre5qb3I9I',
-    name: '카이',
-    age: 35,
-    gender: '남성',
-    location: '서울',
-    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/IZGZp2KPihOre5qb3I9I_0_1788952701591.jpg',
-  },
-  {
-    id: 'a_user_4',
-    name: '유진',
-    age: 27,
-    gender: '여성',
-    location: '경기',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'a_user_5',
-    name: '민우',
-    age: 31,
-    gender: '남성',
-    location: '서울',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'a_user_6',
-    name: '채원',
-    age: 26,
-    gender: '여성',
-    location: '인천',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'a_user_7',
-    name: '시우',
-    age: 30,
-    gender: '남성',
-    location: '서울',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'a_user_8',
-    name: '수아',
-    age: 28,
-    gender: '여성',
-    location: '부산',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop&q=80',
-  },
-];
-
-const CHOICE_B_MEMBERS: MatchingMember[] = [
-  {
-    id: '7SkCjrdeQvf0L9EDm6A1',
-    name: 'Neo',
-    age: 35,
-    gender: '남성',
-    location: '서울',
-    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/7SkCjrdeQvf0L9EDm6A1_0_1788952692294.jpg',
-  },
-  {
-    id: 'AAOZg1Jz2zLDosPyWBLE',
-    name: '지현',
+    id: '7Cmrx37z7e6wkoxtMCxZ',
+    name: '숲속의낮잠',
     age: 25,
     gender: '여성',
-    location: '대전',
-    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/AAOZg1Jz2zLDosPyWBLE_0_1788952693292.jpg',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/7Cmrx37z7e6wkoxtMCxZ_0_1788952692005.jpg',
+  },
+  {
+    id: 'HnmxsGg591Re3oE1MbcX',
+    name: '보랏빛노을',
+    age: 29,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/HnmxsGg591Re3oE1MbcX_0_1788952701222.jpg',
+  },
+  {
+    id: 'TDfGdzl0FLedu3eLqsHh',
+    name: '하얀목화솜',
+    age: 31,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/TDfGdzl0FLedu3eLqsHh_0_1788952700703.jpg',
+  },
+  {
+    id: 'YoP94iadjL8FyMhtifTE',
+    name: 'Hana',
+    age: 25,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/YoP94iadjL8FyMhtifTE_0_1788952703103.jpg',
   },
   {
     id: 'dC4qedMP9D8LiybNHQYt',
@@ -120,44 +85,143 @@ const CHOICE_B_MEMBERS: MatchingMember[] = [
     avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/dC4qedMP9D8LiybNHQYt_0_1788952705267.jpg',
   },
   {
-    id: 'b_user_4',
-    name: '하은',
-    age: 26,
+    id: '2EmGh8y6NJx8GIEAkzmH',
+    name: '쪼꼬우유',
+    age: 28,
     gender: '여성',
-    location: '서울',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'b_user_5',
-    name: '정우',
-    age: 32,
-    gender: '남성',
     location: '대구',
-    avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=500&auto=format&fit=crop&q=80',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/2EmGh8y6NJx8GIEAkzmH_0_1788952707871.jpg',
   },
   {
-    id: 'b_user_6',
-    name: '예린',
-    age: 24,
-    gender: '여성',
-    location: '서울',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'b_user_7',
-    name: '도윤',
-    age: 29,
-    gender: '남성',
-    location: '경기',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=500&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'b_user_8',
-    name: '서아',
+    id: '50dJcA4Jq6z8xqCwNCls',
+    name: '옆집소녀',
     age: 27,
     gender: '여성',
-    location: '광주',
-    avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=500&auto=format&fit=crop&q=80',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/50dJcA4Jq6z8xqCwNCls_0_1788952709702.jpg',
+  },
+  {
+    id: '5h7ZgWAZgR99AYQWXLJI',
+    name: '은하수여행자',
+    age: 29,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/5h7ZgWAZgR99AYQWXLJI_0_1788952710573.jpg',
+  },
+  {
+    id: 'IZGZp2KPihOre5qb3I9I',
+    name: '카이',
+    age: 35,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/IZGZp2KPihOre5qb3I9I_0_1788952701591.jpg',
+  },
+  {
+    id: '6YNODSsfTT8FGlirDhaN',
+    name: '시우',
+    age: 28,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/6YNODSsfTT8FGlirDhaN_0_1788952691593.jpg',
+  },
+];
+
+const CHOICE_B_MEMBERS: MatchingMember[] = [
+  {
+    id: 'AAOZg1Jz2zLDosPyWBLE',
+    name: '지현',
+    age: 25,
+    gender: '여성',
+    location: '대전',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/AAOZg1Jz2zLDosPyWBLE_0_1788952693292.jpg',
+  },
+  {
+    id: 'B71kPkcFSeKUB25oWXtO',
+    name: '민트향기',
+    age: 30,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/B71kPkcFSeKUB25oWXtO_0_1788952693842.jpg',
+  },
+  {
+    id: 'F9nWVXenSObnh23nmsGa',
+    name: 'Chloe',
+    age: 19,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/F9nWVXenSObnh23nmsGa_0_1788952696212.jpg',
+  },
+  {
+    id: 'GFqa5nHSmgm7laf1fiD1',
+    name: '가을바람휘잉',
+    age: 30,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/GFqa5nHSmgm7laf1fiD1_0_1788952696582.jpg',
+  },
+  {
+    id: 'YZlwrZAQoOZ1SAl1VVIM',
+    name: '수아',
+    age: 34,
+    gender: '여성',
+    location: '제주',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/YZlwrZAQoOZ1SAl1VVIM_0_1788952702725.jpg',
+  },
+  {
+    id: '9ibvRn6nrthW350dCEh6',
+    name: '동네친구',
+    age: 27,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/9ibvRn6nrthW350dCEh6_0_1788952692912.jpg',
+  },
+  {
+    id: 'X1XhN4EB34KWBKHg0euU',
+    name: 'Seri',
+    age: 33,
+    gender: '여성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/X1XhN4EB34KWBKHg0euU_0_1788952702342.jpg',
+  },
+  {
+    id: '7SkCjrdeQvf0L9EDm6A1',
+    name: 'Neo',
+    age: 35,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/7SkCjrdeQvf0L9EDm6A1_0_1788952692294.jpg',
+  },
+  {
+    id: 'Eu6ddvE608fuL2irbRPa',
+    name: '에이스',
+    age: 25,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/Eu6ddvE608fuL2irbRPa_0_1788952695836.jpg',
+  },
+  {
+    id: 'SGQtnYq1TpCv77REwTh0',
+    name: '프라임',
+    age: 28,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/SGQtnYq1TpCv77REwTh0_0_1788952699116.jpg',
+  },
+  {
+    id: 'dHbWQVtSntPRaNmeyPD3',
+    name: '어반맨',
+    age: 35,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/dHbWQVtSntPRaNmeyPD3_0_1788952705651.jpg',
+  },
+  {
+    id: 'V2lsQsmOVoacEUFivONC',
+    name: '딥블루',
+    age: 27,
+    gender: '남성',
+    location: '서울',
+    avatar: 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/profiles/V2lsQsmOVoacEUFivONC_0_1788952703642.jpg',
   },
 ];
 
@@ -190,6 +254,52 @@ export function LoungeBalanceGame() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingNew, setIsGeneratingNew] = useState(false);
   const [isMoreModalOpen, setIsMoreModalOpen] = useState(false);
+  const [dbMembersA, setDbMembersA] = useState<MatchingMember[]>(CHOICE_A_MEMBERS);
+  const [dbMembersB, setDbMembersB] = useState<MatchingMember[]>(CHOICE_B_MEMBERS);
+
+  // Sync real members from Supabase database
+  useEffect(() => {
+    async function syncRealDbUsers() {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, age, gender, location, photo_urls')
+          .not('photo_urls', 'is', null)
+          .limit(50);
+
+        if (!error && data && data.length > 0) {
+          const valid = data
+            .filter(u => u.photo_urls && u.photo_urls.length > 0 && u.photo_urls[0].startsWith('http'))
+            .map(u => ({
+              id: u.id,
+              name: u.name || '회원',
+              age: u.age || 28,
+              gender: u.gender || '여성',
+              location: u.location || '서울',
+              avatar: u.photo_urls[0],
+            }));
+
+          if (valid.length >= 6) {
+            // If user is logged in, prioritize opposite gender first
+            let sorted = valid;
+            if (user?.gender === '남성') {
+              sorted = [...valid.filter(u => u.gender === '여성'), ...valid.filter(u => u.gender === '남성')];
+            } else if (user?.gender === '여성') {
+              sorted = [...valid.filter(u => u.gender === '남성'), ...valid.filter(u => u.gender === '여성')];
+            }
+
+            const half = Math.ceil(sorted.length / 2);
+            setDbMembersA(sorted.slice(0, half));
+            setDbMembersB(sorted.slice(half));
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to sync DB users for balance game:', e);
+      }
+    }
+    syncRealDbUsers();
+  }, [user?.gender]);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -303,7 +413,7 @@ export function LoungeBalanceGame() {
       : game.optionA.initialVotesPercent;
   const percentB = 100 - percentA;
 
-  const matchingMembers = selectedChoice === 'A' ? CHOICE_A_MEMBERS : CHOICE_B_MEMBERS;
+  const matchingMembers = selectedChoice === 'A' ? dbMembersA : dbMembersB;
 
   return (
     <section 
@@ -497,7 +607,7 @@ export function LoungeBalanceGame() {
             className="w-full mt-2.5 py-2.5 px-4 rounded-2xl bg-zinc-900/70 hover:bg-zinc-800 border border-zinc-800 hover:border-amber-500/40 text-xs font-bold text-zinc-300 hover:text-amber-300 flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.99]"
           >
             <Users className="w-3.5 h-3.5 text-amber-400" />
-            <span>+ 같은 선택을 한 28명의 회원 더보기</span>
+            <span>+ 같은 선택을 한 {matchingMembers.length}명의 회원 더보기</span>
             <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
           </button>
         </div>
