@@ -72,8 +72,8 @@ android {
         applicationId "app.web.aura"
         minSdkVersion 21
         targetSdkVersion 35
-        versionCode 10
-        versionName "10"
+        versionCode 11
+        versionName "11"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
@@ -225,8 +225,6 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     
         implementation 'com.google.androidbrowserhelper:locationdelegation:1.1.2'
-    
-        implementation 'com.google.androidbrowserhelper:billing:1.1.0'
     
         implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
     

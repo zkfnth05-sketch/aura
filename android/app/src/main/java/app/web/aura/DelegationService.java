@@ -3,8 +3,6 @@ package app.web.aura;
 
 import com.google.androidbrowserhelper.locationdelegation.LocationDelegationExtraCommandHandler;
 
-import com.google.androidbrowserhelper.playbilling.digitalgoods.DigitalGoodsRequestHandler;
-
 
 public class DelegationService extends
         com.google.androidbrowserhelper.trusted.DelegationService {
@@ -14,8 +12,6 @@ public class DelegationService extends
 
         
             registerExtraCommandHandler(new LocationDelegationExtraCommandHandler());
-        
-            registerExtraCommandHandler(new DigitalGoodsRequestHandler(getApplicationContext()));
         
     }
 }
