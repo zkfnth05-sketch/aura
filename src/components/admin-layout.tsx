@@ -20,8 +20,10 @@ const AdminSidebarContent = () => {
     const { t } = useLanguage();
 
     const navItems = [
-        { href: '/admin/dashboard', label: t('admin_sidebar_dashboard') },
-        { href: '/admin', label: t('admin_sidebar_user_management') },
+        { href: '/admin/dashboard', label: '📊 트래픽 & 유입 관제' },
+        { href: '/admin/signups', label: '👥 가입자 정밀 분석' },
+        { href: '/admin/feedback', label: '💬 고객 피드백 (VOC)' },
+        { href: '/admin', label: '⚙️ 회원 관리' },
     ];
     
     const handleLogout = () => {

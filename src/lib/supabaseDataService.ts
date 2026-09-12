@@ -1144,3 +1144,308 @@ export async function sendRadarPushToNearbyUsers(params: {
     return { sentCount: 0, targetCount: 0 };
   }
 }
+
+/**
+ * Traffic & Analytics System
+ */
+export interface TrafficLog {
+  id: string;
+  session_id: string;
+  path: string;
+  referrer: string;
+  channel: string;
+  channel_category: 'search' | 'sns' | 'messenger' | 'community' | 'direct';
+  device: 'mobile' | 'desktop' | 'tablet';
+  created_at: string;
+}
+
+export async function logTrafficVisit(log: {
+  session_id: string;
+  path?: string;
+  referrer?: string;
+  channel: string;
+  channel_category: 'search' | 'sns' | 'messenger' | 'community' | 'direct';
+  device?: 'mobile' | 'desktop' | 'tablet';
+}): Promise<void> {
+  const client = getClient();
+  try {
+    await client.from('site_traffic_logs').insert([
+      {
+        session_id: log.session_id,
+        path: log.path || '/',
+        referrer: log.referrer || '',
+        channel: log.channel,
+        channel_category: log.channel_category,
+        device: log.device || 'mobile',
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  } catch (err) {
+    console.warn('Traffic log insert note:', err);
+  }
+}
+
+export async function fetchTrafficLogs(period: 'today' | 'weekly' | 'monthly' | 'yearly'): Promise<TrafficLog[]> {
+  const client = getClient();
+  try {
+    let query = client.from('site_traffic_logs').select('*');
+    const now = new Date();
+
+    if (period === 'today') {
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+      query = query.gte('created_at', todayStart);
+    } else if (period === 'weekly') {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte('created_at', sevenDaysAgo);
+    } else if (period === 'monthly') {
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte('created_at', thirtyDaysAgo);
+    } else if (period === 'yearly') {
+      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString();
+      query = query.gte('created_at', oneYearAgo);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true }).limit(3000);
+    if (error) {
+      console.warn('fetchTrafficLogs note:', error.message);
+      return [];
+    }
+    return (data || []) as TrafficLog[];
+  } catch (err) {
+    console.warn('fetchTrafficLogs exception:', err);
+    return [];
+  }
+}
+
+export async function fetchTotalTrafficCount(): Promise<number> {
+  const client = getClient();
+  try {
+    const { count, error } = await client.from('site_traffic_logs').select('*', { count: 'exact', head: true });
+    if (error) return 0;
+    return count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function seedSampleTrafficData(): Promise<{ success: boolean; count: number }> {
+  const client = getClient();
+  const channels = [
+    { name: '네이버 (검색/블로그/카페)', category: 'search' as const, weight: 35 },
+    { name: '카카오톡 (오픈채팅/알림톡)', category: 'messenger' as const, weight: 28 },
+    { name: '틱톡 (TikTok 바이럴)', category: 'sns' as const, weight: 22 },
+    { name: '인스타그램 (릴스/스토리)', category: 'sns' as const, weight: 20 },
+    { name: '구글 (Google 다국어 검색)', category: 'search' as const, weight: 18 },
+    { name: '스레드 (Threads)', category: 'sns' as const, weight: 14 },
+    { name: '레딧 (Reddit)', category: 'community' as const, weight: 12 },
+    { name: '텔레그램 (Telegram 채널)', category: 'messenger' as const, weight: 10 },
+    { name: '티스토리 (블로그 리뷰)', category: 'community' as const, weight: 9 },
+    { name: '지인 초대 (친구추천 링크)', category: 'messenger' as const, weight: 8 },
+    { name: '기타 다이렉트 / 북마크', category: 'direct' as const, weight: 15 },
+  ];
+
+  const devices: ('mobile' | 'desktop' | 'tablet')[] = ['mobile', 'mobile', 'mobile', 'desktop', 'tablet'];
+  const logsToInsert: any[] = [];
+  const now = new Date();
+
+  // 1. 오늘 24시간 시간대별 데이터 생성 (00시 ~ 현재시각)
+  const currentHour = now.getHours();
+  for (let h = 0; h <= currentHour; h++) {
+    // 피크 시간대 (12시~14시, 19시~23시) 가중치
+    const isPeak = (h >= 12 && h <= 14) || (h >= 19 && h <= 23);
+    const countInHour = Math.floor(Math.random() * (isPeak ? 10 : 5)) + 2;
+
+    for (let i = 0; i < countInHour; i++) {
+      const selectedCh = channels[Math.floor(Math.random() * channels.length)];
+      const minute = Math.floor(Math.random() * 60);
+      const logDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, minute, Math.floor(Math.random() * 60));
+
+      logsToInsert.push({
+        session_id: `seed_sess_${h}_${i}_${Math.random().toString(36).substring(2, 7)}`,
+        path: '/',
+        referrer: selectedCh.name,
+        channel: selectedCh.name,
+        channel_category: selectedCh.category,
+        device: devices[Math.floor(Math.random() * devices.length)],
+        created_at: logDate.toISOString(),
+      });
+    }
+  }
+
+  // 2. 과거 30일 일별 데이터 분산 생성
+  for (let d = 1; d <= 30; d++) {
+    const pastDate = new Date(now.getTime() - d * 24 * 60 * 60 * 1000);
+    const countForDay = Math.floor(Math.random() * 15) + 10;
+
+    for (let i = 0; i < countForDay; i++) {
+      const selectedCh = channels[Math.floor(Math.random() * channels.length)];
+      const hour = Math.floor(Math.random() * 24);
+      const minute = Math.floor(Math.random() * 60);
+      const logDate = new Date(pastDate.getFullYear(), pastDate.getMonth(), pastDate.getDate(), hour, minute);
+
+      logsToInsert.push({
+        session_id: `seed_sess_past_${d}_${i}`,
+        path: '/',
+        referrer: selectedCh.name,
+        channel: selectedCh.name,
+        channel_category: selectedCh.category,
+        device: devices[Math.floor(Math.random() * devices.length)],
+        created_at: logDate.toISOString(),
+      });
+    }
+  }
+
+  try {
+    // 50개씩 청크 분할 삽입
+    const chunkSize = 50;
+    for (let i = 0; i < logsToInsert.length; i += chunkSize) {
+      const chunk = logsToInsert.slice(i, i + chunkSize);
+      await client.from('site_traffic_logs').insert(chunk);
+    }
+    return { success: true, count: logsToInsert.length };
+  } catch (err) {
+    console.error('Failed to seed traffic data:', err);
+    return { success: false, count: 0 };
+  }
+}
+
+export async function clearAllTrafficLogs(): Promise<boolean> {
+  const client = getClient();
+  try {
+    const { error } = await client.from('site_traffic_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+      console.error('Clear traffic error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Clear traffic exception:', err);
+    return false;
+  }
+}
+
+/**
+ * Customer Feedback & VOC System
+ */
+export interface CustomerFeedback {
+  id: string;
+  user_id?: string | null;
+  user_name?: string | null;
+  user_phone?: string | null;
+  category: 'error_bug' | 'feature_idea' | 'ui_ux' | 'other';
+  content: string;
+  screenshot_url?: string | null;
+  device_info?: string | null;
+  status: 'new' | 'in_progress' | 'resolved';
+  admin_note?: string | null;
+  created_at: string;
+}
+
+export async function submitCustomerFeedback(feedback: {
+  user_id?: string | null;
+  user_name?: string | null;
+  user_phone?: string | null;
+  category: 'error_bug' | 'feature_idea' | 'ui_ux' | 'other';
+  content: string;
+  screenshot_url?: string | null;
+  device_info?: string | null;
+}): Promise<{ success: boolean; error?: string }> {
+  const client = getClient();
+  try {
+    const { error } = await client.from('customer_feedbacks').insert([
+      {
+        user_id: feedback.user_id || null,
+        user_name: feedback.user_name || '익명 사용자',
+        user_phone: feedback.user_phone || null,
+        category: feedback.category,
+        content: feedback.content,
+        screenshot_url: feedback.screenshot_url || null,
+        device_info: feedback.device_info || null,
+        status: 'new',
+        admin_note: '',
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    if (error) {
+      console.error('Error submitting feedback:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error('Submit feedback exception:', err);
+    return { success: false, error: err.message || '제출 중 오류가 발생했습니다.' };
+  }
+}
+
+export async function fetchAllCustomerFeedbacks(statusFilter?: string): Promise<CustomerFeedback[]> {
+  const client = getClient();
+  try {
+    let query = client.from('customer_feedbacks').select('*').order('created_at', { ascending: false });
+    if (statusFilter && statusFilter !== 'all') {
+      query = query.eq('status', statusFilter);
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.warn('fetchAllCustomerFeedbacks note:', error.message);
+      return [];
+    }
+    return (data || []) as CustomerFeedback[];
+  } catch (err) {
+    console.warn('fetchAllCustomerFeedbacks exception:', err);
+    return [];
+  }
+}
+
+export async function updateCustomerFeedbackStatus(
+  id: string,
+  status: 'new' | 'in_progress' | 'resolved',
+  adminNote?: string
+): Promise<boolean> {
+  const client = getClient();
+  try {
+    const updatePayload: Record<string, any> = { status };
+    if (adminNote !== undefined) {
+      updatePayload.admin_note = adminNote;
+    }
+    const { error } = await client.from('customer_feedbacks').update(updatePayload).eq('id', id);
+    if (error) {
+      console.error('Update feedback error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Update feedback exception:', err);
+    return false;
+  }
+}
+
+export async function deleteCustomerFeedback(id: string): Promise<boolean> {
+  const client = getClient();
+  try {
+    const { error } = await client.from('customer_feedbacks').delete().eq('id', id);
+    if (error) {
+      console.error('Delete feedback error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Delete feedback exception:', err);
+    return false;
+  }
+}
+
+export async function clearAllCustomerFeedbacks(): Promise<boolean> {
+  const client = getClient();
+  try {
+    const { error } = await client.from('customer_feedbacks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+      console.error('Clear feedbacks error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Clear feedbacks exception:', err);
+    return false;
+  }
+}

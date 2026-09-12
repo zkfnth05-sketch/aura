@@ -20,6 +20,7 @@ import { TranslationKeys } from '@/lib/locales';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { profileGuide } from '@/lib/coachmark-steps';
 import { VipWaitingBanner } from '@/components/vip-waiting-banner';
+import FeedbackModal from '@/components/feedback-modal';
 
 // Helper components for page structure
 const ProfileSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -45,6 +46,7 @@ export default function ProfilePage() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isAuraDialogOpen, setIsAuraDialogOpen] = useState(false);
   const [savedAuraReport, setSavedAuraReport] = useState<AuraCharmOutput | null>(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -377,9 +379,22 @@ export default function ProfilePage() {
                     isLast={true}
                   />
               </ProfileSection>
+
+              {/* 문제 신고 및 의견 보내기 버튼 */}
+              <div className="pt-2 pb-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsFeedbackOpen(true)}
+                  className="w-full h-12 bg-neutral-900/80 hover:bg-neutral-800 border-neutral-800 text-neutral-200 hover:text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <span className="text-base">💬</span>
+                  <span>문제 신고 및 의견 보내기</span>
+                </Button>
+              </div>
             </div>
 
-            <div className="py-8">
+            <div className="py-6">
               <Button asChild className="w-full h-12 bg-primary text-primary-foreground rounded-full font-bold text-base">
                   <Link href="/profile/edit" prefetch={true}>{t('profile_edit_button')}</Link>
               </Button>
@@ -404,6 +419,12 @@ export default function ProfilePage() {
           onReportSaved={setSavedAuraReport}
         />
       )}
+
+      <FeedbackModal
+        open={isFeedbackOpen}
+        onOpenChange={setIsFeedbackOpen}
+      />
     </>
   );
 }
+

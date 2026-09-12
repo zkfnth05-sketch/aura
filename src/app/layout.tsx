@@ -9,6 +9,7 @@ import { EscapeCallProvider } from '@/contexts/escape-call-context';
 import EscapeCallConfigDialog from '@/components/escape-call/escape-call-config-dialog';
 import IncomingEscapeCallModal from '@/components/escape-call/incoming-escape-call-modal';
 import InAppBrowserEscape from '@/components/in-app-browser-escape';
+import { TrafficTracker } from '@/components/traffic-tracker';
 import { useEffect } from 'react';
 
 
@@ -71,6 +72,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full bg-background text-foreground" suppressHydrationWarning>
+        <TrafficTracker />
         <UserProvider>
           <LanguageProvider>
             <InAppBrowserEscape />
