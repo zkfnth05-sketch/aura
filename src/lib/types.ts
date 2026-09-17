@@ -36,6 +36,7 @@ export type User = {
   referralCode?: string;
   referredBy?: string;
   lastAppOpenedAt?: string;
+  dateOfBirth?: string;
 };
 
 export type Match = {
