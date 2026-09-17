@@ -33,7 +33,7 @@ export function VipActionGateModal({
   const [copied, setCopied] = useState(false);
 
   // 초대 링크 URL
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aura-ai-dating.com';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aura-ai-dating.vercel.app';
   const inviteUrl = `${origin}/?ref=${referralCode}`;
   const shareMessage = `[AURA] 성비 50:50 철저 보장 프라이빗 데이팅 라운지 AURA에 초대합니다! ✨\n제 초대 코드 [${referralCode}]로 가입하시면 여성 VIP 프리패스로 즉시 입장됩니다.\n👉 입장 링크: ${inviteUrl}`;
 

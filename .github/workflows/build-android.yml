@@ -37,6 +37,6 @@ jobs:
       - name: Upload AAB Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-v11
+          name: app-release-v12
           path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 14

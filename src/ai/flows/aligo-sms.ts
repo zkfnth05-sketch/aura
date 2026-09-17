@@ -31,6 +31,26 @@ export async function sendOtpSms(phone: string) {
       }
     }
 
+    // 구글 플레이 심사관 및 테스트 계정 전용 즉시 통과 (010-1234-5678 등)
+    const isTestNumber =
+      domesticPhone.includes('12345678') ||
+      domesticPhone === '01012345678' ||
+      domesticPhone.endsWith('00000000') ||
+      domesticPhone.endsWith('11111111');
+
+    if (isTestNumber) {
+      const testCode = '123456';
+      memoryOtpMap.set(domesticPhone, { code: testCode, timestamp: Date.now() });
+      memoryOtpMap.set(standardPhone, { code: testCode, timestamp: Date.now() });
+      console.log(`🧪 구글 심사/테스트 계정 감지 (${phone}): 테스트 인증번호 [${testCode}] 즉시 발송 모드`);
+      return {
+        success: true,
+        simulated: true,
+        code: testCode,
+        message: `[심사/테스트 안내] 인증번호는 [${testCode}]입니다.`,
+      };
+    }
+
     // 해외 번호일 경우: 알리고는 국내 통신망(SKT/KT/LGU+) 전용이므로 해외 발송 미지원.
     // 외국인 유저의 가입 실패를 방지하기 위해 화면 인증 토스트로 즉시 100% 통과!
     if (!isKorean) {

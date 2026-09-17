@@ -1,6 +1,6 @@
 {
   "packageId": "app.web.aura",
-  "host": "studio--aura-ai-dating-38251551-64a99.us-central1.hosted.app",
+  "host": "aura-ai-dating.vercel.app",
   "name": "Aura Ai Dating",
   "launcherName": "Aura",
   "display": "standalone",
@@ -13,19 +13,19 @@
   "backgroundColor": "#121212",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "https://studio--aura-ai-dating-38251551-64a99.us-central1.hosted.app/logo.svg",
-  "maskableIconUrl": "https://studio--aura-ai-dating-38251551-64a99.us-central1.hosted.app/maskable_icon.svg",
-  "monochromeIconUrl": "https://studio--aura-ai-dating-38251551-64a99.us-central1.hosted.app/logo.svg",
+  "iconUrl": "https://aura-ai-dating.vercel.app/logo.svg",
+  "maskableIconUrl": "https://aura-ai-dating.vercel.app/maskable_icon.svg",
+  "monochromeIconUrl": "https://aura-ai-dating.vercel.app/logo.svg",
   "splashScreenFadeOutDuration": 0,
   "signingKey": {
     "path": "android.keystore",
     "alias": "android"
   },
-  "appVersionName": "11",
-  "appVersionCode": 11,
+  "appVersionName": "12",
+  "appVersionCode": 12,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://studio--aura-ai-dating-38251551-64a99.us-central1.hosted.app/manifest.json",
+  "webManifestUrl": "https://aura-ai-dating.vercel.app/manifest.json",
   "fallbackType": "customtabs",
   "features": {
     "playBilling": {
@@ -41,7 +41,7 @@
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://studio--aura-ai-dating-38251551-64a99.us-central1.hosted.app/",
+  "fullScopeUrl": "https://aura-ai-dating.vercel.app/",
   "minSdkVersion": 21,
   "orientation": "default",
   "fingerprints": [],
@@ -51,5 +51,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "11"
+  "appVersion": "12"
 }
