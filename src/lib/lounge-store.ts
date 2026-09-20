@@ -42,9 +42,9 @@ export class LoungeStore {
 
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
@@ -404,10 +404,24 @@ export class LoungeStore {
     target.commentsCount = target.comments.length;
     this.savePosts(posts);
 
-    // Sync to Supabase in background
+    // Sync to Supabase in background with AI translations
     if (supabase) {
       (async () => {
         try {
+          let commentTranslations: Record<string, string> = {};
+          try {
+            const aiTranslations = await getLoungeTranslationAction(content);
+            if (aiTranslations) {
+              commentTranslations = {
+                en: aiTranslations.en || content,
+                ja: aiTranslations.ja || content,
+                es: aiTranslations.es || content,
+              };
+            }
+          } catch (tErr) {
+            console.warn('Comment AI translation failed:', tErr);
+          }
+
           await supabase.from('lounge_comments').insert({
             id: commentId,
             post_id: postId,
@@ -418,6 +432,7 @@ export class LoungeStore {
             content: newComment.content,
             is_anonymous: Boolean(isAnonymous),
             anonymous_alias: newComment.anonymousAlias || null,
+            translations: commentTranslations,
             created_at: nowIso,
           });
 
@@ -459,5 +474,216 @@ export class LoungeStore {
         console.warn('Failed to update translations in Supabase:', err);
       }
     }
+  }
+
+  /**
+   * Delete a post by ID: removes from local state immediately and deletes from Supabase.
+   */
+  public static async deletePost(postId: string): Promise<boolean> {
+    const posts = this.getPosts();
+    const filtered = posts.filter((p) => p.id !== postId);
+    this.savePosts(filtered);
+
+    if (supabase) {
+      try {
+        await supabase.from('lounge_comments').delete().eq('post_id', postId);
+        await supabase.from('lounge_likes').delete().eq('post_id', postId);
+        await supabase.from('lounge_posts').delete().eq('id', postId);
+      } catch (err) {
+        console.error('Failed to delete post from Supabase:', err);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Update an existing post's content, discussionPrompt, or tags.
+   */
+  public static async updatePost(
+    postId: string,
+    updates: { content?: string; discussionPrompt?: string; tags?: string[] }
+  ): Promise<boolean> {
+    const posts = this.getPosts();
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return false;
+
+    if (updates.content !== undefined) target.content = updates.content;
+    if (updates.discussionPrompt !== undefined) target.discussionPrompt = updates.discussionPrompt;
+    if (updates.tags !== undefined) target.tags = updates.tags;
+
+    this.savePosts(posts);
+
+    if (supabase) {
+      try {
+        const dbUpdates: any = { updated_at: new Date().toISOString() };
+        if (updates.content !== undefined) dbUpdates.content = updates.content;
+        if (updates.discussionPrompt !== undefined) {
+          dbUpdates.discussion_prompt = updates.discussionPrompt;
+          dbUpdates.translations = { ...(target.translations || {}), discussion_prompt: updates.discussionPrompt };
+        }
+        if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+
+        await supabase.from('lounge_posts').update(dbUpdates).eq('id', postId);
+      } catch (err) {
+        console.error('Failed to update post in Supabase:', err);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Delete all official magazine / editor posts.
+   */
+  public static async deleteOfficialPosts(): Promise<boolean> {
+    const posts = this.getPosts();
+    const officialIds: string[] = [];
+    const remaining: LoungePost[] = [];
+
+    posts.forEach((p) => {
+      const isOfficial =
+        p.userId === 'aura-official-editor' ||
+        p.userName?.includes('Aura') ||
+        p.userName?.includes('매거진') ||
+        p.userName?.includes('공식');
+      if (isOfficial) {
+        officialIds.push(p.id);
+      } else {
+        remaining.push(p);
+      }
+    });
+
+    this.savePosts(remaining);
+
+    if (supabase) {
+      try {
+        if (officialIds.length > 0) {
+          await supabase.from('lounge_comments').delete().in('post_id', officialIds);
+          await supabase.from('lounge_likes').delete().in('post_id', officialIds);
+          await supabase.from('lounge_posts').delete().in('id', officialIds);
+        }
+        await supabase.from('lounge_posts').delete().eq('user_id', 'aura-official-editor');
+      } catch (err) {
+        console.error('Failed to delete official posts from Supabase:', err);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Clear all posts entirely (database & local).
+   */
+  public static async clearAllPosts(): Promise<boolean> {
+    this.savePosts([]);
+
+    if (supabase) {
+      try {
+        await supabase.from('lounge_comments').delete().neq('id', '');
+        await supabase.from('lounge_likes').delete().neq('id', '');
+        await supabase.from('lounge_posts').delete().neq('id', '');
+      } catch (err) {
+        console.error('Failed to clear all posts from Supabase:', err);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Create an official thread post.
+   */
+  public static async createOfficialPost({
+    content,
+    discussionPrompt,
+    tags,
+  }: {
+    content: string;
+    discussionPrompt?: string;
+    tags?: string[];
+  }): Promise<LoungePost> {
+    const postId = `post-official-${Date.now()}`;
+    const nowIso = new Date().toISOString();
+
+    const newPost: LoungePost = {
+      id: postId,
+      userId: 'aura-official-editor',
+      userName: '💖 Aura 공식 매거진',
+      userAvatar: '/aura-magazine-logo.jpg',
+      userAge: 26,
+      userGender: '여성',
+      userLocation: '서울',
+      content,
+      imageUrls: [],
+      tags: tags && tags.length > 0 ? tags : ['#Aura공식', '#공식스레드'],
+      likesCount: 0,
+      isLiked: false,
+      commentsCount: 0,
+      comments: [],
+      createdAt: '방금 전',
+      isVip: true,
+      auraScore: 99,
+      isAnonymous: false,
+      discussionPrompt: discussionPrompt || undefined,
+      translations: discussionPrompt ? { discussion_prompt: discussionPrompt } : {},
+    };
+
+    const currentPosts = this.getPosts();
+    this.savePosts([newPost, ...currentPosts]);
+
+    if (supabase) {
+      try {
+        await supabase.from('lounge_posts').insert({
+          id: postId,
+          user_id: newPost.userId,
+          user_name: newPost.userName,
+          user_avatar: newPost.userAvatar,
+          user_age: newPost.userAge,
+          user_gender: newPost.userGender,
+          user_location: newPost.userLocation,
+          content: newPost.content,
+          image_urls: [],
+          tags: newPost.tags,
+          likes_count: 0,
+          comments_count: 0,
+          is_vip: true,
+          aura_score: 99,
+          is_anonymous: false,
+          discussion_prompt: discussionPrompt || null,
+          translations: newPost.translations,
+          created_at: nowIso,
+          updated_at: nowIso,
+        });
+
+        // Translate official post content via Gemini AI in background
+        (async () => {
+          try {
+            const aiTranslations = await getLoungeTranslationAction(content);
+            if (aiTranslations) {
+              const mergedTranslations = {
+                ...(newPost.translations || {}),
+                en: aiTranslations.en || content,
+                ja: aiTranslations.ja || content,
+                es: aiTranslations.es || content,
+              };
+              await supabase
+                .from('lounge_posts')
+                .update({ translations: mergedTranslations })
+                .eq('id', postId);
+
+              const latest = this.getPosts();
+              const p = latest.find((item) => item.id === postId);
+              if (p) {
+                p.translations = mergedTranslations;
+                this.savePosts(latest);
+              }
+            }
+          } catch (tErr) {
+            console.warn('Official post translation error:', tErr);
+          }
+        })();
+      } catch (err) {
+        console.error('Failed to insert official post into Supabase:', err);
+      }
+    }
+
+    return newPost;
   }
 }

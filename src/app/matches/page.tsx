@@ -12,6 +12,7 @@ import { useLanguage } from '@/contexts/language-context';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { matchesGuide } from '@/lib/coachmark-steps';
 import { fetchUsersByIds } from '@/lib/supabaseDataService';
+import { GuestGateModal } from '@/components/guest-gate-modal';
 
 export interface MatchWithUser {
   match: Match;
@@ -91,14 +92,23 @@ export default function MatchesPage() {
   }, [peopleILiked]);
 
 
-  if (!isLoaded || !currentUser) {
+  if (!isLoaded) {
     return (
-        <div className="flex flex-col h-screen">
-          <Header />
-          <main className="flex-1 flex justify-center items-center pt-20">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </main>
-        </div>
+      <div className="flex flex-col h-screen">
+        <Header />
+        <main className="flex-1 flex justify-center items-center pt-20">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </main>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col h-screen">
+        <Header />
+        <GuestGateModal isOpen={true} featureName="1:1 매칭 & 대화" />
+      </div>
     );
   }
   

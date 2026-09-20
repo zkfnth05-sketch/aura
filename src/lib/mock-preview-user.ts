@@ -1,0 +1,33 @@
+import type { User } from '@/lib/types';
+
+export const DEMO_QUEUED_MALE_USER: User = {
+  id: 'demo_queued_male_user',
+  name: '민수',
+  email: 'demo_minsu@aura.app',
+  phoneNumber: '+821012345678',
+  age: 28,
+  gender: '남성',
+  bio: '안녕하세요! 러닝과 카페 투어를 좋아하는 직장인 민수입니다. 좋은 인연을 만나고 싶어요 ✨',
+  location: '서울 강남구',
+  lat: 37.5172,
+  lng: 127.0473,
+  admissionStatus: 'queued',
+  queuePosition: 3,
+  referralCode: 'AURA-VIP-7789',
+  photoUrls: [
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80',
+  ],
+  videoUrls: [],
+  relationship: ['진지한 만남', '연애'],
+  values: ['성실함', '대화의 중요성', '서로 존중'],
+  communication: ['자주 연락', '솔직한 대화'],
+  lifestyle: ['운동/러닝', '카페 투어', '주말 드라이브'],
+  hobbies: ['러닝', '독서', '요리'],
+  interests: ['여행', '맛집 탐방', '자기계발'],
+  blockedUsers: [],
+  completedCoachMarks: [],
+  pushSubscriptions: [],
+  lastSeen: '방금 전',
+  language: 'ko',
+};

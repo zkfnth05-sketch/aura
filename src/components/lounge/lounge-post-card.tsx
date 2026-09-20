@@ -20,7 +20,8 @@ import {
   VenetianMask as Mask,
   Lock,
   Globe,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { ANONYMOUS_AVATAR } from '@/lib/lounge-types';
 import { useUser } from '@/contexts/user-context';
@@ -33,6 +34,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export function LoungePostCard({
   post,
@@ -100,6 +111,35 @@ export function LoungePostCard({
     };
   }, [post.id, post.content, post.translations, language]);
 
+  // Translate discussion prompt when language changes
+  const [currentPromptTranslation, setCurrentPromptTranslation] = useState<string | null>(null);
+  useEffect(() => {
+    if (language === 'ko' || !post.discussionPrompt) {
+      setCurrentPromptTranslation(null);
+      return;
+    }
+
+    const cachedKey = `discussion_prompt_${language}`;
+    if (post.translations?.[cachedKey]) {
+      setCurrentPromptTranslation(post.translations[cachedKey]);
+      return;
+    }
+
+    let isMounted = true;
+    getLoungeTranslationAction(post.discussionPrompt).then((res) => {
+      if (isMounted && res && res[language]) {
+        setCurrentPromptTranslation(res[language]);
+        LoungeStore.updatePostTranslations(post.id, {
+          [cachedKey]: res[language],
+        });
+      }
+    }).catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [post.id, post.discussionPrompt, post.translations, language]);
+
   const isOfficialMagazine = post.userId === 'aura-official-editor' || post.userName?.includes('Aura') || post.userName?.includes('매거진') || post.userName?.includes('공식');
   const cardAvatar = isOfficialMagazine
     ? '/aura-magazine-logo.jpg'
@@ -109,6 +149,35 @@ export function LoungePostCard({
   const [isDmDialogOpen, setIsDmDialogOpen] = useState(false);
   const [dmMessage, setDmMessage] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canDelete =
+    isOfficialMagazine ||
+    (user?.id && user.id === post.userId) ||
+    (typeof window !== 'undefined' && sessionStorage.getItem('isAdminAuthenticated') === 'true');
+
+  const handleDeletePost = async () => {
+    setIsDeleting(true);
+    try {
+      await LoungeStore.deletePost(post.id);
+      toast({
+        title: '🗑️ 스레드 글 삭제 완료',
+        description: '스레드 글이 성공적으로 삭제되었습니다.',
+      });
+      if (onUpdated) onUpdated();
+    } catch (e) {
+      console.error('Failed to delete post:', e);
+      toast({
+        variant: 'destructive',
+        title: '삭제 실패',
+        description: '스레드 글을 삭제하는 중 오류가 발생했습니다.',
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  };
 
   const handleLike = () => {
     const nextState = LoungeStore.toggleLike(post.id, user?.id);
@@ -303,20 +372,37 @@ export function LoungePostCard({
             </div>
           </div>
 
-          {/* DM Quick Button */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsDmDialogOpen(true)}
-            className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 ${
-              post.isAnonymous
-                ? 'border-purple-500/40 hover:border-purple-400 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-purple-200'
-                : 'border-amber-500/40 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200'
-            }`}
-          >
-            <MessageSquareHeart className={`w-3.5 h-3.5 ${post.isAnonymous ? 'text-purple-400' : 'text-amber-400'}`} />
-            <span>{post.isAnonymous ? t('lounge_card_secret_note') : t('lounge_card_direct_message')}</span>
-          </Button>
+          {/* DM Quick Button & Delete Button */}
+          <div className="flex items-center gap-1.5">
+            {canDelete && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDeleteDialogOpen(true);
+                }}
+                className="h-8 w-8 p-0 rounded-full text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                title="스레드 삭제"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsDmDialogOpen(true)}
+              className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 ${
+                post.isAnonymous
+                  ? 'border-purple-500/40 hover:border-purple-400 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-purple-200'
+                  : 'border-amber-500/40 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200'
+              }`}
+            >
+              <MessageSquareHeart className={`w-3.5 h-3.5 ${post.isAnonymous ? 'text-purple-400' : 'text-amber-400'}`} />
+              <span>{post.isAnonymous ? t('lounge_card_secret_note') : t('lounge_card_direct_message')}</span>
+            </Button>
+          </div>
         </div>
 
         {/* Content Body with Automatic Multilingual Translation */}
@@ -380,10 +466,12 @@ export function LoungePostCard({
           <div className="mb-3.5 p-4 rounded-2xl bg-gradient-to-r from-rose-500/15 via-pink-500/10 to-zinc-900 border border-rose-500/30 text-xs sm:text-sm shadow-lg text-left">
             <div className="flex items-center gap-2 mb-1.5 text-rose-300 font-bold">
               <span className="text-base">💬</span>
-              <span>Aura 공식 에디터의 소통 핑퐁</span>
+              <span>{t('lounge_discussion_box_title')}</span>
             </div>
             <p className="text-zinc-200 leading-relaxed font-medium pl-6">
-              {post.discussionPrompt}
+              {language !== 'ko'
+                ? (currentPromptTranslation || post.translations?.[`discussion_prompt_${language}`] || post.discussionPrompt)
+                : post.discussionPrompt}
             </p>
           </div>
         )}
@@ -647,6 +735,35 @@ export function LoungePostCard({
           />
         </div>
       )}
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100 max-w-sm rounded-2xl">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="text-base font-bold text-zinc-100">
+              {t('lounge_delete_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-zinc-400">
+              {t('lounge_delete_confirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-end gap-2 pt-2">
+            <AlertDialogCancel 
+              disabled={isDeleting}
+              className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 text-xs"
+            >
+              {t('lounge_delete_cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+            >
+              {isDeleting ? '...' : t('lounge_delete_btn')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -149,7 +149,7 @@ export default function LoungePage() {
               size="icon"
               onClick={handleRefresh}
               className="h-8 w-8 rounded-full text-zinc-400 hover:text-amber-300 hover:bg-zinc-800/80"
-              title="새로고침"
+              title={t('lounge_refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-amber-400' : ''}`} />
             </Button>

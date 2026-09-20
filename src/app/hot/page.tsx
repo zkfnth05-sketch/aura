@@ -15,6 +15,7 @@ import CoachMarkGuide from '@/components/coach-mark-guide';
 import { hotGuide } from '@/lib/coachmark-steps';
 import { supabase } from '@/lib/supabaseClient';
 import { fromSupabaseUser } from '@/lib/supabaseMappers';
+import { GuestGateModal } from '@/components/guest-gate-modal';
 
 const UserCard = React.memo(({ user }: { user: User }) => {
   // Defensive check for photoUrls
@@ -106,13 +107,22 @@ export default function HotPage() {
   }, [isLoaded, currentUser, fetchUsers]);
   
 
-  if (!isLoaded || !currentUser) {
+  if (!isLoaded) {
     return (
       <div className="flex flex-col h-screen">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
         </main>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col h-screen">
+        <Header />
+        <GuestGateModal isOpen={true} featureName="HOT 인기 회원 탐색" />
       </div>
     );
   }

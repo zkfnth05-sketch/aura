@@ -21,6 +21,9 @@ import CoachMarkGuide from '@/components/coach-mark-guide';
 import { profileGuide } from '@/lib/coachmark-steps';
 import { VipWaitingBanner } from '@/components/vip-waiting-banner';
 import FeedbackModal from '@/components/feedback-modal';
+import { GuestGateModal } from '@/components/guest-gate-modal';
+
+import { DEMO_QUEUED_MALE_USER } from '@/lib/mock-preview-user';
 
 // Helper components for page structure
 const ProfileSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -39,7 +42,7 @@ const ProfileToggle = ({ label, id, checked, onCheckedChange, isLast = false, di
 
 
 export default function ProfilePage() {
-  const { user: currentUser, notificationSettings, updateNotificationSettings, subscribeToPushNotifications, openActionGate } = useUser();
+  const { user: authUser, isLoaded, notificationSettings, updateNotificationSettings, subscribeToPushNotifications, openActionGate } = useUser();
   const { openConfigModal: openEscapeModal } = useEscapeCall();
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -47,8 +50,20 @@ export default function ProfilePage() {
   const [isAuraDialogOpen, setIsAuraDialogOpen] = useState(false);
   const [savedAuraReport, setSavedAuraReport] = useState<AuraCharmOutput | null>(null);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isPreviewQueued, setIsPreviewQueued] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('preview') === 'queued') {
+        setIsPreviewQueued(true);
+      }
+    }
+  }, []);
+
+  const currentUser = isPreviewQueued ? DEMO_QUEUED_MALE_USER : authUser;
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -79,14 +94,23 @@ export default function ProfilePage() {
     }
   };
   
-  // Render immediately if we have user data, otherwise show a loader.
-  if (!currentUser) {
+  // If loading, show spinner. If finished loading and no user, show guest gate modal.
+  if (!isLoaded && !isPreviewQueued) {
     return (
       <div className="flex flex-col h-full">
         <Header/>
         <div className="flex-1 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col h-full">
+        <Header />
+        <GuestGateModal isOpen={true} featureName="내 프로필 관리" />
       </div>
     );
   }
@@ -103,12 +127,6 @@ export default function ProfilePage() {
       <CoachMarkGuide guide={profileGuide} />
       <div className="bg-background text-foreground">
         <Header />
-        {currentUser.admissionStatus === 'queued' && (
-          <VipWaitingBanner
-            queuePosition={currentUser.queuePosition || 1}
-            onOpenInviteModal={() => openActionGate('1:1 대화 및 매칭')}
-          />
-        )}
         <main>
           <div className="relative w-full aspect-[3/4] max-h-[70vh] cursor-pointer" onClick={() => handleImageClick(0)}>
             {allPhotos[0] && (

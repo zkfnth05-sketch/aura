@@ -757,8 +757,22 @@ export const translations = {
     'inapp_escape_open_chrome': 'Chrome으로 바로 열기',
     'inapp_escape_dismiss': '웹으로 계속 보기',
 
-
-
+    // --- Lounge Multilingual Keys ---
+    'lounge_refresh': '새로고침',
+    'game_matching_members_hint': '선택하신 보기에 투표한 회원님들입니다. 대화를 시작해보세요!',
+    'game_vote_done_toast': '🎯 투표 완료!',
+    'lounge_card_like': '공감',
+    'lounge_card_comment': '댓글',
+    'lounge_card_share': '공유',
+    'lounge_delete_title': '스레드 글 삭제',
+    'lounge_delete_confirm': '정말로 이 스레드 글을 삭제하시겠습니까? 데이터베이스에서 완전히 영구 삭제되며 복구할 수 없습니다.',
+    'lounge_delete_cancel': '취소',
+    'lounge_delete_btn': '완전 삭제',
+    'lounge_delete_success': '스레드 글이 성공적으로 삭제되었습니다.',
+    'lounge_delete_fail': '스레드 글 삭제 중 오류가 발생했습니다.',
+    'lounge_comment_placeholder': '따뜻한 댓글을 남겨보세요...',
+    'lounge_comment_submit': '등록',
+    'lounge_discussion_box_title': 'Aura 공식 에디터의 소통 핑퐁',
   },
   en: {
     // Signup Flow
@@ -1502,8 +1516,22 @@ export const translations = {
     'inapp_escape_open_chrome': 'Open in Chrome',
     'inapp_escape_dismiss': 'Continue in Web',
 
-
-
+    // --- Lounge Multilingual Keys ---
+    'lounge_refresh': 'Refresh',
+    'game_matching_members_hint': 'Members who voted for your choice. Start a chat now!',
+    'game_vote_done_toast': '🎯 Vote Completed!',
+    'lounge_card_like': 'Like',
+    'lounge_card_comment': 'Comment',
+    'lounge_card_share': 'Share',
+    'lounge_delete_title': 'Delete Thread',
+    'lounge_delete_confirm': 'Are you sure you want to delete this thread? It will be permanently removed from the database.',
+    'lounge_delete_cancel': 'Cancel',
+    'lounge_delete_btn': 'Permanently Delete',
+    'lounge_delete_success': 'Thread permanently deleted.',
+    'lounge_delete_fail': 'Failed to delete thread.',
+    'lounge_comment_placeholder': 'Leave a thoughtful comment...',
+    'lounge_comment_submit': 'Reply',
+    'lounge_discussion_box_title': 'Aura Official Editor\'s Discussion Ping-Pong',
   },
   ja: {
     // Signup Flow
@@ -2247,8 +2275,22 @@ export const translations = {
     'inapp_escape_open_chrome': 'Chromeですぐ開く',
     'inapp_escape_dismiss': 'ウェブで続ける',
 
-
-
+    // --- Lounge Multilingual Keys ---
+    'lounge_refresh': '更新',
+    'game_matching_members_hint': '同じ選択肢に投票した会員様です。会話を始めてみましょう！',
+    'game_vote_done_toast': '🎯 投票完了！',
+    'lounge_card_like': '共感',
+    'lounge_card_comment': 'コメント',
+    'lounge_card_share': '共有',
+    'lounge_delete_title': 'スレッドを削除',
+    'lounge_delete_confirm': '本当にこのスレッドを削除しますか？データベースから完全に削除され、復元できません。',
+    'lounge_delete_cancel': 'キャンセル',
+    'lounge_delete_btn': '完全削除',
+    'lounge_delete_success': 'スレッドが正常に削除されました。',
+    'lounge_delete_fail': 'スレッドの削除中にエラーが発生しました。',
+    'lounge_comment_placeholder': '温かいコメントを残してみましょう...',
+    'lounge_comment_submit': '登録',
+    'lounge_discussion_box_title': 'Aura公式エディターのコミュニケーション・ピンポン',
   },
   es: {
     // Signup Flow
@@ -2991,7 +3033,21 @@ export const translations = {
     'inapp_escape_open_chrome': 'Abrir en Chrome',
     'inapp_escape_dismiss': 'Continuar en la web',
 
-
-
+    // --- Lounge Multilingual Keys ---
+    'lounge_refresh': 'Actualizar',
+    'game_matching_members_hint': 'Miembros que votaron por tu misma opción. ¡Inicia una charla!',
+    'game_vote_done_toast': '🎯 ¡Votación completada!',
+    'lounge_card_like': 'Me gusta',
+    'lounge_card_comment': 'Comentario',
+    'lounge_card_share': 'Compartir',
+    'lounge_delete_title': 'Eliminar Hilo',
+    'lounge_delete_confirm': '¿Seguro que deseas eliminar este hilo? Se eliminará permanentemente de la base de datos.',
+    'lounge_delete_cancel': 'Cancelar',
+    'lounge_delete_btn': 'Eliminar Permanentemente',
+    'lounge_delete_success': 'Hilo eliminado permanentemente.',
+    'lounge_delete_fail': 'Error al eliminar el hilo.',
+    'lounge_comment_placeholder': 'Deja un comentario agradable...',
+    'lounge_comment_submit': 'Enviar',
+    'lounge_discussion_box_title': 'Ping-Pong de Comunicación del Editor Oficial de Aura',
   },
 };

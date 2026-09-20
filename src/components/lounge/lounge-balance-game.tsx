@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DailyBalanceGameOutput } from '@/ai/flows/daily-balance-game-flow';
-import { getDailyBalanceGameAction } from '@/actions/ai-actions';
+import { getDailyBalanceGameAction, getLoungeTranslationAction } from '@/actions/ai-actions';
 import { Sparkles, Check, Flame, MessageSquareHeart, RefreshCw, ChevronRight, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -248,7 +248,7 @@ const DEFAULT_INITIAL_GAME: DailyBalanceGameOutput = {
 export function LoungeBalanceGame() {
   const router = useRouter();
   const { user } = useUser();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { toast } = useToast();
 
   const [game, setGame] = useState<DailyBalanceGameOutput>(DEFAULT_INITIAL_GAME);
@@ -258,6 +258,58 @@ export function LoungeBalanceGame() {
   const [isMoreModalOpen, setIsMoreModalOpen] = useState(false);
   const [dbMembersA, setDbMembersA] = useState<MatchingMember[]>(CHOICE_A_MEMBERS);
   const [dbMembersB, setDbMembersB] = useState<MatchingMember[]>(CHOICE_B_MEMBERS);
+
+  // Multilingual translation state for balance game
+  const [translatedGame, setTranslatedGame] = useState<{
+    question: string;
+    optionAText: string;
+    optionBText: string;
+    tag: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (language === 'ko' || !game) {
+      setTranslatedGame(null);
+      return;
+    }
+
+    const cacheKey = `aura_balance_trans_${game.id}_${language}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setTranslatedGame(JSON.parse(cached));
+        return;
+      }
+    } catch {}
+
+    let isMounted = true;
+    const fetchTranslations = async () => {
+      try {
+        const textToTranslate = `${game.question}\n---\n${game.optionA.text}\n---\n${game.optionB.text}\n---\n${game.tag}`;
+        const res = await getLoungeTranslationAction(textToTranslate);
+        if (isMounted && res && res[language]) {
+          const parts = res[language].split('---').map((s) => s.trim());
+          const translated = {
+            question: parts[0] || game.question,
+            optionAText: parts[1] || game.optionA.text,
+            optionBText: parts[2] || game.optionB.text,
+            tag: parts[3] || game.tag,
+          };
+          setTranslatedGame(translated);
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify(translated));
+          } catch {}
+        }
+      } catch (e) {
+        console.warn('Balance game translation error:', e);
+      }
+    };
+
+    fetchTranslations();
+    return () => {
+      isMounted = false;
+    };
+  }, [game, language]);
 
   // Sync real members from Supabase database
   useEffect(() => {
@@ -433,7 +485,7 @@ export function LoungeBalanceGame() {
             {t('game_badge')}
           </span>
           <span className="text-[11px] text-zinc-400 font-medium truncate max-w-[130px] sm:max-w-none">
-            {game.tag}
+            {translatedGame?.tag || game.tag}
           </span>
         </div>
 
@@ -455,7 +507,7 @@ export function LoungeBalanceGame() {
 
       {/* Question Headline */}
       <h2 className="text-base sm:text-lg font-extrabold text-white leading-snug mb-3.5 break-words">
-        Q. {game.question}
+        Q. {translatedGame?.question || game.question}
       </h2>
 
       {/* Choice Buttons A / B */}
@@ -476,7 +528,7 @@ export function LoungeBalanceGame() {
                 A.
               </span>
               <p className="text-xs sm:text-sm font-bold text-zinc-100 leading-snug">
-                {game.optionA.text}
+                {translatedGame?.optionAText || game.optionA.text}
               </p>
             </div>
             {selectedChoice === 'A' && (
@@ -518,7 +570,7 @@ export function LoungeBalanceGame() {
                 B.
               </span>
               <p className="text-xs sm:text-sm font-bold text-zinc-100 leading-snug">
-                {game.optionB.text}
+                {translatedGame?.optionBText || game.optionB.text}
               </p>
             </div>
             {selectedChoice === 'B' && (
