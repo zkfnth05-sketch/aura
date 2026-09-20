@@ -100,6 +100,11 @@ export function LoungePostCard({
     };
   }, [post.id, post.content, post.translations, language]);
 
+  const isOfficialMagazine = post.userId === 'aura-official-editor' || post.userName?.includes('Aura') || post.userName?.includes('매거진') || post.userName?.includes('공식');
+  const cardAvatar = isOfficialMagazine
+    ? '/aura-magazine-logo.jpg'
+    : post.userAvatar;
+
   // DM / Profile Dialog states
   const [isDmDialogOpen, setIsDmDialogOpen] = useState(false);
   const [dmMessage, setDmMessage] = useState('');
@@ -229,14 +234,16 @@ export function LoungePostCard({
             <div className="relative">
               <Avatar
                 className={`w-11 h-11 border-2 ${
-                  post.isAnonymous
+                  isOfficialMagazine
+                    ? 'border-amber-400 shadow-[0_0_12px_rgba(229,169,52,0.4)]'
+                    : post.isAnonymous
                     ? 'border-purple-500/50 group-hover:border-purple-400'
                     : 'border-amber-500/40 group-hover:border-amber-400'
                 } shadow-md transition-all group-hover:scale-105`}
               >
-                <AvatarImage src={post.userAvatar} alt={post.userName} className="object-cover" />
+                <AvatarImage src={cardAvatar} alt={post.userName} className="object-cover" />
                 <AvatarFallback className="bg-zinc-800 text-amber-300 font-bold">
-                  {post.isAnonymous ? '?' : (post.userName?.[0] || 'U')}
+                  {isOfficialMagazine ? 'Aura' : (post.isAnonymous ? '?' : (post.userName?.[0] || 'U'))}
                 </AvatarFallback>
               </Avatar>
               {post.isVip && !post.isAnonymous && (
@@ -549,8 +556,8 @@ export function LoungePostCard({
             <div className={`p-3.5 rounded-2xl bg-zinc-900/80 border ${post.isAnonymous ? 'border-purple-500/30' : 'border-zinc-800'}`}>
               <div className="flex items-center gap-2 mb-1.5">
                 <Avatar className={`w-6 h-6 border ${post.isAnonymous ? 'border-purple-500/40' : 'border-amber-500/30'}`}>
-                  <AvatarImage src={post.userAvatar} />
-                  <AvatarFallback className="text-[10px]">{post.isAnonymous ? '?' : post.userName[0]}</AvatarFallback>
+                  <AvatarImage src={cardAvatar} />
+                  <AvatarFallback className="text-[10px]">{isOfficialMagazine ? 'A' : (post.isAnonymous ? '?' : post.userName[0])}</AvatarFallback>
                 </Avatar>
                 <span className={`text-xs font-bold ${post.isAnonymous ? 'text-purple-300' : 'text-amber-300'}`}>
                   {post.isAnonymous ? '익명 회원의 속마음 고민' : `${post.userName}님의 스레드 글`}

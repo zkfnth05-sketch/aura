@@ -118,7 +118,9 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
         userName: isAnonymous ? '익명의 오라' : (user?.name || '나'),
         userAvatar: isAnonymous
           ? ANONYMOUS_AVATAR
-          : (user?.photoUrls?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80'),
+          : (user?.photoUrls?.[0] && !user.photoUrls[0].includes('1578632767115') && !user.photoUrls[0].includes('1534528741775')
+              ? user.photoUrls[0]
+              : 'https://ncflciezowwpnknuutko.supabase.co/storage/v1/object/public/aura-media/branding/aura_magazine_logo.jpg'),
         userAge: user?.age || 26,
         userGender: (user?.gender as any) || '여성',
         userLocation: user?.location || '서울',
@@ -158,7 +160,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
 
   const avatarUrl = isAnonymous
     ? ANONYMOUS_AVATAR
-    : (user?.photoUrls?.[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80');
+    : '/aura-magazine-logo.jpg';
 
   return (
     <div
