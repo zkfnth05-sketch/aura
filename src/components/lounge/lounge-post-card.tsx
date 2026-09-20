@@ -368,6 +368,19 @@ export function LoungePostCard({
           </div>
         )}
 
+        {/* 💬 Discussion Prompt Box (댓글 유도 티키타카 질문 박스) */}
+        {post.discussionPrompt && (
+          <div className="mb-3.5 p-4 rounded-2xl bg-gradient-to-r from-rose-500/15 via-pink-500/10 to-zinc-900 border border-rose-500/30 text-xs sm:text-sm shadow-lg text-left">
+            <div className="flex items-center gap-2 mb-1.5 text-rose-300 font-bold">
+              <span className="text-base">💬</span>
+              <span>Aura 공식 에디터의 소통 핑퐁</span>
+            </div>
+            <p className="text-zinc-200 leading-relaxed font-medium pl-6">
+              {post.discussionPrompt}
+            </p>
+          </div>
+        )}
+
         {/* Hashtags */}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3.5 text-left">

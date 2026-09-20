@@ -5,7 +5,6 @@ import Header from '@/components/layout/header';
 import { LoungeComposer } from '@/components/lounge/lounge-composer';
 import { LoungePostCard } from '@/components/lounge/lounge-post-card';
 import { LoungeBalanceGame } from '@/components/lounge/lounge-balance-game';
-import { LoungeMagazineCarousel } from '@/components/lounge/lounge-magazine-carousel';
 import { LoungeStore } from '@/lib/lounge-store';
 import { LoungePost, LoungeCategory } from '@/lib/lounge-types';
 import { useUser } from '@/contexts/user-context';
@@ -184,8 +183,7 @@ export default function LoungePage() {
         {/* Daily Romance Balance Game (Gemini AI generated) */}
         <LoungeBalanceGame />
 
-        {/* 💖 Aura 2030 매거진 가로 슬라이드 캐러셀 (에디터 PICK) */}
-        <LoungeMagazineCarousel />
+        
 
         {/* Category Filter Chips (내 일상 공유 피드 필터) */}
         <div className="flex flex-wrap items-center gap-1.5 mb-4">

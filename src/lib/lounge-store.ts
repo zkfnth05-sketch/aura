@@ -144,6 +144,7 @@ export class LoungeStore {
           isAnonymous: Boolean(p.is_anonymous),
           anonymousAlias: p.anonymous_alias ?? undefined,
           translations: p.translations || {},
+          discussionPrompt: p.translations?.discussion_prompt || p.discussion_prompt || undefined,
         };
       });
 

@@ -13,6 +13,7 @@ export interface LoungeComment {
   isAnonymous?: boolean;
   anonymousAlias?: string;
   translations?: Record<string, string>;
+  discussionPrompt?: string;
 }
 
 export interface LoungePost {
@@ -37,6 +38,7 @@ export interface LoungePost {
   anonymousAlias?: string;
   category?: LoungeCategory;
   translations?: Record<string, string>;
+  discussionPrompt?: string;
 }
 
 export type LoungeCategory = 'all' | 'hot' | 'popular' | 'anonymous' | 'cafe' | 'workout' | 'fitness' | 'pet' | 'daily' | 'travel' | 'culture';
