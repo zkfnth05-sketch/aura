@@ -83,21 +83,54 @@ export default function DashboardPage() {
         }
     };
 
-    // 1. 핵심 KPI 지표 계산
+    // 선택 기간 내 실제 신규 가입한 회원 목록 필터링
+    const periodNewUsers = useMemo(() => {
+        const now = new Date();
+        return users.filter(user => {
+            if (!user.createdAt) return false;
+            const userDate = typeof (user.createdAt as any)?.toDate === 'function' 
+                ? (user.createdAt as any).toDate() 
+                : new Date(user.createdAt as any);
+
+            if (isNaN(userDate.getTime())) return false;
+
+            if (period === 'today') {
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+                return userDate >= todayStart;
+            } else if (period === 'weekly') {
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                return userDate >= sevenDaysAgo;
+            } else if (period === 'monthly') {
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                return userDate >= thirtyDaysAgo;
+            } else {
+                const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                return userDate >= oneYearAgo;
+            }
+        });
+    }, [users, period]);
+
+    // 1. 핵심 KPI 지표 계산 (정직한 CVR 및 순 방문자 산출)
     const kpiMetrics = useMemo(() => {
         const periodPV = trafficLogs.length;
         const uniqueVisitors = new Set(trafficLogs.map(l => l.session_id)).size;
+        const newUsersCount = periodNewUsers.length;
         const totalUserCount = users.length;
-        const conversionRate = periodPV > 0 ? Math.min(100, ((totalUserCount / Math.max(1, uniqueVisitors)) * 100)).toFixed(1) : '0.0';
+        
+        // 가입 전환율(CVR): 기간 내 순 방문자(UV) 중 실제 신규 가입한 비율
+        const conversionRate = uniqueVisitors > 0 
+            ? Math.min(100, ((newUsersCount / uniqueVisitors) * 100)).toFixed(1) 
+            : '0.0';
 
         return {
             periodPV,
             uniqueVisitors,
             cumulativePV: Math.max(totalCumulativePV, periodPV),
+            periodNewUsers: newUsersCount,
             conversionRate,
             totalUsers: totalUserCount,
         };
-    }, [trafficLogs, users, totalCumulativePV]);
+    }, [trafficLogs, periodNewUsers, users.length, totalCumulativePV]);
 
     // 2. 시간대별 / 일별 차트 데이터 생성
     const chartData = useMemo(() => {
@@ -367,7 +400,7 @@ export default function DashboardPage() {
                                 {isLoading ? '-' : `${kpiMetrics.uniqueVisitors.toLocaleString()} `}
                                 <span className="text-xs md:text-sm font-normal text-neutral-400">명</span>
                             </div>
-                            <p className="text-[11px] text-sky-400 mt-1">중복 제외 순 방문자</p>
+                            <p className="text-[11px] text-sky-400 mt-1">고유 순 방문자 (기기 세션)</p>
                         </CardContent>
                     </Card>
 
@@ -381,7 +414,7 @@ export default function DashboardPage() {
                                 {isLoading ? '-' : `${kpiMetrics.conversionRate}%`}
                             </div>
                             <p className="text-[11px] text-neutral-400 mt-1">
-                                총 회원 {kpiMetrics.totalUsers}명 기준
+                                신규 가입 {kpiMetrics.periodNewUsers}명 / 방문 {kpiMetrics.uniqueVisitors}명
                             </p>
                         </CardContent>
                     </Card>

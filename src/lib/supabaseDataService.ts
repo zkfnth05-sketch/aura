@@ -1312,10 +1312,14 @@ export async function seedSampleTrafficData(): Promise<{ success: boolean; count
 export async function clearAllTrafficLogs(): Promise<boolean> {
   const client = getClient();
   try {
-    const { error } = await client.from('site_traffic_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    let { error } = await client.from('site_traffic_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (error) {
-      console.error('Clear traffic error:', error);
-      return false;
+      // Fallback: delete using created_at condition
+      const fallback = await client.from('site_traffic_logs').delete().gte('created_at', '1970-01-01T00:00:00.000Z');
+      if (fallback.error) {
+        console.error('Clear traffic error:', fallback.error);
+        return false;
+      }
     }
     return true;
   } catch (err) {
