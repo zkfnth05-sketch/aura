@@ -34,8 +34,9 @@ export default function RootLayout({
         <title>Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅</title>
         <meta name="description" content="남탕 어플 NO! 국내 최초 1:1 남녀 50:50 황금 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 영상통화로 진짜 만남을 이어드립니다." />
         
-        {/* Google Search Console Verification */}
+        {/* Google Search Console & Naver Search Advisor Verification */}
         <meta name="google-site-verification" content="IHFjD1HlX9qQLUbwjrKPVdADPnoqgmEqBML05pV4STs" />
+        <meta name="naver-site-verification" content="bdfdbb49416330fed9984611756191930df7697f" />
 
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
