@@ -70,28 +70,82 @@ export default function HotPage() {
       const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
       const oppositeGender = isMale ? '여성' : '남성';
 
-      const { data: usersData, error } = await supabase
+      // ── 🆕 뉴 탭: 최근 14일 신규 가입자 풀 → 랜덤 셔플 → 50명 ──
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+      const { data: newUsersData, error: newError } = await supabase
         .from('users')
         .select('*')
         .eq('gender', oppositeGender)
         .neq('id', currentUser.id)
+        .gte('created_at', twoWeeksAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(200);
 
-      if (error) {
-        console.error("Error fetching HOT/NEW users:", error);
-        return;
+      if (newError) {
+        console.error("Error fetching NEW users:", newError);
       }
 
-      const users = (usersData || []).map(fromSupabaseUser).filter(u =>
+      const newFiltered = (newUsersData || []).map(fromSupabaseUser).filter(u =>
         u.gender === oppositeGender &&
         u.photoUrls && u.photoUrls.length > 0 &&
         !currentUser.blockedUsers?.includes(u.id) &&
         !u.blockedUsers?.includes(currentUser.id)
       );
 
-      setNewUsers(users.slice(0, 20));
-      setHotUsers([...users].sort(() => 0.5 - Math.random()).slice(0, 20));
+      const shuffledNew = [...newFiltered].sort(() => Math.random() - 0.5);
+      setNewUsers(shuffledNew.slice(0, 50));
+
+      // ── 🔥 HOT 탭: 실제 좋아요 수 Top 50 → 셔플 ──
+      const { data: likesData, error: likesError } = await supabase
+        .from('likes')
+        .select('likee_id')
+        .eq('is_like', true);
+
+      if (likesError) {
+        console.error("Error fetching likes:", likesError);
+      }
+
+      // likee_id 별 좋아요 수 집계
+      const likeCountMap: Record<string, number> = {};
+      for (const row of (likesData || [])) {
+        if (row.likee_id) {
+          likeCountMap[row.likee_id] = (likeCountMap[row.likee_id] || 0) + 1;
+        }
+      }
+
+      // 좋아요 많은 순 Top 50 ID 추출
+      const topLikedIds = Object.entries(likeCountMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 50)
+        .map(([id]) => id);
+
+      if (topLikedIds.length > 0) {
+        const { data: hotUsersData, error: hotError } = await supabase
+          .from('users')
+          .select('*')
+          .in('id', topLikedIds)
+          .eq('gender', oppositeGender)
+          .neq('id', currentUser.id);
+
+        if (hotError) {
+          console.error("Error fetching HOT users:", hotError);
+        }
+
+        const hotFiltered = (hotUsersData || []).map(fromSupabaseUser).filter(u =>
+          u.gender === oppositeGender &&
+          u.photoUrls && u.photoUrls.length > 0 &&
+          !currentUser.blockedUsers?.includes(u.id) &&
+          !u.blockedUsers?.includes(currentUser.id)
+        );
+
+        // 접속할 때마다 다른 순서로 노출
+        const shuffledHot = [...hotFiltered].sort(() => Math.random() - 0.5);
+        setHotUsers(shuffledHot.slice(0, 50));
+      } else {
+        setHotUsers([]);
+      }
 
     } catch (error) {
       console.error("Error fetching HOT/NEW users:", error);
