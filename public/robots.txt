@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aura-ai-dating.vercel.app/sitemap_aura.xml
+Sitemap: https://aura-ai-dating.vercel.app/sitemap.xml
+Sitemap: https://aura-ai-dating.vercel.app/sitemaps/sitemap_aura.xml

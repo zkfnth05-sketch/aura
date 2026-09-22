@@ -31,9 +31,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className="dark h-full" suppressHydrationWarning>
       <head>
-        <title>Aura - 50:50 성비 맞춤 & AI 데이팅</title>
-        <meta name="description" content="50:50 성비 맞춤과 AI 사진 보정, 취향 저격 매칭부터 데이트 코스까지. 당신의 연애를 AI가 가이드합니다." />
+        <title>Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅</title>
+        <meta name="description" content="남탕 어플 NO! 국내 최초 1:1 남녀 50:50 황금 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 영상통화로 진짜 만남을 이어드립니다." />
         
+        {/* Google Search Console Verification */}
+        <meta name="google-site-verification" content="IHFjD1HlX9qQLUbwjrKPVdADPnoqgmEqBML05pV4STs" />
+
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -43,22 +46,22 @@ export default function RootLayout({
         {/* Open Graph / KakaoTalk / Facebook / Instagram */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Aura" />
-        <meta property="og:title" content="Aura - 50:50 성비 맞춤 & 프리미엄 AI 데이팅" />
-        <meta property="og:description" content="남녀 50:50 성비 보장, AI 사진 보정과 맞춤 매칭부터 데이트 코스까지. 지금 바로 시작하세요." />
+        <meta property="og:title" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
+        <meta property="og:description" content="국내 최초 50:50 남녀 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 통역으로 설레는 만남을 시작하세요." />
         <meta property="og:url" content="https://aura-ai-dating.vercel.app" />
         <meta property="og:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:secure_url" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Aura - 50:50 성비 맞춤 & 프리미엄 AI 데이팅" />
+        <meta property="og:image:alt" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
         <meta property="og:locale" content="ko_KR" />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@Aura" />
-        <meta name="twitter:title" content="Aura - 50:50 성비 맞춤 & 프리미엄 AI 데이팅" />
-        <meta name="twitter:description" content="남녀 50:50 성비 보장, AI 사진 보정과 맞춤 매칭부터 데이트 코스까지. 지금 바로 시작하세요." />
+        <meta name="twitter:title" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
+        <meta name="twitter:description" content="국내 최초 50:50 남녀 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 통역으로 설레는 만남을 시작하세요." />
         <meta name="twitter:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
