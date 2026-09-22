@@ -104,7 +104,8 @@ export async function fetchDiscoverUsers(
     })
     .map(fromSupabaseUser);
 
-  return candidates.slice(0, limitCount);
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, limitCount);
 }
 
 /**
