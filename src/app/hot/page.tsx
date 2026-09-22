@@ -70,78 +70,75 @@ export default function HotPage() {
       const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
       const oppositeGender = isMale ? '여성' : '남성';
 
-      // ── 🆕 뉴 탭: 최근 14일 신규 가입자 풀 → 랜덤 셔플 → 50명 ──
-      const twoWeeksAgo = new Date();
-      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-
+      // ── 🆕 NEW 탭: 반대 성별 최신 가입자 풀 (14일 제한 없이 최신순으로 20~50명 안정적 확보) ──
       const { data: newUsersData, error: newError } = await supabase
         .from('users')
         .select('*')
         .eq('gender', oppositeGender)
         .neq('id', currentUser.id)
-        .gte('created_at', twoWeeksAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
       if (newError) {
         console.error("Error fetching NEW users:", newError);
       }
 
-      const newFiltered = (newUsersData || []).map(fromSupabaseUser).filter(u =>
+      const validCandidates = (newUsersData || []).map(fromSupabaseUser).filter(u =>
         u.gender === oppositeGender &&
         u.photoUrls && u.photoUrls.length > 0 &&
         !currentUser.blockedUsers?.includes(u.id) &&
         !u.blockedUsers?.includes(currentUser.id)
       );
 
-      const shuffledNew = [...newFiltered].sort(() => Math.random() - 0.5);
+      // 최신순 후보군에서 최대 50명 (접속 시마다 자연스러운 셔플)
+      const shuffledNew = [...validCandidates].sort(() => Math.random() - 0.5);
       setNewUsers(shuffledNew.slice(0, 50));
 
-      // ── 🔥 HOT 탭: 실제 좋아요 수 Top 50 → 셔플 ──
-      const { data: likesData, error: likesError } = await supabase
-        .from('likes')
-        .select('likee_id')
-        .eq('is_like', true);
+      // ── 🔥 HOT 탭: 반대 성별 좋아요 상위 우선 + 부족 시(20~50명 미달) 좋아요 없는 회원 자동 보충(Fallback) ──
+      const candidateIds = validCandidates.map(u => u.id);
 
-      if (likesError) {
-        console.error("Error fetching likes:", likesError);
-      }
+      if (candidateIds.length > 0) {
+        // 반대 성별 후보자들이 받은 실제 좋아요 데이터 조회
+        const { data: likesData, error: likesError } = await supabase
+          .from('likes')
+          .select('likee_id')
+          .in('likee_id', candidateIds)
+          .eq('is_like', true);
 
-      // likee_id 별 좋아요 수 집계
-      const likeCountMap: Record<string, number> = {};
-      for (const row of (likesData || [])) {
-        if (row.likee_id) {
-          likeCountMap[row.likee_id] = (likeCountMap[row.likee_id] || 0) + 1;
-        }
-      }
-
-      // 좋아요 많은 순 Top 50 ID 추출
-      const topLikedIds = Object.entries(likeCountMap)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 50)
-        .map(([id]) => id);
-
-      if (topLikedIds.length > 0) {
-        const { data: hotUsersData, error: hotError } = await supabase
-          .from('users')
-          .select('*')
-          .in('id', topLikedIds)
-          .eq('gender', oppositeGender)
-          .neq('id', currentUser.id);
-
-        if (hotError) {
-          console.error("Error fetching HOT users:", hotError);
+        if (likesError) {
+          console.error("Error fetching likes for HOT tab:", likesError);
         }
 
-        const hotFiltered = (hotUsersData || []).map(fromSupabaseUser).filter(u =>
-          u.gender === oppositeGender &&
-          u.photoUrls && u.photoUrls.length > 0 &&
-          !currentUser.blockedUsers?.includes(u.id) &&
-          !u.blockedUsers?.includes(currentUser.id)
-        );
+        // likee_id 별 좋아요 수 집계
+        const likeCountMap: Record<string, number> = {};
+        for (const row of (likesData || [])) {
+          if (row.likee_id) {
+            likeCountMap[row.likee_id] = (likeCountMap[row.likee_id] || 0) + 1;
+          }
+        }
 
-        // 접속할 때마다 다른 순서로 노출
-        const shuffledHot = [...hotFiltered].sort(() => Math.random() - 0.5);
+        // 1) 좋아요를 1개 이상 받은 회원 (좋아요 많은 순으로 우선 정렬)
+        const usersWithLikes = validCandidates
+          .filter(u => (likeCountMap[u.id] || 0) > 0)
+          .sort((a, b) => (likeCountMap[b.id] || 0) - (likeCountMap[a.id] || 0));
+
+        // 2) 좋아요가 아직 없는 회원 (보충용 Fallback 풀)
+        const usersWithoutLikes = validCandidates
+          .filter(u => (likeCountMap[u.id] || 0) === 0);
+
+        // 목표 인원: 최대 50명 (최소 20명 이상 항상 확보)
+        const TARGET_HOT_COUNT = 50;
+        let selectedHotUsers: User[] = [...usersWithLikes];
+
+        // 좋아요 받은 회원이 목표치에 미달할 경우, 좋아요를 받지 못한 회원으로 자동 채움
+        if (selectedHotUsers.length < TARGET_HOT_COUNT) {
+          const needed = TARGET_HOT_COUNT - selectedHotUsers.length;
+          const shuffledWithoutLikes = [...usersWithoutLikes].sort(() => Math.random() - 0.5);
+          selectedHotUsers.push(...shuffledWithoutLikes.slice(0, needed));
+        }
+
+        // 접속할 때마다 다른 순서로 신선하게 노출 (최대 50명, 최소 20명 이상)
+        const shuffledHot = [...selectedHotUsers].sort(() => Math.random() - 0.5);
         setHotUsers(shuffledHot.slice(0, 50));
       } else {
         setHotUsers([]);
