@@ -32,7 +32,7 @@ export default function RootLayout({
     <html lang="ko" className="dark h-full" suppressHydrationWarning>
       <head>
         <title>Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅</title>
-        <meta name="description" content="남탕 어플 NO! 국내 최초 1:1 남녀 50:50 황금 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 영상통화로 진짜 만남을 이어드립니다." />
+        <meta name="description" content="국내 최초 1:1 남녀 50:50 황금 성비 보장! AI 매력 분석과 4개국어 실시간 자막 영상통화 프리미엄 소개팅" />
         
         {/* Google Search Console & Naver Search Advisor Verification */}
         <meta name="google-site-verification" content="IHFjD1HlX9qQLUbwjrKPVdADPnoqgmEqBML05pV4STs" />
@@ -48,7 +48,7 @@ export default function RootLayout({
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Aura" />
         <meta property="og:title" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
-        <meta property="og:description" content="국내 최초 50:50 남녀 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 통역으로 설레는 만남을 시작하세요." />
+        <meta property="og:description" content="국내 최초 1:1 남녀 50:50 황금 성비 보장! AI 매력 분석과 4개국어 실시간 자막 영상통화 프리미엄 소개팅" />
         <meta property="og:url" content="https://aura-ai-dating.vercel.app" />
         <meta property="og:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:secure_url" content="https://aura-ai-dating.vercel.app/og-image.png" />
@@ -62,7 +62,7 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@Aura" />
         <meta name="twitter:title" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
-        <meta name="twitter:description" content="국내 최초 50:50 남녀 성비 보장, AI 매력 리포트와 4개국어 실시간 자막 통역으로 설레는 만남을 시작하세요." />
+        <meta name="twitter:description" content="국내 최초 1:1 남녀 50:50 황금 성비 보장! AI 매력 분석과 4개국어 실시간 자막 영상통화 프리미엄 소개팅" />
         <meta name="twitter:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
