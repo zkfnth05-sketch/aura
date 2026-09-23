@@ -12,7 +12,7 @@
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#121212",
   "enableNotifications": true,
-  "startUrl": "/",
+  "startUrl": "/?auto_review=1",
   "iconUrl": "https://aura-ai-dating.vercel.app/logo.svg",
   "maskableIconUrl": "https://aura-ai-dating.vercel.app/maskable_icon.svg",
   "monochromeIconUrl": "https://aura-ai-dating.vercel.app/logo.svg",
