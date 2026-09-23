@@ -23,7 +23,7 @@ plugins {
 def twaManifest = [
     applicationId: 'app.web.aura',
     hostName: 'aura-ai-dating.vercel.app', // The domain being opened in the TWA.
-    launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
+    launchUrl: '/?auto_review=1', // The start path for the TWA. Must be relative to the domain.
     name: 'Aura Ai Dating', // The application name.
     launcherName: 'Aura', // The name shown on the Android Launcher.
     themeColor: '#FFD700', // The color used for the status bar.
@@ -72,8 +72,8 @@ android {
         applicationId "app.web.aura"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 14
-        versionName "14"
+        versionCode 15
+        versionName "15"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
