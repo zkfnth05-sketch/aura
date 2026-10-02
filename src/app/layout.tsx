@@ -12,7 +12,6 @@ import InAppBrowserEscape from '@/components/in-app-browser-escape';
 import { TrafficTracker } from '@/components/traffic-tracker';
 import { useEffect } from 'react';
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,12 +26,12 @@ export default function RootLayout({
     }
   }, []);
 
-
   return (
     <html lang="ko" className="dark h-full" suppressHydrationWarning>
       <head>
-        <title>Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅</title>
-        <meta name="description" content="국내 최초 1:1 남녀 50:50 황금 성비 보장! AI 매력 분석과 4개국어 실시간 자막 영상통화 프리미엄 소개팅" />
+        <title>Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange</title>
+        <meta name="description" content="Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required." />
+        <meta name="keywords" content="Aura AI Dating, Aura Dating Korea, 아우라AI데이팅, Korean Language Exchange, Korean Dating" />
         
         {/* Google Search Console & Naver Search Advisor Verification */}
         <meta name="google-site-verification" content="IHFjD1HlX9qQLUbwjrKPVdADPnoqgmEqBML05pV4STs" />
@@ -44,26 +43,49 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon.png" />
         <meta name="theme-color" content="#E5A934" />
 
-        {/* Open Graph / KakaoTalk / Facebook / Instagram */}
+        {/* Open Graph / KakaoTalk / Facebook / Instagram / Reddit */}
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Aura" />
-        <meta property="og:title" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
-        <meta property="og:description" content="국내 최초 1:1 남녀 50:50 황금 성비 보장! AI 매력 분석과 4개국어 실시간 자막 영상통화 프리미엄 소개팅" />
+        <meta property="og:site_name" content="Aura AI Dating" />
+        <meta property="og:title" content="Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange" />
+        <meta property="og:description" content="Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required." />
         <meta property="og:url" content="https://aura-ai-dating.vercel.app" />
         <meta property="og:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:secure_url" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
-        <meta property="og:locale" content="ko_KR" />
+        <meta property="og:image:alt" content="Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:locale:alternate" content="ko_KR" />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@Aura" />
-        <meta name="twitter:title" content="Aura - 50:50 남녀 성비 &amp; 프리미엄 AI 소개팅" />
-        <meta name="twitter:description" content="국내 최초 1:1 남녀 50:50 황금 성비 보장! AI 매력 분석과 4개국어 실시간 자막 영상통화 프리미엄 소개팅" />
+        <meta name="twitter:title" content="Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange" />
+        <meta name="twitter:description" content="Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required." />
         <meta name="twitter:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
+
+        {/* Structured Data (JSON-LD) for Google Rich Snippets & Instant Indexing */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "Aura AI Dating",
+              "alternateName": ["아우라AI데이팅", "Aura Dating Korea"],
+              "url": "https://aura-ai-dating.vercel.app",
+              "description": "Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required.",
+              "applicationCategory": "LifestyleApplication",
+              "operatingSystem": "All",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              }
+            })
+          }}
+        />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
