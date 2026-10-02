@@ -35,14 +35,19 @@ import { GenderBalanceHeroCard } from '@/components/gender-balance-hero-card';
 export default function SignupPage() {
   const router = useRouter();
   const { t, setLanguage, supportedLanguages, language } = useLanguage();
+  const [likedTargetName, setLikedTargetName] = React.useState<string | null>(null);
 
-  // URL에서 초대 코드 (?ref=CODE) 감지하여 자동 보관
+  // URL에서 초대 코드 (?ref=CODE) 및 프리뷰에서 좋아요 누른 대상 감지
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const ref = params.get('ref');
       if (ref) {
         localStorage.setItem('aura_referred_by_code', ref.trim().toUpperCase());
+      }
+      const targetName = localStorage.getItem('aura_liked_target_name');
+      if (targetName) {
+        setLikedTargetName(targetName);
       }
     }
   }, []);
@@ -70,6 +75,23 @@ export default function SignupPage() {
         <p className="mt-4 mb-6 text-sm sm:text-base text-neutral-300">
           {t('app_tagline')}
         </p>
+
+        {/* 프리뷰에서 호감 보낸 이성이 있는 경우: 심쿵 안내 카드 */}
+        {likedTargetName && (
+          <div className="w-full mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-rose-950/60 to-amber-950/60 border border-rose-500/40 text-left shadow-lg animate-pulse">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">💖</span>
+              <div>
+                <p className="text-xs font-bold text-rose-200">
+                  [{likedTargetName}]님에게 보낸 호감 시그널이 대기 중입니다!
+                </p>
+                <p className="text-[11px] text-zinc-300 mt-0.5">
+                  1초 만에 시작하고 매칭 수락 알림을 받아보세요.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 50:50 성비 균형 보장제 공식 안내 카드 */}
         <div className="w-full mb-6">

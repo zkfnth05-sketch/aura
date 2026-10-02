@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HomePageClient from '@/components/home-page-client';
+import GuestPreviewExperience from '@/components/guest-preview-experience';
 import SplashScreen from '@/components/splash-screen';
 import { useUser } from '@/contexts/user-context';
 import { supabase } from '@/lib/supabaseClient';
 import { fromSupabaseUser } from '@/lib/supabaseMappers';
-
 
 export default function HomePage() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function HomePage() {
   const { authUser, isLoaded, user, isSignupFlowActive } = useUser();
   const [autoReviewDone, setAutoReviewDone] = useState(false);
 
-  // 구글 심사관 자동 로그인: ?auto_review=1 파라미터 감지
+  // 구글 심사관 자동 로그인: ?auto_review=1 파라미터 감지 (Google Play 절대 수칙)
   useEffect(() => {
     if (autoReviewDone) return;
     const isAutoReview = searchParams.get('auto_review') === '1';
@@ -65,26 +65,30 @@ export default function HomePage() {
         // If we are in the middle of signup, don't redirect anywhere.
         return;
       }
-      if (!authUser) {
-        // 1. If no user is authenticated, redirect to the signup page.
-        // 단, auto_review 처리 중이면 리다이렉트하지 않음
-        if (searchParams.get('auto_review') === '1' && !autoReviewDone) return;
-        router.replace('/signup');
-      } else if (authUser && !user) {
-        // 2. If authenticated but no profile data exists (signup incomplete),
+      if (authUser && !user) {
+        // If authenticated but no profile data exists (signup incomplete),
         // redirect to the profile creation page.
         router.replace('/signup/profile');
       }
-      // 3. If authUser and user both exist, do nothing and let the component render HomePageClient.
     }
-  }, [authUser, isLoaded, user, router, isSignupFlowActive, searchParams, autoReviewDone]);
+  }, [authUser, isLoaded, user, router, isSignupFlowActive]);
 
-  // Show a splash screen while loading or redirecting.
-  // This prevents the main interface from flashing before the redirect happens.
-  if (!isLoaded || (isSignupFlowActive && !user) || (!isSignupFlowActive && (!authUser || !user))) {
+  // Show a splash screen while loading authentication state
+  if (!isLoaded) {
     return <SplashScreen />;
   }
-  
-  // If user has completed signup, show the main app interface.
-  return <HomePageClient />;
+
+  // If in the middle of active signup flow without completed profile
+  if (isSignupFlowActive && !user) {
+    return <SplashScreen />;
+  }
+
+  // If authenticated and user profile exists -> Full Regular App Interface
+  if (authUser && user) {
+    return <HomePageClient />;
+  }
+
+  // If NOT authenticated -> High-Converting VIP Guest Preview Swiping Experience!
+  return <GuestPreviewExperience />;
 }
+
