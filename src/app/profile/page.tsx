@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, X, Loader2, ShieldAlert, PhoneCall, Sparkles } from 'lucide-react';
+import { MapPin, X, Loader2, ShieldAlert, PhoneCall, Sparkles, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { isDefaultAvatar } from '@/lib/avatar-utils';
 import ImageCarouselDialog from '@/components/image-carousel-dialog';
 import AuraCharmReportDialog from '@/components/aura-charm-report-dialog';
 import type { AuraCharmOutput } from '@/actions/ai-actions';
@@ -128,33 +129,58 @@ export default function ProfilePage() {
       <div className="bg-background text-foreground">
         <Header />
         <main>
-          <div className="relative w-full aspect-[3/4] max-h-[70vh] cursor-pointer" onClick={() => handleImageClick(0)}>
+          {/* 메인 프로필 사진 영역 */}
+          <div className="relative w-full aspect-[3/4] max-h-[70vh] bg-zinc-950 overflow-hidden">
             {allPhotos[0] && (
               <Image
                 src={allPhotos[0]}
                 alt={`Profile of ${currentUser.name}`}
                 fill
-                className="object-cover"
+                className={cn("object-cover", isDefaultAvatar(allPhotos[0]) && "opacity-90")}
                 data-ai-hint="person portrait"
                 priority
+                onClick={() => {
+                  if (isDefaultAvatar(allPhotos[0])) {
+                    // 기본 아바타일 경우 클릭 시 바로 사진 등록(수정) 페이지로 이동
+                    window.location.href = '/profile/edit';
+                  } else {
+                    handleImageClick(0);
+                  }
+                }}
               />
+            )}
+
+            {/* 기본 아바타 상태일 때 표시되는 사진 등록 유도 오버레이 */}
+            {isDefaultAvatar(allPhotos[0]) && (
+              <div className="absolute inset-x-0 bottom-4 px-4 flex flex-col items-center pointer-events-auto">
+                <Link
+                  href="/profile/edit"
+                  className="w-full max-w-sm py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500/90 via-amber-600/90 to-yellow-600/90 hover:brightness-110 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(245,158,11,0.4)] backdrop-blur-md transition-all active:scale-98"
+                >
+                  <Camera className="w-4 h-4 text-black" />
+                  <span>내 사진 등록하기 (매칭 3배 상승)</span>
+                </Link>
+              </div>
             )}
           </div>
           
           <div className="container relative z-10 px-4">
-            <div className="grid grid-cols-3 gap-2 mt-4">
-                {allPhotos.slice(1).map((photoUrl, index) => (
-                    <div key={index} className="relative aspect-square rounded-md overflow-hidden cursor-pointer" onClick={() => handleImageClick(index + 1)}>
-                        <Image 
-                            src={photoUrl}
-                            alt={`More photo of ${currentUser.name} ${index + 1}`}
-                            fill
-                            className="object-cover"
-                            data-ai-hint="person portrait"
-                        />
-                    </div>
-                ))}
-            </div>
+            {/* 실사진이 2장 이상 있을 때만 추가 사진 그리드 노출 */}
+            {!isDefaultAvatar(allPhotos[0]) && allPhotos.slice(1).length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                  {allPhotos.slice(1).map((photoUrl, index) => (
+                      <div key={index} className="relative aspect-square rounded-md overflow-hidden cursor-pointer" onClick={() => handleImageClick(index + 1)}>
+                          <Image 
+                              src={photoUrl}
+                              alt={`More photo of ${currentUser.name} ${index + 1}`}
+                              fill
+                              className="object-cover"
+                              data-ai-hint="person portrait"
+                          />
+                      </div>
+                  ))}
+              </div>
+            )}
             <div className="text-left mt-4">
                 <h1 className="text-3xl font-bold">
                     {currentUser.name}, {currentUser.age}, {t(currentUser.gender as TranslationKeys) || currentUser.gender}

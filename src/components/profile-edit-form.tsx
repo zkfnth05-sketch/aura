@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { X, Plus, Video, Camera, ImageIcon, Loader2, Check, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, compressImage } from '@/lib/utils';
+import { isDefaultAvatar, getDefaultAvatarByGender } from '@/lib/avatar-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import CameraDialog from '@/components/camera-dialog';
 import { uploadDataUri, uploadMediaFile } from '@/lib/supabaseStorageService';
@@ -132,7 +133,7 @@ export default function ProfileEditForm() {
       return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
-  const photoUrls = currentUser.photoUrls || [];
+  const realPhotos = useMemo(() => (currentUser?.photoUrls || []).filter(url => !isDefaultAvatar(url)), [currentUser?.photoUrls]);
   const videoUrls = currentUser.videoUrls || [];
   
   const handleMultiSelect = (field: keyof typeof profile, value: string) => {
@@ -207,7 +208,7 @@ export default function ProfileEditForm() {
     
     try {
         const cdnPhotoUrl = await uploadDataUri(finalUriToUpload, 'profiles');
-        await updateUser({ photoUrls: [...photoUrls, cdnPhotoUrl] });
+        await updateUser({ photoUrls: [cdnPhotoUrl, ...realPhotos] });
     } catch (error) {
         console.error("Failed to update user with new photo:", error);
         toast({
@@ -242,8 +243,12 @@ export default function ProfileEditForm() {
   };
   
   const removeImage = (urlToRemove: string) => {
-    const newPhotoUrls = photoUrls.filter(url => url !== urlToRemove);
-    updateUser({ photoUrls: newPhotoUrls });
+    const newRealPhotos = realPhotos.filter(url => url !== urlToRemove);
+    if (newRealPhotos.length === 0) {
+      updateUser({ photoUrls: [getDefaultAvatarByGender(currentUser?.gender)] });
+    } else {
+      updateUser({ photoUrls: newRealPhotos });
+    }
   }
 
   const handleDeleteAccount = async () => {
@@ -337,7 +342,7 @@ export default function ProfileEditForm() {
             <Switch checked={aiEnhancement} onCheckedChange={setAiEnhancement} />
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {photoUrls.map((url, index) => (
+            {realPhotos.map((url, index) => (
               <div key={url + index} className="relative aspect-square rounded-lg overflow-hidden group bg-zinc-900">
                 <Image src={url} alt={`My profile photo`} fill className="object-cover"/>
                 <div className="absolute top-1 right-1 z-20">
@@ -359,7 +364,7 @@ export default function ProfileEditForm() {
                 </div>
             )}
 
-            {photoUrls.length < 9 && !tempPhotoUri &&(
+            {realPhotos.length < 9 && !tempPhotoUri &&(
               <Dialog open={isPhotoSourceDialogOpen} onOpenChange={setIsPhotoSourceDialogOpen}>
                 <DialogTrigger asChild>
                   <button className="flex items-center justify-center aspect-square rounded-lg border-2 border-dashed border-zinc-700" disabled={isEnhancing}>

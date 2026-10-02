@@ -8,13 +8,14 @@ import { useLanguage } from '@/contexts/language-context';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Loader2, Camera, ImageIcon } from 'lucide-react';
+import { Plus, Loader2, Camera, ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getEnhancedPhoto } from '@/actions/ai-actions';
 import { compressImage } from '@/lib/utils';
 import { uploadDataUri } from '@/lib/supabaseStorageService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import CameraDialog from '@/components/camera-dialog';
+import { getDefaultAvatarByGender } from '@/lib/avatar-utils';
 
 type PhotoState = {
   uri: string | null;
@@ -92,6 +93,7 @@ export default function UploadPhotoPage() {
     processAndAddImage(dataUri);
   };
 
+  // 사진을 등록하고 완료하는 기존 로직 (AI 보정 적용)
   const handleComplete = async () => {
     if (!photo.uri) {
       toast({
@@ -119,6 +121,32 @@ export default function UploadPhotoPage() {
         description: t('signup_failed_desc')
       });
       setIsSubmitting(false); // Re-enable button on error
+    }
+  };
+
+  // 사진이 당장 없는 유저를 위한 1초 스킵 완료 로직 (기본 실루엣 그래픽 아바타 적용)
+  const handleSkipPhoto = async () => {
+    setIsSubmitting(true);
+    try {
+      const defaultAvatar = getDefaultAvatarByGender(user?.gender);
+
+      await updateUser({
+        photoUrls: [defaultAvatar],
+      });
+      setIsSignupFlowActive(false);
+      toast({
+        title: '🎉 아우라에 오신 것을 환영합니다!',
+        description: '기본 프로필로 가입이 완료되었습니다. 언제든 [프로필]에서 내 사진을 등록하실 수 있습니다.',
+      });
+      router.push('/profile');
+    } catch (error) {
+      console.error("Failed to complete signup with default avatar:", error);
+      toast({
+        variant: "destructive",
+        title: t('signup_failed_title'),
+        description: t('signup_failed_desc')
+      });
+      setIsSubmitting(false);
     }
   };
   
@@ -184,36 +212,62 @@ export default function UploadPhotoPage() {
             </DialogContent>
             </Dialog>
 
-
+            {/* AI 자동 보정 토글 스위치 (100% 정상 보존) */}
             <div className="flex items-center justify-center gap-4 mt-8">
-            <label htmlFor="ai-enhancement" className="text-sm font-medium text-zinc-400">
-                {t('ai_enhancement')}
-            </label>
-            <Switch
-                id="ai-enhancement"
-                checked={aiEnhancement}
-                onCheckedChange={setAiEnhancement}
-            />
+              <label htmlFor="ai-enhancement" className="text-sm font-medium text-zinc-400">
+                  {t('ai_enhancement')}
+              </label>
+              <Switch
+                  id="ai-enhancement"
+                  checked={aiEnhancement}
+                  onCheckedChange={setAiEnhancement}
+              />
             </div>
+
+            {/* 사진이 없는 유저를 위한 빠른 스킵 텍스트 힌트 */}
+            {!photo.uri && (
+              <button
+                type="button"
+                onClick={handleSkipPhoto}
+                disabled={isSubmitting}
+                className="mt-6 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-900 border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:bg-zinc-800 text-xs font-semibold shadow-md transition-all active:scale-95"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>지금 사진이 없으신가요? 기본 아바타로 먼저 시작하기</span>
+              </button>
+            )}
         </div>
       </main>
 
+      {/* 하단 버튼 영역: 사진 업로드 여부에 따른 스마트 분기 */}
       <footer className="flex-shrink-0 pt-8 flex gap-3">
         <Button
             onClick={() => router.back()}
-            className="w-full h-14 bg-zinc-800 text-zinc-300 font-bold rounded-full text-lg hover:bg-zinc-700"
+            className="w-1/3 h-14 bg-zinc-800 text-zinc-300 font-bold rounded-full text-base hover:bg-zinc-700"
             disabled={isSubmitting || photo.isEnhancing}
         >
             {t('previous_button')}
         </Button>
-        <Button
-          onClick={handleComplete}
-          disabled={!photo.uri || photo.isEnhancing || isSubmitting}
-          className="w-full h-14 bg-primary text-primary-foreground font-bold rounded-full text-lg hover:bg-primary/90 disabled:bg-zinc-800 disabled:text-zinc-500"
-        >
-          {(photo.isEnhancing || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {t('complete_button')}
-        </Button>
+
+        {photo.uri ? (
+          <Button
+            onClick={handleComplete}
+            disabled={photo.isEnhancing || isSubmitting}
+            className="w-2/3 h-14 bg-gradient-to-r from-[#E5A934] via-[#DE9F2B] to-[#C7871E] text-black font-extrabold rounded-full text-base hover:brightness-110 shadow-[0_4px_20px_rgba(229,169,52,0.35)] transition-all"
+          >
+            {(photo.isEnhancing || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('complete_button')}
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSkipPhoto}
+            disabled={isSubmitting}
+            className="w-2/3 h-14 bg-gradient-to-r from-zinc-800 via-zinc-800 to-zinc-900 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:border-amber-400 font-extrabold rounded-full text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg active:scale-98 transition-all"
+          >
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-400" />}
+            <span>나중에 올릴게요 (1초 시작)</span>
+          </Button>
+        )}
       </footer>
     </div>
     <CameraDialog isOpen={isCameraDialogOpen} onClose={() => setIsCameraDialogOpen(false)} onPhotoTaken={handlePhotoTaken} />
