@@ -60,7 +60,7 @@ export default function Header() {
         <div className="flex items-center justify-end gap-1 sm:gap-1.5 z-10">
           <PwaInstallButton />
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" asChild>
-            <Link href="/filter" aria-label="필터 설정">
+            <Link href="/filter" aria-label={t('header_filter_aria')}>
               <SlidersHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
           </Button>

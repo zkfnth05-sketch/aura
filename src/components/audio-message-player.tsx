@@ -98,10 +98,10 @@ export default function AudioMessagePlayer({ message }: { message: Message }) {
       if (result.translatedText) {
         setTranslatedText(result.translatedText);
       } else {
-        toast({ variant: 'destructive', description: "음성을 텍스트로 변환하지 못했습니다." });
+        toast({ variant: 'destructive', title: t('translation_failed_title'), description: t('translation_failed_empty_desc') });
       }
     } catch (error) {
-      toast({ variant: 'destructive', description: "음성 메시지 번역에 실패했습니다." });
+      toast({ variant: 'destructive', title: t('translation_service_error_title'), description: t('translation_failed_title') });
     } finally {
       setIsTranslating(false);
     }

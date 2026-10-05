@@ -147,7 +147,7 @@ export default function AiPage() {
               value="aura-report"
               className="rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-pink-500 data-[state=active]:text-pink-400 bg-transparent text-muted-foreground"
             >
-              ✨ 나의 아우라
+              {t('ai_aura_banner_tag')}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="ideal-type" className="mt-6 pb-8">
@@ -178,16 +178,16 @@ export default function AiPage() {
               </div>
 
               <div className="space-y-1">
-                <h2 className="text-xl font-bold text-white">제미나이 AI 나의 아우라 매력 진단</h2>
+                <h2 className="text-xl font-bold text-white">{t('ai_aura_header_title')}</h2>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  내 사진과 프로필을 제미나이 비전 AI가 분석하여 인스타 스토리에 공유할 수 있는 1장짜리 프리미엄 화보 카드로 만들어 드립니다.
+                  {t('ai_aura_header_desc')}
                 </p>
               </div>
 
               {savedAuraReport ? (
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2">
                   <div className="flex items-center justify-between text-xs text-amber-400 font-bold">
-                    <span>👑 아우라 지수: {savedAuraReport.auraScore}점</span>
+                    <span>👑 {t('aura_canvas_score').replace('%s점 (상위 %s%)', `${savedAuraReport.auraScore}점`)}</span>
                     <span className="text-pink-400">상위 {savedAuraReport.percentile}%</span>
                   </div>
                   <h3 className="text-base font-bold text-white">[ {savedAuraReport.title} ]</h3>
@@ -203,8 +203,8 @@ export default function AiPage() {
                 <Sparkles className="w-5 h-5" />
                 <span>
                   {savedAuraReport
-                    ? '📸 인스타 화보 카드 열기 & 공유하기'
-                    : '🔮 3초 만에 나의 매력 진단받기'}
+                    ? t('ai_aura_btn_open_saved')
+                    : t('ai_aura_btn_diagnose_now')}
                 </span>
               </Button>
             </div>

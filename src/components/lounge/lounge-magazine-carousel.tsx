@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/contexts/language-context';
 
 import { MagazineArticle } from '@/lib/magazine-types';
 import { MagazineStore, MAGAZINE_UPDATED_EVENT } from '@/lib/magazine-store';
@@ -16,6 +17,7 @@ import { MagazineStore, MAGAZINE_UPDATED_EVENT } from '@/lib/magazine-store';
 export type { MagazineArticle };
 
 export function LoungeMagazineCarousel() {
+  const { t } = useLanguage();
   const [articles, setArticles] = useState<MagazineArticle[]>(() => MagazineStore.getArticles());
   const [selectedArticle, setSelectedArticle] = useState<MagazineArticle | null>(null);
 
@@ -32,7 +34,7 @@ export function LoungeMagazineCarousel() {
   if (!articles || articles.length === 0) return null;
 
   return (
-    <section aria-label="Aura 2030 매거진" className="w-full mb-5 text-left">
+    <section aria-label={t('magazine_title')} className="w-full mb-5 text-left">
       {/* Header with Title and Link */}
       <div className="flex items-center justify-between mb-2.5 px-0.5">
         <div className="flex items-center gap-2">
@@ -40,9 +42,9 @@ export function LoungeMagazineCarousel() {
             💖
           </span>
           <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-zinc-100 flex items-center gap-1.5">
-            <span>Aura 2030 매거진</span>
+            <span>{t('magazine_title')}</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300">
-              에디터 PICK
+              {t('magazine_editor_pick')}
             </span>
           </h2>
         </div>
@@ -52,7 +54,7 @@ export function LoungeMagazineCarousel() {
           onClick={() => setSelectedArticle(articles[0])}
           className="inline-flex items-center gap-0.5 text-xs text-zinc-400 hover:text-amber-300 font-medium transition-colors"
         >
-          <span>전체보기</span>
+          <span>{t('magazine_view_all')}</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -130,7 +132,7 @@ export function LoungeMagazineCarousel() {
                 {selectedArticle.title}
               </DialogTitle>
               <p className="text-xs text-zinc-400 mt-1">
-                💖 Aura 2030 매거진 공식 에디토리얼 칼럼
+                {t('magazine_official_editorial')}
               </p>
             </DialogHeader>
 
@@ -163,7 +165,7 @@ export function LoungeMagazineCarousel() {
                   onClick={() => setSelectedArticle(null)}
                   className="w-full rounded-full bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-black font-extrabold text-xs shadow-md shadow-rose-500/20"
                 >
-                  👉 Aura에서 실시간 분석 체험하기
+                  {t('magazine_experience_cta')}
                 </Button>
               </div>
 

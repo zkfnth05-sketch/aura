@@ -159,7 +159,7 @@ function UserProfilePageContent() {
 
     // 대기 중인 남성 유저는 관전만 가능하며 좋아요/메시지 시도시 VIP 모달 발동!
     if (action === 'like' || action === 'message') {
-      const allowed = requireActiveAdmission(() => {}, action === 'like' ? '프로필 좋아요' : '1:1 메시지 전송');
+      const allowed = requireActiveAdmission(() => {}, action === 'like' ? t('action_like_profile') : t('action_send_message'));
       if (!allowed) return;
     }
 

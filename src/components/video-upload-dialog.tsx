@@ -107,7 +107,7 @@ export default function VideoUploadDialog({ isOpen, onClose }: { isOpen: boolean
 
   const handleStartRecording = useCallback(() => {
     if (!streamRef.current || !streamRef.current.active) {
-        toast({ variant: 'destructive', title: "카메라 오류", description: "카메라를 사용할 수 없습니다. 권한을 확인해주세요." });
+        toast({ variant: 'destructive', title: t('camera_permission_denied_title'), description: t('camera_permission_denied_desc') });
         return;
     }
 
@@ -129,7 +129,7 @@ export default function VideoUploadDialog({ isOpen, onClose }: { isOpen: boolean
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         
         if (recordingChunksRef.current.length === 0) {
-          toast({ variant: "destructive", title: "녹화 실패", description: "녹화 시간이 너무 짧습니다." });
+          toast({ variant: "destructive", title: t('video_record_failed_title'), description: t('video_record_too_short_desc') });
           startCamera(); // Reset to idle mode with camera on
           return;
         }
@@ -157,10 +157,10 @@ export default function VideoUploadDialog({ isOpen, onClose }: { isOpen: boolean
 
     } catch (e) {
       console.error("MediaRecorder error:", e);
-      toast({ variant: "destructive", title: "녹화 오류", description: "녹화를 시작할 수 없습니다." });
+      toast({ variant: "destructive", title: t('video_record_error_title'), description: t('video_record_error_desc') });
       setMode('idle');
     }
-  }, [toast, startCamera, cleanupMedia, handleStopRecording]);
+  }, [toast, t, startCamera, cleanupMedia, handleStopRecording]);
   
   const handleSave = async () => {
     if (!videoBlob || !user) return;
@@ -168,11 +168,11 @@ export default function VideoUploadDialog({ isOpen, onClose }: { isOpen: boolean
     try {
       const downloadURL = await uploadMediaFile(videoBlob, 'videos', `${user.id}_${Date.now()}.webm`);
       await updateUser({ videoUrls: [...(user.videoUrls || []), downloadURL] });
-      toast({ title: '동영상 업로드 성공', description: '프로필에 동영상이 추가되었습니다.' });
+      toast({ title: t('profile_video_upload_success_title'), description: t('profile_video_upload_success_desc') });
       handleClose();
     } catch (error) {
       console.error('Failed to upload video:', error);
-      toast({ variant: 'destructive', title: '업로드 실패', description: '동영상 업로드 중 오류가 발생했습니다.' });
+      toast({ variant: 'destructive', title: t('profile_video_upload_fail_title'), description: t('profile_video_upload_fail_desc') });
       setMode('preview');
     }
   };

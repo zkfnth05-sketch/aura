@@ -107,7 +107,7 @@ export default function MatchesPage() {
     return (
       <div className="flex flex-col h-screen">
         <Header />
-        <GuestGateModal isOpen={true} featureName="1:1 매칭 & 대화" />
+        <GuestGateModal isOpen={true} featureName={t('feature_chat_and_match')} />
       </div>
     );
   }

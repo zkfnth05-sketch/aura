@@ -39,8 +39,8 @@ export default function CameraDialog({ isOpen, onClose, onPhotoTaken }: CameraDi
           let errorTitle = t('camera_access_denied_title');
 
           if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-            errorTitle = "카메라를 찾을 수 없음";
-            errorMessage = "기기에 카메라 장치가 없거나 연결되지 않았습니다. 앨범에서 사진을 업로드해 주세요.";
+            errorTitle = t('camera_access_denied_title');
+            errorMessage = t('camera_access_denied_desc');
           } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             errorTitle = t('camera_access_denied_title');
             errorMessage = t('camera_access_denied_desc');

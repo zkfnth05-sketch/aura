@@ -52,10 +52,10 @@ export default function OtpPage() {
               className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl text-xs text-amber-400 font-medium leading-relaxed cursor-pointer hover:bg-amber-500/20 transition-all flex items-center justify-between"
             >
               <div>
-                <span className="font-bold">🧪 테스트 인증번호:</span>{' '}
+                <span className="font-bold">{t('otp_test_code_label')}</span>{' '}
                 <span className="font-mono font-extrabold text-white underline tracking-widest text-sm ml-1">{mockOtp}</span>
               </div>
-              <span className="text-[10px] text-amber-300/80 bg-amber-500/20 px-2 py-0.5 rounded-full">클릭 시 자동입력</span>
+              <span className="text-[10px] text-amber-300/80 bg-amber-500/20 px-2 py-0.5 rounded-full">{t('otp_test_click_to_fill')}</span>
             </div>
           )}
 

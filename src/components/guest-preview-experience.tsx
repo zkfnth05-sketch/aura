@@ -158,7 +158,7 @@ export default function GuestPreviewExperience() {
           </span>
           <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1">
             <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-            <span>VIP 체험존</span>
+            <span>{t('guest_preview_vip_badge')}</span>
           </span>
         </div>
 
@@ -173,7 +173,7 @@ export default function GuestPreviewExperience() {
                 : 'text-zinc-400 hover:text-white'
             )}
           >
-            👩 여성
+            {t('guest_preview_female')}
           </button>
           <button
             onClick={() => handleGenderSwitch('남성')}
@@ -184,7 +184,7 @@ export default function GuestPreviewExperience() {
                 : 'text-zinc-400 hover:text-white'
             )}
           >
-            👨 남성
+            {t('guest_preview_male')}
           </button>
         </div>
 
@@ -195,7 +195,7 @@ export default function GuestPreviewExperience() {
           onClick={() => router.push('/signup')}
           className="text-xs text-zinc-400 hover:text-white px-2 h-7"
         >
-          <span>로그인</span>
+          <span>{t('login')}</span>
         </Button>
       </header>
 
@@ -203,7 +203,7 @@ export default function GuestPreviewExperience() {
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-1 flex items-center justify-between text-[11px] text-zinc-400">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-zinc-300 font-medium">50:50 성비 보장 실시간 추천</span>
+          <span className="text-zinc-300 font-medium">{t('guest_preview_banner')}</span>
         </div>
         <span className="text-amber-400 font-bold">
           {currentIndex < cards.length ? `${currentIndex + 1} / ${cards.length}` : '3 / 3'}
@@ -278,12 +278,12 @@ export default function GuestPreviewExperience() {
                     <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2 z-10">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-amber-500/40 text-amber-300 text-xs font-extrabold shadow-md">
                         <Sparkles className="w-3 h-3 text-amber-400" />
-                        <span>AURA 매력도 98점</span>
+                        <span>{t('guest_preview_charm_score').replace('%s', '98')}</span>
                       </div>
 
                       <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-[11px] font-bold">
                         <UserCheck className="w-3 h-3" />
-                        <span>100% 실명 인증</span>
+                        <span>{t('guest_preview_verified_badge')}</span>
                       </div>
                     </div>
 
@@ -293,7 +293,7 @@ export default function GuestPreviewExperience() {
                         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                           {user.name}
                         </h2>
-                        <span className="text-xl font-light text-zinc-300">{user.age}세</span>
+                        <span className="text-xl font-light text-zinc-300">{user.age}</span>
                         <span className="text-xs text-zinc-400 ml-1">· {user.location?.replace('서울특별시 ', '').replace('경기 ', '')}</span>
                       </div>
 
@@ -304,13 +304,13 @@ export default function GuestPreviewExperience() {
                       {/* Tag Chips */}
                       <div className="flex flex-wrap gap-1.5 mt-3">
                         <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold text-white">
-                          #자연스러운_만남
+                          #Vibe
                         </span>
                         <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-500/30 text-[11px] font-semibold text-amber-300">
-                          #취향_데이트
+                          #AuraDate
                         </span>
                         <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold text-zinc-200">
-                          #매칭율 99%
+                          #Match99%
                         </span>
                       </div>
                     </div>
@@ -325,23 +325,23 @@ export default function GuestPreviewExperience() {
                 <Sparkles className="w-8 h-8 text-amber-400" />
               </div>
               <h3 className="text-xl font-extrabold text-white">
-                추천 이상형 3명을 모두 확인하셨습니다!
+                {t('guest_preview_completed_title')}
               </h3>
               <p className="text-xs text-zinc-400 mt-2 mb-6 leading-relaxed">
-                지금 3초 만에 시작하고 마음에 드는 이성에게 호감을 보내보세요.
+                {t('guest_preview_completed_desc')}
               </p>
               <Button
                 onClick={() => router.push('/signup')}
                 className="w-full h-12 rounded-full bg-gradient-to-r from-[#FFF3D1] via-[#E5A934] to-[#C98718] text-black font-extrabold text-sm shadow-xl shadow-amber-500/30 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                <span>✨ 지금 1초 만에 무료 시작하기</span>
+                <span>{t('guest_preview_start_free_btn')}</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
               <button
                 onClick={handleResetStack}
                 className="mt-4 text-xs text-zinc-400 hover:text-zinc-200 underline"
               >
-                다시 처음부터 둘러보기
+                {t('guest_preview_restart_btn')}
               </button>
             </div>
           )}
@@ -354,7 +354,7 @@ export default function GuestPreviewExperience() {
             <button
               onClick={() => handleAction('dislike')}
               className="w-14 h-14 rounded-full bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-700 flex items-center justify-center shadow-lg active:scale-90 transition-all"
-              title="넘기기"
+              title={t('tooltip_pass')}
             >
               <X className="w-6 h-6" />
             </button>
@@ -363,7 +363,7 @@ export default function GuestPreviewExperience() {
             <button
               onClick={() => handleAction('message')}
               className="w-12 h-12 rounded-full bg-zinc-900/90 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/20 flex items-center justify-center shadow-lg active:scale-90 transition-all"
-              title="1:1 대화 신청"
+              title={t('tooltip_chat_request')}
             >
               <MessageCircle className="w-5 h-5 fill-current" />
             </button>
@@ -372,7 +372,7 @@ export default function GuestPreviewExperience() {
             <button
               onClick={() => handleAction('like')}
               className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#E5A934] via-[#DE9F2B] to-[#C7871E] text-black hover:brightness-110 flex items-center justify-center shadow-[0_4px_24px_rgba(229,169,52,0.45)] active:scale-90 transition-all"
-              title="호감 보내기"
+              title={t('tooltip_send_like')}
             >
               <Heart className="w-7 h-7 fill-current text-black" />
             </button>
@@ -390,15 +390,15 @@ export default function GuestPreviewExperience() {
             <span className="text-lg">💖</span>
             <div>
               <p className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
-                내 이상형과 실시간 매칭 시작하기
+                {t('guest_preview_cta_title')}
               </p>
               <p className="text-[10px] text-zinc-400">
-                남녀 50:50 성비 보장 · 3초 간편 시작
+                {t('guest_preview_cta_subtitle')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1 text-amber-400 font-extrabold text-xs">
-            <span>시작하기</span>
+            <span>{t('next_button')}</span>
             <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </button>
@@ -413,10 +413,10 @@ export default function GuestPreviewExperience() {
             </div>
             <div>
               <h3 className="text-lg font-extrabold text-white">
-                어떤 분을 만나보고 싶으신가요?
+                {t('guest_preview_picker_title')}
               </h3>
               <p className="text-xs text-zinc-400 mt-1">
-                회원님에게 어울리는 실시간 추천 카드를 준비해 드립니다.
+                {t('guest_preview_picker_desc')}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2.5 pt-2">
@@ -424,15 +424,13 @@ export default function GuestPreviewExperience() {
                 onClick={() => handleGenderSwitch('여성')}
                 className="h-14 rounded-2xl bg-gradient-to-r from-[#FFF3D1] via-[#E5A934] to-[#C98718] text-black font-extrabold text-sm shadow-lg hover:brightness-110 flex flex-col items-center justify-center gap-0.5"
               >
-                <span className="text-base">👩 여성 회원</span>
-                <span className="text-[10px] opacity-80 font-normal">여성 프로필 보기</span>
+                <span className="text-base">{t('guest_preview_female')}</span>
               </Button>
               <Button
                 onClick={() => handleGenderSwitch('남성')}
                 className="h-14 rounded-2xl bg-zinc-900 border border-zinc-700 hover:border-amber-500/60 text-white font-extrabold text-sm shadow-lg flex flex-col items-center justify-center gap-0.5"
               >
-                <span className="text-base">👨 남성 회원</span>
-                <span className="text-[10px] text-zinc-400 font-normal">남성 프로필 보기</span>
+                <span className="text-base">{t('guest_preview_male')}</span>
               </Button>
             </div>
           </div>

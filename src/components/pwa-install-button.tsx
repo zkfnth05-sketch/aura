@@ -146,7 +146,7 @@ export default function PwaInstallButton() {
               {t('ios_install_title')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Safari 브라우저에서 3초 만에 홈 화면에 추가할 수 있습니다.
+              {t('pwa_safari_prompt')}
             </DialogDescription>
           </DialogHeader>
 
@@ -184,7 +184,7 @@ export default function PwaInstallButton() {
               onClick={() => setShowIosGuide(false)}
               className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-semibold rounded-xl text-sm"
             >
-              확인
+              {t('confirm_btn')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -201,12 +201,12 @@ export default function PwaInstallButton() {
               {t('install_app_btn')}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              브라우저 메뉴에서 홈 화면에 추가할 수 있습니다.
+              {t('pwa_menu_prompt')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="p-3 rounded-xl bg-card/60 border border-border/50 text-xs leading-relaxed text-foreground font-medium">
-            💡 브라우저 주소창 우측 또는 메뉴([⋮]) 버튼을 누른 후 <strong>[앱 설치]</strong> 또는 <strong>[홈 화면에 추가]</strong>를 선택해 주세요.
+            {t('pwa_instructions')}
           </div>
 
           <DialogFooter className="pt-2 sm:justify-center">
@@ -214,7 +214,7 @@ export default function PwaInstallButton() {
               onClick={() => setShowGenericGuide(false)}
               className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-black font-semibold rounded-xl text-sm"
             >
-              확인
+              {t('confirm_btn')}
             </Button>
           </DialogFooter>
         </DialogContent>

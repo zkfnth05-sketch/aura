@@ -161,7 +161,7 @@ export default function ChatPage() {
             const fallbackMatch = {
               id: matchId,
               users: userIds,
-              last_message: '대화를 시작해보세요.',
+              last_message: t('chat_start_conversation'),
               last_message_timestamp: now,
               match_date: now,
               call_status: 'idle',
@@ -430,7 +430,7 @@ export default function ChatPage() {
       const result = await getAIChatReplySuggestions({
           currentUser: { name: currentUser.name, bio: currentUser.bio || '', hobbies: currentUser.hobbies || [], interests: currentUser.interests || [] },
           matchUser: { name: otherUser.name, bio: otherUser.bio || '', hobbies: otherUser.hobbies || [], interests: otherUser.interests || [] },
-          messages: (orderedMessages || []).map(m => ({ senderName: m.senderId === currentUser.id ? currentUser.name : otherUser.name, text: m.text || '[음성 메시지]' })),
+          messages: (orderedMessages || []).map(m => ({ senderName: m.senderId === currentUser.id ? currentUser.name : otherUser.name, text: m.text || t('chat_voice_message_placeholder') })),
           targetLanguage: languageMap[language] || 'Korean'
       });
       setSuggestions(result.suggestions);

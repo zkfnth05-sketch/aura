@@ -96,8 +96,8 @@ export default function CreateQuestDialog({
     if (!title.trim()) {
       toast({
         variant: 'destructive',
-        title: '제목 입력',
-        description: '어떤 번개인지 제목을 입력해주세요.',
+        title: t('quest_title_required_title'),
+        description: t('quest_title_required_desc'),
       });
       return;
     }
@@ -116,8 +116,8 @@ export default function CreateQuestDialog({
 
       if (quest) {
         toast({
-          title: '⚡ 번개 퀘스트 등록 완료!',
-          description: '지도에 24시간 동안 번개 핀이 노출됩니다.',
+          title: t('quest_success_title'),
+          description: t('quest_success_desc'),
         });
         onQuestCreated(quest);
         onOpenChange(false);
@@ -140,8 +140,8 @@ export default function CreateQuestDialog({
               const isMale = userObj.gender === '남성' || userObj.gender?.toLowerCase().startsWith('m');
               const targetGenderStr = isMale ? '여성' : '남성';
               toast({
-                title: '⚡ 5km 번개 레이더 발송 완료!',
-                description: `반경 5km 이내의 ${targetGenderStr} 회원 ${radarResult.targetCount}명에게 실시간 번개 푸시가 전파되었습니다!`,
+                title: t('quest_radar_sent_toast_title'),
+                description: t('quest_radar_sent_toast_desc').replace('%s', String(radarResult.targetCount)),
               });
             }
           }
@@ -152,8 +152,8 @@ export default function CreateQuestDialog({
     } catch (err: any) {
       toast({
         variant: 'destructive',
-        title: '등록 실패',
-        description: err?.message || '퀘스트 등록 중 오류가 발생했습니다.',
+        title: t('quest_fail_title'),
+        description: err?.message || t('quest_fail_title'),
       });
     } finally {
       setIsSubmitting(false);

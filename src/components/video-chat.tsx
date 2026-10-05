@@ -546,8 +546,8 @@ export default function VideoChat({
     toast({
       title: nextState ? t('live_subtitle_on') : t('live_subtitle_off'),
       description: nextState 
-        ? `${LANG_DISPLAY_NAME[localUser.language || 'ko'] || '한국어'} ⇄ ${LANG_DISPLAY_NAME[remoteUser.language || 'ko'] || 'English'} AI 실시간 통역이 활성화되었습니다.`
-        : '자막 및 음성 인식이 일시 중지되었습니다.',
+        ? `${LANG_DISPLAY_NAME[localUser.language || 'ko'] || '한국어'} ⇄ ${LANG_DISPLAY_NAME[remoteUser.language || 'ko'] || 'English'} ${t('live_subtitle_badge')}`
+        : t('live_subtitle_off'),
     });
   };
 
@@ -615,7 +615,7 @@ export default function VideoChat({
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-20">
           <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
           <p className="text-white text-lg font-medium">{(t('chat_connecting') || '').replace('...', '')}</p>
-          <p className="text-zinc-400 text-sm mt-1">{remoteUser?.name || '상대방'}님과 연결 중...</p>
+          <p className="text-zinc-400 text-sm mt-1">{t('chat_partner_connecting').replace('%s', remoteUser?.name || t('default_chat_partner'))}</p>
         </div>
       )}
 

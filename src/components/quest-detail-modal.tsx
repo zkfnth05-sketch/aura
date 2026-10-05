@@ -27,12 +27,12 @@ interface QuestDetailModalProps {
   onQuestDeleted?: (questId: string) => void;
 }
 
-const CATEGORY_LABELS: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
-  coffee: { label: '커피/카페', icon: Coffee },
-  food: { label: '맛집 탐방', icon: Utensils },
-  drink: { label: '가벼운 한잔', icon: Wine },
-  walk: { label: '산책/러닝', icon: Footprints },
-  activity: { label: '놀거리/전시', icon: Sparkles },
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  coffee: Coffee,
+  food: Utensils,
+  drink: Wine,
+  walk: Footprints,
+  activity: Sparkles,
 };
 
 export default function QuestDetailModal({
@@ -71,8 +71,7 @@ export default function QuestDetailModal({
     }
   };
 
-  const catInfo = CATEGORY_LABELS[quest.category] || { label: '번개', icon: Zap };
-  const CategoryIcon = catInfo.icon;
+  const CategoryIcon = CATEGORY_ICONS[quest.category] || Zap;
 
   // Handle 1:1 Chat Start
   const handleStartChat = async () => {
@@ -82,7 +81,7 @@ export default function QuestDetailModal({
     }
 
     // 대기 중인 남성 유저는 1:1 대화 불가 (VIP 모달 발동)
-    const allowed = requireActiveAdmission(() => {}, '번개 퀘스트 1:1 대화');
+    const allowed = requireActiveAdmission(() => {}, t('feature_chat_and_match'));
     if (!allowed) {
       onOpenChange(false);
       return;
@@ -92,16 +91,16 @@ export default function QuestDetailModal({
     try {
       const matchId = await startQuestChat(currentUser.id, quest.creatorId, quest.title);
       toast({
-        title: '🎉 1:1 대화방 연결!',
-        description: `${creator?.name || '호스트'}님과의 대화방으로 이동합니다.`,
+        title: t('quest_chat_connected_title'),
+        description: t('quest_chat_connected_desc').replace('%s', creator?.name || t('quest_host')),
       });
       onOpenChange(false);
       router.push(`/chat/${matchId}`);
     } catch (err: any) {
       toast({
         variant: 'destructive',
-        title: '대화 연결 실패',
-        description: err?.message || '대화방을 여는 중 문제가 발생했습니다.',
+        title: t('quest_chat_fail_title'),
+        description: err?.message || t('quest_chat_fail_title'),
       });
       setIsLoading(false);
     }
@@ -116,19 +115,19 @@ export default function QuestDetailModal({
       const success = await deleteQuestPin(quest.id, currentUser.id);
       if (success) {
         toast({
-          title: '퀘스트 삭제 완료',
-          description: '지도에서 번개 핀이 정상적으로 제거되었습니다.',
+          title: t('quest_delete_success'),
+          description: t('quest_delete_desc'),
         });
         onQuestDeleted?.(quest.id);
         onOpenChange(false);
       } else {
-        throw new Error('삭제 실패');
+        throw new Error('Delete failed');
       }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: '삭제 오류',
-        description: '퀘스트를 삭제하지 못했습니다. 다시 시도해주세요.',
+        title: t('quest_delete_error_title'),
+        description: t('quest_delete_error_desc'),
       });
     } finally {
       setIsDeleting(false);
@@ -166,11 +165,11 @@ export default function QuestDetailModal({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h4 className="font-bold text-white text-base truncate">
-                {creator?.name || '호스트'}
+                {creator?.name || t('quest_host')}
               </h4>
               {creator?.age && (
                 <span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full font-medium">
-                  {creator.age}세
+                  {creator.age}
                 </span>
               )}
               {creator?.gender && (
@@ -180,7 +179,7 @@ export default function QuestDetailModal({
               )}
             </div>
             <p className="text-xs text-zinc-400 truncate mt-0.5">
-              {creator?.bio || '새로운 인연과의 즐거운 만남을 기대해요!'}
+              {creator?.bio || ''}
             </p>
           </div>
         </div>
@@ -189,7 +188,7 @@ export default function QuestDetailModal({
         <div className="space-y-3 text-sm py-1">
           {quest.meetupTime && (
             <div className="flex items-center gap-2 text-zinc-300 bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-800/50 text-xs">
-              <span className="text-zinc-500 font-semibold">희망 시간:</span>
+              <span className="text-zinc-500 font-semibold">{t('quest_preferred_time')}</span>
               <span className="text-white font-bold">{quest.meetupTime}</span>
             </div>
           )}
@@ -203,7 +202,7 @@ export default function QuestDetailModal({
           {/* Safety Notice */}
           <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 pt-1">
             <MapPin className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
-            <span>500m 안심 지터링이 적용되어 실제 상세 주소는 공개되지 않습니다.</span>
+            <span>{t('quest_safety_jitter')}</span>
           </div>
         </div>
 
@@ -219,12 +218,12 @@ export default function QuestDetailModal({
               {isDeleting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  퀘스트 삭제 중...
+                  <span>{t('quest_deleting')}</span>
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4" />
-                  {t('quest_delete_btn')}
+                  <span>{t('quest_delete_btn')}</span>
                 </>
               )}
             </Button>
@@ -237,12 +236,12 @@ export default function QuestDetailModal({
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  대화방 연결 중...
+                  <span>{t('quest_chat_connecting')}</span>
                 </>
               ) : (
                 <>
                   <MessageCircle className="w-5 h-5" />
-                  {t('quest_start_chat')}
+                  <span>{t('quest_start_chat')}</span>
                 </>
               )}
             </Button>

@@ -117,7 +117,7 @@ export default function InAppBrowserEscape() {
             className="h-7 px-2.5 rounded-lg border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium"
           >
             {copied ? <Check className="w-3 h-3 mr-1 text-emerald-400" /> : <Copy className="w-3 h-3 mr-1" />}
-            {copied ? '복사됨!' : t('inapp_escape_copy')}
+            {copied ? t('copied_toast') : t('inapp_escape_copy')}
           </Button>
           <button
             onClick={handleDismiss}

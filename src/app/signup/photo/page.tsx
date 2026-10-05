@@ -64,7 +64,7 @@ export default function UploadPhotoPage() {
         toast({
             variant: "destructive",
             title: t('ai_enhance_failed_title'),
-            description: "AI 보정에 실패하여 원본 사진이 사용됩니다.AI 보정을 원하시면 다시 시도해주세요",
+            description: t('ai_enhance_fallback_desc'),
         });
         setPhoto({ uri: compressedForUpload, isEnhancing: false });
       }
@@ -135,8 +135,8 @@ export default function UploadPhotoPage() {
       });
       setIsSignupFlowActive(false);
       toast({
-        title: '🎉 아우라에 오신 것을 환영합니다!',
-        description: '기본 프로필로 가입이 완료되었습니다. 언제든 [프로필]에서 내 사진을 등록하실 수 있습니다.',
+        title: t('welcome_title'),
+        description: t('welcome_default_avatar_desc'),
       });
       router.push('/profile');
     } catch (error) {
@@ -233,7 +233,7 @@ export default function UploadPhotoPage() {
                 className="mt-6 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-900 border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:bg-zinc-800 text-xs font-semibold shadow-md transition-all active:scale-95"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>지금 사진이 없으신가요? 기본 아바타로 먼저 시작하기</span>
+                <span>{t('photo_skip_hint')}</span>
               </button>
             )}
         </div>
@@ -265,7 +265,7 @@ export default function UploadPhotoPage() {
             className="w-2/3 h-14 bg-gradient-to-r from-zinc-800 via-zinc-800 to-zinc-900 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:border-amber-400 font-extrabold rounded-full text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg active:scale-98 transition-all"
           >
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-400" />}
-            <span>나중에 올릴게요 (1초 시작)</span>
+            <span>{t('photo_skip_button')}</span>
           </Button>
         )}
       </footer>

@@ -10,6 +10,16 @@ import { toSupabaseUser, fromSupabaseUser } from '@/lib/supabaseMappers';
 import { fetchUserMatches, subscribeUserMatches, fetchUserLikes, fetchUsersByIds, subscribeUserLikes, recordSwipe, checkInactivityExpiry, touchAppOpened } from '@/lib/supabaseDataService';
 import { sendWelcomePush } from '@/lib/notificationService';
 import { VipActionGateModal } from '@/components/vip-action-gate-modal';
+import { translations, defaultLang } from '@/lib/locales';
+
+function getLocaleText(key: keyof typeof translations.ko): string {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('preferred_language') as 'ko' | 'en' | 'ja' | 'es' | null;
+    const lang = saved && translations[saved] ? saved : defaultLang;
+    return translations[lang][key] || translations.ko[key] || '';
+  }
+  return translations.ko[key] || '';
+}
 
 export interface AuthUser {
   uid: string;
@@ -213,8 +223,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
               setUser(prev => {
                 if (prev?.admissionStatus === 'queued' && updatedUser.admissionStatus === 'active') {
                   toast({
-                    title: '🎉 VIP 프리패스 승인!',
-                    description: '초대하신 여성 회원님이 가입을 완료하여 정회원으로 입장되었습니다!',
+                    title: getLocaleText('profile_referral_applied_title'),
+                    description: getLocaleText('queue_ticket_share_toast_desc'),
                   });
                 }
                 return updatedUser;
@@ -263,8 +273,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
           if (error.code === error.PERMISSION_DENIED) {
             toast({
               variant: "destructive",
-              title: "위치 권한 거부됨",
-              description: "위치 서비스를 사용하려면 브라우저 설정에서 권한을 허용해주세요.",
+              title: getLocaleText('push_noti_denied_title'),
+              description: getLocaleText('camera_access_denied_desc'),
             });
             // Sync the UI toggle with the browser's reality
             updateNotificationSettings({ locationShared: false });
@@ -283,8 +293,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (isExpired) {
           toast({
             variant: 'destructive',
-            title: '대기열 만료 안내',
-            description: '14일 동안 앱에 미접속하여 대기열 순번이 자동 만료되었습니다.',
+            title: getLocaleText('vip_gate_title'),
+            description: getLocaleText('vip_gate_desc'),
           });
           setUser((prev) => (prev ? { ...prev, admissionStatus: 'expired' } : null));
         } else {
@@ -296,7 +306,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // --- 50:50 Gender Equilibrium Action Gate Modal ---
   const [isActionGateOpen, setIsActionGateOpen] = useState(false);
-  const [actionGateTitle, setActionGateTitle] = useState('1:1 대화 및 매칭');
+  const [actionGateTitle, setActionGateTitle] = useState(getLocaleText('map_quest_gate_title'));
 
   const openActionGate = useCallback((title?: string) => {
     if (title) setActionGateTitle(title);

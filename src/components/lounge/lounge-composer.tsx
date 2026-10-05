@@ -13,6 +13,16 @@ import { compressImage } from '@/lib/image-compression';
 import { uploadDataUri } from '@/lib/supabaseStorageService';
 
 const POPULAR_TAGS = ['일상', '익명고민', '카페', '오운완', '반려견', '맛집', '데이트', '오늘의무드'];
+const TAG_LABEL_KEYS: Record<string, string> = {
+  '일상': 'lounge_composer_tag_daily',
+  '익명고민': 'lounge_composer_tag_anon_worries',
+  '카페': 'lounge_composer_tag_cafe',
+  '오운완': 'lounge_composer_tag_workout',
+  '반려견': 'lounge_composer_tag_pet',
+  '맛집': 'lounge_composer_tag_gourmet',
+  '데이트': 'lounge_composer_tag_dating',
+  '오늘의무드': 'lounge_composer_tag_mood',
+};
 
 export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }) {
   const { user } = useUser();
@@ -34,8 +44,8 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
         setSelectedTags(['익명고민', ...selectedTags.filter(t => t !== '일상')]);
       }
       toast({
-        title: '🎭 익명 모드 활성화',
-        description: '프로필 사진과 실명이 숨겨지며, 안전하게 속마음을 나눌 수 있습니다.',
+        title: t('lounge_composer_anon_mode_title'),
+        description: t('lounge_composer_anon_mode_desc'),
       });
     } else {
       setSelectedTags(selectedTags.filter(t => t !== '익명고민'));
@@ -51,8 +61,8 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
     if (file.size > 15 * 1024 * 1024) {
       toast({
         variant: 'destructive',
-        title: '용량 초과',
-        description: '사진 용량은 15MB 이하만 업로드 가능합니다.',
+        title: t('lounge_composer_img_size_limit_title'),
+        description: t('lounge_composer_img_size_limit_desc'),
       });
       return;
     }
@@ -63,8 +73,8 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
       const compressed = await compressImage(file, 1280, 1280, 0.82);
       setSelectedImage(compressed);
       toast({
-        title: '⚡ 고속 이미지 최적화 완료',
-        description: '초고화질을 유지하면서 용량을 90% 이상 대폭 압축했습니다.',
+        title: `⚡ ${t('lounge_compose_optimized_badge')}`,
+        description: t('lounge_compose_compressing'),
       });
     } catch (compressErr) {
       console.warn('Image compression fallback:', compressErr);
@@ -94,7 +104,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
     if (!content.trim() && !selectedImage) {
       toast({
         variant: 'destructive',
-        description: '내용이나 사진을 입력해 주세요.',
+        description: t('lounge_composer_content_required'),
       });
       return;
     }
@@ -150,8 +160,8 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
     } catch (err: any) {
       toast({
         variant: 'destructive',
-        title: '등록 실패',
-        description: '글 등록 중 오류가 발생했습니다.',
+        title: t('quest_fail_title'),
+        description: t('lounge_delete_fail'),
       });
     } finally {
       setIsSubmitting(false);
@@ -283,7 +293,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
                       : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
                   }`}
                 >
-                  #{tag}
+                  #{TAG_LABEL_KEYS[tag] ? t(TAG_LABEL_KEYS[tag] as any) : tag}
                 </button>
               );
             })}

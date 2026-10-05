@@ -31,6 +31,7 @@ const PhoneIcon = () => (
 
 import { FlagIcon } from '@/components/ui/flag-icon';
 import { GenderBalanceHeroCard } from '@/components/gender-balance-hero-card';
+import { SocialLoginButtons } from '@/components/social-login-buttons';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -83,10 +84,10 @@ export default function SignupPage() {
               <span className="text-xl">💖</span>
               <div>
                 <p className="text-xs font-bold text-rose-200">
-                  [{likedTargetName}]님에게 보낸 호감 시그널이 대기 중입니다!
+                  {t('signup_liked_target_signal').replace('%s', likedTargetName)}
                 </p>
                 <p className="text-[11px] text-zinc-300 mt-0.5">
-                  1초 만에 시작하고 매칭 수락 알림을 받아보세요.
+                  {t('signup_liked_target_desc')}
                 </p>
               </div>
             </div>
@@ -98,16 +99,8 @@ export default function SignupPage() {
           <GenderBalanceHeroCard />
         </div>
 
-        <div className="space-y-3 w-full">
-          <Button
-            onClick={() => router.push('/signup/phone')}
-            variant="secondary"
-            className="w-full h-13 bg-gradient-to-r from-[#E5A934] via-[#DE9F2B] to-[#C7871E] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold text-base relative shadow-[0_4px_24px_rgba(229,169,52,0.35)] transition-all rounded-full hover:scale-[1.01] active:scale-[0.99]"
-          >
-            <PhoneIcon />
-            {t('continue_with_phone')}
-          </Button>
-        </div>
+        {/* 간편 소셜 로그인 (카카오 + 전화번호) */}
+        <SocialLoginButtons />
       </div>
 
       <div className="text-center text-xs text-neutral-500 max-w-sm">

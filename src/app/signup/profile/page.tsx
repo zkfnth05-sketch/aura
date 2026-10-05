@@ -91,8 +91,8 @@ export default function CreateProfilePage() {
           const res = await redeemFemaleReferral(authUser.uid, referralCodeInput.trim());
           if (res.success) {
             toast({
-              title: '🎟️ 초대 코드 적용 완료!',
-              description: `${res.inviterName || '초대 회원'}님의 대기열 프리패스가 승인되었습니다.`,
+              title: t('profile_referral_applied_title'),
+              description: t('profile_referral_applied_desc').replace('%s', res.inviterName || 'VIP'),
             });
           }
         } catch (e) {
@@ -243,23 +243,23 @@ export default function CreateProfilePage() {
             <div className="flex items-center justify-between">
               <label htmlFor="referralCode" className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
                 <span>🎟️</span>
-                <span>{gender === '여성' ? '초대 코드 입력 (지인 선물)' : '여사친 초대 코드 (프리패스)'}</span>
+                <span>{gender === '여성' ? t('profile_referral_title_female') : t('profile_referral_title_male')}</span>
               </label>
-              <span className="text-[11px] text-zinc-400 font-medium">선택 사항</span>
+              <span className="text-[11px] text-zinc-400 font-medium">{t('profile_referral_optional')}</span>
             </div>
             <Input
               id="referralCode"
               type="text"
               value={referralCodeInput}
               onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-              placeholder={gender === '여성' ? '남사친의 초대 코드 (예: AURA-7K9B)' : '여사친 초대 코드 (예: AURA-7K9B)'}
+              placeholder={gender === '여성' ? t('profile_referral_placeholder_female') : t('profile_referral_placeholder_male')}
               className="bg-black/60 border-amber-500/30 font-mono tracking-wider h-11 text-amber-200 placeholder:text-zinc-600 uppercase"
               disabled={isSubmitting}
             />
             <p className="text-[11px] text-zinc-400 leading-normal">
               {gender === '여성'
-                ? '💡 나를 초대한 남성의 코드를 입력하면 해당 회원에게 즉시 VIP 대기열 프리패스가 선물됩니다.'
-                : '💡 여사친의 초대 코드를 입력하면 50:50 대기열 없이 즉시 프리패스로 정회원 입장합니다.'}
+                ? t('profile_referral_desc_female')
+                : t('profile_referral_desc_male')}
             </p>
           </div>
         </div>

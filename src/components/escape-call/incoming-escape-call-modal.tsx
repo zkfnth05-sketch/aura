@@ -92,7 +92,7 @@ export default function IncomingEscapeCallModal() {
           <div className="bg-zinc-800/60 border border-zinc-700/60 rounded-2xl p-3 flex items-center justify-between text-xs text-zinc-300">
             <div className="flex items-center gap-2">
               <Volume2 className="w-4 h-4 text-emerald-400 animate-pulse" />
-              <span>수화기에서 실제 음성이 재생 중입니다</span>
+              <span>{t('escape_system_running')}</span>
             </div>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">
               {t('escape_connected')}
@@ -109,7 +109,7 @@ export default function IncomingEscapeCallModal() {
               &ldquo;{activePersona.teleprompterScript}&rdquo;
             </p>
             <p className="text-[11px] text-amber-300/80 leading-normal">
-              💡 대본을 읽은 후, 상대방에게 &ldquo;죄송해요.. 급한 일이 생겨서 먼저 가봐야 할 것 같아요 ㅠㅠ&rdquo; 하고 짐을 챙기시면 됩니다.
+              💡 {t('escape_hangup_desc')}
             </p>
           </div>
 

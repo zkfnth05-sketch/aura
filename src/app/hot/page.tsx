@@ -173,7 +173,7 @@ export default function HotPage() {
     return (
       <div className="flex flex-col h-screen">
         <Header />
-        <GuestGateModal isOpen={true} featureName="HOT 인기 회원 탐색" />
+        <GuestGateModal isOpen={true} featureName={t('feature_hot_members')} />
       </div>
     );
   }

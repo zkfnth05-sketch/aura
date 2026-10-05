@@ -83,8 +83,8 @@ export default function AuraCharmReportDialog({
     } catch (err: any) {
       toast({
         variant: 'destructive',
-        title: '분석 실패',
-        description: err?.message || '아우라 매력 진단 중 오류가 발생했습니다.',
+        title: t('quest_fail_title'),
+        description: err?.message || t('ai_date_course_error_desc'),
       });
     } finally {
       setIsLoading(false);
@@ -125,7 +125,7 @@ export default function AuraCharmReportDialog({
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '28px sans-serif';
-    ctx.fillText('GEMINI AI 공식 매력 진단 리포트', 540, 210);
+    ctx.fillText(t('aura_canvas_header'), 540, 210);
 
     // 4. 유저 프로필 사진 렌더링 (원형 클리핑 + 골드/핑크 테두리)
     const userImgUrl = user.photoUrls?.[0];
@@ -177,7 +177,7 @@ export default function AuraCharmReportDialog({
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 36px sans-serif';
-      ctx.fillText(`👑 아우라 지수: ${report.auraScore}점 (상위 ${report.percentile}%)`, 540, 852);
+      ctx.fillText(t('aura_canvas_score').replace('%s', String(report.auraScore)).replace('%s', String(report.percentile)), 540, 852);
 
       // 타이틀
       ctx.fillStyle = '#ffd700';
@@ -213,7 +213,7 @@ export default function AuraCharmReportDialog({
 
       ctx.fillStyle = '#f43f5e';
       ctx.font = 'bold 28px sans-serif';
-      ctx.fillText('🔮 나와 궁합 99% 최고의 이성 스타일:', 140, 1450);
+      ctx.fillText(t('aura_canvas_match_style'), 140, 1450);
 
       ctx.fillStyle = '#ffffff';
       ctx.font = '30px sans-serif';
@@ -229,7 +229,7 @@ export default function AuraCharmReportDialog({
 
       ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 28px sans-serif';
-      ctx.fillText('☕ 추천 첫 데이트 무드:', 140, 1648);
+      ctx.fillText(t('aura_canvas_date_mood'), 140, 1648);
 
       ctx.fillStyle = '#ffffff';
       ctx.font = '30px sans-serif';
@@ -240,7 +240,7 @@ export default function AuraCharmReportDialog({
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
     ctx.font = '26px sans-serif';
-    ctx.fillText('💎 AURA Private Lounge · 50:50 성비 평형 라운지 · aura.dating', 540, 1830);
+    ctx.fillText(`${t('aura_canvas_footer')} · aura.dating`, 540, 1830);
 
     return canvas;
   };
@@ -285,14 +285,14 @@ export default function AuraCharmReportDialog({
       link.click();
 
       toast({
-        title: '💾 인스타 화보 카드 저장 완료!',
-        description: '스마트폰 갤러리에 1080×1920 스토리 규격으로 저장되었습니다.',
+        title: t('aura_card_saved_title'),
+        description: t('aura_card_saved_desc'),
       });
     } catch (e) {
       toast({
         variant: 'destructive',
-        title: '저장 실패',
-        description: '이미지 저장 중 오류가 발생했습니다.',
+        title: t('aura_card_save_failed_title'),
+        description: t('aura_card_save_failed_desc'),
       });
     } finally {
       setIsExporting(false);
@@ -328,15 +328,15 @@ export default function AuraCharmReportDialog({
         link.click();
 
         toast({
-          title: '📸 화보 카드가 갤러리에 저장되었습니다!',
-          description: '인스타그램 앱을 열고 스토리 추가에서 방금 저장된 화보를 선택해 공유해보세요!',
+          title: t('aura_card_saved_title'),
+          description: t('aura_card_saved_desc'),
         });
       }, 'image/png');
     } catch (e) {
       toast({
         variant: 'destructive',
-        title: '공유 오류',
-        description: '스토리 공유 준비 중 오류가 발생했습니다.',
+        title: t('aura_card_share_error_title'),
+        description: t('aura_card_share_error_desc'),
       });
     } finally {
       setIsExporting(false);
@@ -366,7 +366,7 @@ export default function AuraCharmReportDialog({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-bold text-white">{t('charm_analyzing')}</p>
-              <p className="text-xs text-zinc-400">사진의 분위기, 표정, 프로필 취향을 읽어내는 중 💫</p>
+              <p className="text-xs text-zinc-400">{t('aura_card_analyzing_sub')}</p>
             </div>
           </div>
         ) : report ? (
@@ -447,7 +447,7 @@ export default function AuraCharmReportDialog({
 
               {/* Footer Badge */}
               <div className="pt-1 text-center text-[10px] text-zinc-500">
-                💎 AURA Private Lounge · 50:50 성비 평형 라운지
+                {t('aura_canvas_footer')}
               </div>
             </div>
 

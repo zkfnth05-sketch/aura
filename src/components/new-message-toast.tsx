@@ -23,8 +23,8 @@ export function NewMessageToast() {
     if (!currentUser) return;
     if (pathname === `/chat/${matchId}`) return;
 
-    const senderName = sender.name || '대화 상대';
-    const messageText = text || '새로운 메시지가 도착했습니다.';
+    const senderName = sender.name || t('default_chat_partner');
+    const messageText = text || t('default_new_message_text');
 
     toast({
       duration: 5000,

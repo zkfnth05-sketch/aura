@@ -149,8 +149,8 @@ export default function HomePageClient() {
     swipeUser(activeUser, action === 'like').then((result) => {
       if (result.isMatch) {
         toast({
-          title: "🎉 매칭 성공!",
-          description: `${activeUser.name}님과 서로 호감을 표시했습니다!`,
+          title: t('match_success_title'),
+          description: t('match_success_desc').replace('%s', activeUser.name),
         });
       }
     }).catch(e => {

@@ -201,7 +201,7 @@ export default function ProfileEditForm() {
             toast({
                 variant: "destructive",
                 title: t('ai_enhance_failed_title'),
-                description: "AI 보정에 실패하여 원본 사진이 사용됩니다.AI 보정을 원하시면 다시 시도해주세요",
+                description: t('ai_enhance_fallback_desc'),
             });
         }
     }
@@ -296,8 +296,8 @@ export default function ProfileEditForm() {
       if (video.duration > 15) {
         toast({
           variant: 'destructive',
-          title: '동영상 길이 초과',
-          description: `동영상은 15초 이하여야 합니다.`,
+          title: t('profile_video_max_duration_title'),
+          description: t('profile_video_max_duration_desc'),
         });
         return;
       }
@@ -314,15 +314,15 @@ export default function ProfileEditForm() {
         await updateUser({ videoUrls: [...(currentUser.videoUrls || []), downloadURL] });
 
         toast({
-          title: '동영상 업로드 성공',
-          description: '프로필에 동영상이 추가되었습니다.',
+          title: t('profile_video_upload_success_title'),
+          description: t('profile_video_upload_success_desc'),
         });
       } catch (error) {
         console.error('Failed to upload video:', error);
         toast({
           variant: 'destructive',
-          title: '업로드 실패',
-          description: '동영상 업로드 중 오류가 발생했습니다.',
+          title: t('profile_video_upload_fail_title'),
+          description: t('profile_video_upload_fail_desc'),
         });
       } finally {
         setIsSaving(false);
@@ -423,19 +423,19 @@ export default function ProfileEditForm() {
         <Dialog open={isVideoSourceDialogOpen} onOpenChange={setIsVideoSourceDialogOpen}>
             <DialogContent className="sm:max-w-[425px] bg-card border-primary/20">
                 <DialogHeader>
-                <DialogTitle>동영상 추가</DialogTitle>
+                <DialogTitle>{t('profile_video_dialog_title')}</DialogTitle>
                 <DialogDescription>
-                    프로필에 동영상을 추가하는 방법을 선택하세요.
+                    {t('profile_video_dialog_desc')}
                 </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                 <Button variant="outline" onClick={() => { setIsVideoUploadOpen(true); setIsVideoSourceDialogOpen(false); }}>
                     <Camera className="mr-2 h-4 w-4" />
-                    직접 촬영
+                    {t('profile_video_record_direct')}
                 </Button>
                 <Button variant="outline" onClick={() => videoFileInputRef.current?.click()}>
                     <Upload className="mr-2 h-4 w-4" />
-                    앨범에서 선택
+                    {t('profile_video_pick_gallery')}
                 </Button>
                 <input
                     type="file"
@@ -458,7 +458,7 @@ export default function ProfileEditForm() {
                       <span>{supportedLanguages.find(l => l.code === profile.language)?.name}</span>
                     </div>
                   ) : (
-                    "언어 선택"
+                    t('language_section_title')
                   )}
                 </SelectValue>
             </SelectTrigger>

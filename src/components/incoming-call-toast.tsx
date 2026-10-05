@@ -25,7 +25,7 @@ export function IncomingCallToast() {
   const renderCallAlert = useCallback((matchId: string, caller: Partial<User>) => {
     if (!caller?.id || caller.id === currentUser?.id) return;
 
-    const callerName = caller.name || '대화 상대';
+    const callerName = caller.name || t('call_partner_default');
     const notificationTitle = t('incoming_call_title');
     const notificationBody = t('incoming_call_desc').replace('%s', callerName);
 

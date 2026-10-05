@@ -111,7 +111,7 @@ export default function ProfilePage() {
     return (
       <div className="flex flex-col h-full">
         <Header />
-        <GuestGateModal isOpen={true} featureName="내 프로필 관리" />
+        <GuestGateModal isOpen={true} featureName={t('feature_manage_profile')} />
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function ProfilePage() {
                   className="w-full max-w-sm py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500/90 via-amber-600/90 to-yellow-600/90 hover:brightness-110 text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(245,158,11,0.4)] backdrop-blur-md transition-all active:scale-98"
                 >
                   <Camera className="w-4 h-4 text-black" />
-                  <span>내 사진 등록하기 (매칭 3배 상승)</span>
+                  <span>{t('profile_upload_real_photo_btn')}</span>
                 </Link>
               </div>
             )}
@@ -433,7 +433,7 @@ export default function ProfilePage() {
                   className="w-full h-12 bg-neutral-900/80 hover:bg-neutral-800 border-neutral-800 text-neutral-200 hover:text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                 >
                   <span className="text-base">💬</span>
-                  <span>문제 신고 및 의견 보내기</span>
+                  <span>{t('profile_report_feedback_btn')}</span>
                 </Button>
               </div>
             </div>

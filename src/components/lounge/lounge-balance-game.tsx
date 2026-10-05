@@ -400,10 +400,10 @@ export function LoungeBalanceGame() {
       localStorage.setItem(`aura_balance_vote_${todayStr}`, choice);
     } catch {}
 
-    const chosenText = choice === 'A' ? game.optionA.text : game.optionB.text;
+    const chosenText = choice === 'A' ? (translatedGame?.optionAText || game.optionA.text) : (translatedGame?.optionBText || game.optionB.text);
     toast({
-      title: '🎯 투표 완료!',
-      description: `[${chosenText}]에 투표하셨습니다. 나와 취향이 같은 회원을 확인해보세요!`,
+      title: t('lounge_balance_voted_title'),
+      description: t('lounge_balance_voted_desc').replace('%s', chosenText),
     });
   };
 
@@ -447,8 +447,8 @@ export function LoungeBalanceGame() {
     }
 
     toast({
-      title: `💌 ${member.name}님께 취향 공감 메시지 전송!`,
-      description: '대화창으로 이동합니다.',
+      title: t('lounge_balance_dm_sent_title').replace('%s', member.name),
+      description: t('lounge_balance_dm_sent_desc'),
     });
 
     setTimeout(() => {

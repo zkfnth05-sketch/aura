@@ -162,16 +162,16 @@ export function LoungePostCard({
     try {
       await LoungeStore.deletePost(post.id);
       toast({
-        title: '🗑️ 스레드 글 삭제 완료',
-        description: '스레드 글이 성공적으로 삭제되었습니다.',
+        title: t('lounge_post_deleted_title'),
+        description: t('lounge_post_deleted_desc'),
       });
       if (onUpdated) onUpdated();
     } catch (e) {
       console.error('Failed to delete post:', e);
       toast({
         variant: 'destructive',
-        title: '삭제 실패',
-        description: '스레드 글을 삭제하는 중 오류가 발생했습니다.',
+        title: t('lounge_delete_fail_title'),
+        description: t('lounge_delete_fail_desc'),
       });
     } finally {
       setIsDeleting(false);
@@ -205,10 +205,10 @@ export function LoungePostCard({
       setComments((prev) => [...prev, newComment]);
       setCommentText('');
       toast({
-        title: isCommentAnonymous ? '🎭 익명 댓글 등록' : '댓글 등록',
+        title: isCommentAnonymous ? t('lounge_comment_anon_title') : t('lounge_comment_normal_title'),
         description: isCommentAnonymous
-          ? '프로필이 안전하게 보호된 채로 공감 댓글이 등록되었습니다.'
-          : '소중한 의견이 등록되었습니다.',
+          ? t('lounge_comment_anon_desc')
+          : t('lounge_comment_normal_desc'),
       });
       if (onUpdated) onUpdated();
     }
@@ -219,7 +219,7 @@ export function LoungePostCard({
     if (!dmMessage.trim()) {
       toast({
         variant: 'destructive',
-        description: '보내실 메시지를 입력해 주세요.',
+        description: t('lounge_dm_message_required'),
       });
       return;
     }
@@ -258,8 +258,8 @@ export function LoungePostCard({
     }
 
     toast({
-      title: post.isAnonymous ? '💌 익명 작성자에게 비밀 쪽지 전송 완료' : `💌 ${post.userName}님께 메시지 전송 완료`,
-      description: '회원님의 메시지가 상대방의 대화창으로 발송되었습니다!',
+      title: post.isAnonymous ? t('lounge_dm_sent_anon_title') : t('lounge_dm_sent_title').replace('%s', post.userName),
+      description: t('lounge_dm_sent_desc'),
     });
 
     setIsDmDialogOpen(false);
@@ -279,8 +279,8 @@ export function LoungePostCard({
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
       toast({
-        title: '링크 복사 완료',
-        description: '스레드 링크가 클립보드에 복사되었습니다.',
+        title: t('lounge_link_copied_title'),
+        description: t('lounge_link_copied_desc'),
       });
     }
   };
@@ -383,7 +383,7 @@ export function LoungePostCard({
                   setIsDeleteDialogOpen(true);
                 }}
                 className="h-8 w-8 p-0 rounded-full text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                title="스레드 삭제"
+                title={t('lounge_delete_title')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>
@@ -421,7 +421,7 @@ export function LoungePostCard({
                 {isTranslating ? (
                   <span className="flex items-center gap-1.5 text-amber-400/80">
                     <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
-                    Gemini AI 번역 중...
+                    {t('lounge_ai_translating')}
                   </span>
                 ) : (
                   <span className="font-medium text-[11px] sm:text-xs">
@@ -633,7 +633,7 @@ export function LoungePostCard({
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>{post.userName}님과 1:1 대화 시작하기</span>
+                  <span>{t('lounge_start_dm_with_user').replace('%s', post.userName)}</span>
                 </>
               )}
             </DialogTitle>
@@ -648,7 +648,7 @@ export function LoungePostCard({
                   <AvatarFallback className="text-[10px]">{isOfficialMagazine ? 'A' : (post.isAnonymous ? '?' : post.userName[0])}</AvatarFallback>
                 </Avatar>
                 <span className={`text-xs font-bold ${post.isAnonymous ? 'text-purple-300' : 'text-amber-300'}`}>
-                  {post.isAnonymous ? '익명 회원의 속마음 고민' : `${post.userName}님의 스레드 글`}
+                  {post.isAnonymous ? t('lounge_card_anonymous_hint') : post.userName}
                 </span>
               </div>
               <p className="text-xs text-zinc-300 line-clamp-2 italic">
@@ -667,14 +667,14 @@ export function LoungePostCard({
                 className="w-full py-2 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-amber-500/40 text-xs font-semibold text-zinc-300 hover:text-amber-300 flex items-center justify-center gap-1.5 transition-all"
               >
                 <span>👤</span>
-                <span>{post.userName}님의 상세 프로필 및 사진 보기</span>
+                <span>{t('lounge_view_profile_photo').replace('%s', post.userName)}</span>
               </button>
             )}
 
             {/* Message Input */}
             <div>
               <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
-                {post.isAnonymous ? '비밀 쪽지 내용:' : '첫 메시지 작성:'}
+                {post.isAnonymous ? t('lounge_card_secret_note') : t('lounge_card_direct_message')}
               </label>
               <textarea
                 rows={3}
@@ -682,8 +682,8 @@ export function LoungePostCard({
                 onChange={(e) => setDmMessage(e.target.value)}
                 placeholder={
                   post.isAnonymous
-                    ? '고민에 공감하고 위로가 되는 따뜻한 비밀 쪽지를 보내보세요. 안전하게 전달됩니다.'
-                    : `${post.userName}님의 일상에 공감하며 자연스럽게 대화를 시작해보세요!`
+                    ? t('lounge_card_comment_placeholder_anon')
+                    : t('lounge_card_comment_placeholder_normal')
                 }
                 className={`w-full bg-zinc-900 border ${
                   post.isAnonymous ? 'border-purple-500/40 focus:border-purple-400' : 'border-zinc-800 focus:border-amber-500/50'
