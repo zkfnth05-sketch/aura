@@ -73,8 +73,16 @@ export default function SignupPage() {
         <span className="font-headline text-5xl sm:text-6xl font-extrabold bg-gradient-to-b from-[#FFF3D1] via-[#E5A934] to-[#B3791B] bg-clip-text text-transparent drop-shadow-[0_2px_16px_rgba(229,169,52,0.4)] scale-y-[.85]">
           {t('app_title')}
         </span>
-        <p className="mt-4 mb-6 text-sm sm:text-base text-neutral-300">
-          {t('app_tagline')}
+
+        {/* 🌟 대표님 확정 공식 프로모션 배지 & 킬러 혜택 카피 */}
+        <div className="mt-3.5 mb-2 inline-flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-pink-500/40 rounded-full py-1.5 px-4 shadow-[0_0_20px_rgba(236,72,153,0.35)]">
+          <span className="text-base">💖</span>
+          <span className="text-xs sm:text-sm font-black tracking-wider text-white">아우라 AI 데이팅</span>
+          <span className="text-xs sm:text-sm font-bold text-pink-400 pl-2.5 border-l border-white/25">현재 100% 무료</span>
+        </div>
+        <p className="mb-6 text-xs sm:text-sm font-bold text-amber-200/95 leading-relaxed tracking-tight px-1">
+          탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지<br className="sm:hidden" />
+          <span className="text-white font-extrabold sm:ml-1">전 기능 현재 100% 무료 지원 중!</span>
         </p>
 
         {/* 프리뷰에서 호감 보낸 이성이 있는 경우: 심쿵 안내 카드 */}

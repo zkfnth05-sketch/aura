@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     <html lang="ko" className="dark h-full" suppressHydrationWarning>
       <head>
-        <title>Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange</title>
-        <meta name="description" content="Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required." />
-        <meta name="keywords" content="Aura AI Dating, Aura Dating Korea, 아우라AI데이팅, Korean Language Exchange, Korean Dating" />
+        <title>아우라 AI 데이팅 | 현재 100% 무료 - 50:50 클린 매칭 라운지</title>
+        <meta name="description" content="탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지 Aura의 모든 기능을 현재 100% 무료 지원 중! 하트 과금 없는 50:50 황금 성비 AI 소개팅." />
+        <meta name="keywords" content="아우라AI데이팅, 아우라 AI 데이팅, Aura AI Dating, 소개팅어플, 데이팅앱, 50:50성비, AI소개팅, 소개팅, 연애" />
         
         {/* Google Search Console & Naver Search Advisor Verification */}
         <meta name="google-site-verification" content="IHFjD1HlX9qQLUbwjrKPVdADPnoqgmEqBML05pV4STs" />
@@ -46,23 +46,23 @@ export default function RootLayout({
         {/* Open Graph / KakaoTalk / Facebook / Instagram / Reddit */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Aura AI Dating" />
-        <meta property="og:title" content="Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange" />
-        <meta property="og:description" content="Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required." />
+        <meta property="og:title" content="💖 아우라 AI 데이팅 | 현재 100% 무료" />
+        <meta property="og:description" content="탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지 전 기능 현재 100% 무료 지원 중!" />
         <meta property="og:url" content="https://aura-ai-dating.vercel.app" />
         <meta property="og:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:secure_url" content="https://aura-ai-dating.vercel.app/og-image.png" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange" />
+        <meta property="og:image:alt" content="아우라 AI 데이팅 - 현재 100% 무료 지원 중" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:locale:alternate" content="ko_KR" />
 
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@Aura" />
-        <meta name="twitter:title" content="Aura AI Dating - 50:50 Ratio Korean Dating &amp; Language Exchange" />
-        <meta name="twitter:description" content="Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required." />
+        <meta name="twitter:title" content="💖 아우라 AI 데이팅 | 현재 100% 무료" />
+        <meta name="twitter:description" content="탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지 전 기능 현재 100% 무료 지원 중!" />
         <meta name="twitter:image" content="https://aura-ai-dating.vercel.app/og-image.png" />
 
         {/* Structured Data (JSON-LD) for Google Rich Snippets & Instant Indexing */}
@@ -75,13 +75,13 @@ export default function RootLayout({
               "name": "Aura AI Dating",
               "alternateName": ["아우라AI데이팅", "Aura Dating Korea"],
               "url": "https://aura-ai-dating.vercel.app",
-              "description": "Meet verified Korean friends and singles with real-time AI auto-translation chat and voice subtitles. 50:50 gender ratio, no Korean phone number required.",
+              "description": "탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지 Aura의 모든 기능을 현재 100% 무료 지원 중! 하트 과금 없는 50:50 황금 성비 AI 소개팅.",
               "applicationCategory": "LifestyleApplication",
               "operatingSystem": "All",
               "offers": {
                 "@type": "Offer",
                 "price": "0",
-                "priceCurrency": "USD"
+                "priceCurrency": "KRW"
               }
             })
           }}

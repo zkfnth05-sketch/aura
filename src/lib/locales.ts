@@ -15,7 +15,7 @@ export const translations = {
   ko: {
     // Signup Flow
     'app_title': 'Aura',
-    'app_tagline': '운명적인 인연을 발견하세요',
+    'app_tagline': 'AI 화보, 매칭, 쪽지, 번개 전 기능 현재 100% 무료 지원 중!',
     'login': '로그인',
     'continue_with_phone': '전화번호로 계속하기',
     'continue_with_kakao': '카카오로 3초 만에 시작하기',
