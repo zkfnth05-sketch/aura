@@ -74,15 +74,15 @@ export default function SignupPage() {
           {t('app_title')}
         </span>
 
-        {/* 🌟 대표님 확정 공식 프로모션 배지 & 킬러 혜택 카피 */}
+        {/* 🌟 4개국어(한국어, English, 日本語, Español) 자동 스위칭 배지 & 카피 */}
         <div className="mt-3.5 mb-2 inline-flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-pink-500/40 rounded-full py-1.5 px-4 shadow-[0_0_20px_rgba(236,72,153,0.35)]">
           <span className="text-base">💖</span>
-          <span className="text-xs sm:text-sm font-black tracking-wider text-white">아우라 AI 데이팅</span>
-          <span className="text-xs sm:text-sm font-bold text-pink-400 pl-2.5 border-l border-white/25">현재 100% 무료</span>
+          <span className="text-xs sm:text-sm font-black tracking-wider text-white">{t('promo_badge_title')}</span>
+          <span className="text-xs sm:text-sm font-bold text-pink-400 pl-2.5 border-l border-white/25">{t('promo_badge_sub')}</span>
         </div>
-        <p className="mb-6 text-xs sm:text-sm font-bold text-amber-200/95 leading-relaxed tracking-tight px-1">
-          탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지<br className="sm:hidden" />
-          <span className="text-white font-extrabold sm:ml-1">전 기능 현재 100% 무료 지원 중!</span>
+        <p className="mb-6 text-xs sm:text-sm font-bold text-amber-200/95 leading-relaxed tracking-tight px-2 break-keep">
+          {t('promo_hero_line1')}<br className="sm:hidden" />
+          <span className="text-white font-extrabold sm:ml-1">{t('promo_hero_line2')}</span>
         </p>
 
         {/* 프리뷰에서 호감 보낸 이성이 있는 경우: 심쿵 안내 카드 */}

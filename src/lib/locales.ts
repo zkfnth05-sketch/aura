@@ -16,6 +16,10 @@ export const translations = {
     // Signup Flow
     'app_title': 'Aura',
     'app_tagline': 'AI 화보, 매칭, 쪽지, 번개 전 기능 현재 100% 무료 지원 중!',
+    'promo_badge_title': '아우라 AI 데이팅',
+    'promo_badge_sub': '현재 100% 무료',
+    'promo_hero_line1': '탈출 전화는 물론! AI 화보, 매칭, 쪽지, 번개까지',
+    'promo_hero_line2': '전 기능 현재 100% 무료 지원 중!',
     'login': '로그인',
     'continue_with_phone': '전화번호로 계속하기',
     'continue_with_kakao': '카카오로 3초 만에 시작하기',
@@ -1005,6 +1009,10 @@ export const translations = {
     // Signup Flow
     'app_title': 'Aura',
     'app_tagline': 'Discover your destiny',
+    'promo_badge_title': 'Aura AI Dating',
+    'promo_badge_sub': '100% Free Now',
+    'promo_hero_line1': 'Escape call, AI Studio photo, Matching & Chat —',
+    'promo_hero_line2': '100% Free Right Now!',
     'login': 'Log in',
     'continue_with_phone': 'Continue with phone number',
     'continue_with_kakao': 'Continue with Kakao (3s)',
@@ -1991,6 +1999,10 @@ export const translations = {
     // Signup Flow
     'app_title': 'Aura',
     'app_tagline': '運命の出会いを見つけよう',
+    'promo_badge_title': 'Aura AI デーティング',
+    'promo_badge_sub': '今なら100%無料',
+    'promo_hero_line1': '脱出コールはもちろん！AIグラビア、マッチング、チャットまで',
+    'promo_hero_line2': '全機能が現在100%無料提供中！',
     'login': 'ログイン',
     'continue_with_phone': '電話番号で続ける',
     'continue_with_kakao': 'Kakaoで3秒で始める',
@@ -2977,6 +2989,10 @@ export const translations = {
     // Signup Flow
     'app_title': 'Aura',
     'app_tagline': 'Descubre tu destino',
+    'promo_badge_title': 'Aura AI Citas',
+    'promo_badge_sub': '100% Gratis Ahora',
+    'promo_hero_line1': 'Llamada de escape, foto IA, emparejamiento y chat —',
+    'promo_hero_line2': '¡Todo 100% gratis ahora!',
     'login': 'Iniciar sesión',
     'continue_with_phone': 'Continuar con número de teléfono',
     'continue_with_kakao': 'Continuar con Kakao (3s)',
