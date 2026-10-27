@@ -189,6 +189,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // User Document Fetching & Presence Management via Supabase
   useEffect(() => {
+    // 🎯 [구글 심사관 0.1초 즉시 인식] URL에 auto_review=1이 있으면 즉시 테스트 계정(user_821012345678) 바인딩
+    if (typeof window !== 'undefined' && window.location.search.includes('auto_review=1')) {
+      if (localStorage.getItem('aura_user_id') !== 'user_821012345678') {
+        localStorage.setItem('aura_user_id', 'user_821012345678');
+        localStorage.setItem('aura_temp_uid', 'user_821012345678');
+        localStorage.setItem('aura_signup_phone', '+821012345678');
+      }
+    }
+
     const localUserId = typeof window !== 'undefined' ? localStorage.getItem('aura_user_id') : null;
 
     if (supabase && localUserId) {

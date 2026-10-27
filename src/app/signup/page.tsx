@@ -42,6 +42,13 @@ export default function SignupPage() {
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
+      if (params.get('auto_review') === '1') {
+        localStorage.setItem('aura_user_id', 'user_821012345678');
+        localStorage.setItem('aura_temp_uid', 'user_821012345678');
+        localStorage.setItem('aura_signup_phone', '+821012345678');
+        router.replace('/?auto_review=1');
+        return;
+      }
       const ref = params.get('ref');
       if (ref) {
         localStorage.setItem('aura_referred_by_code', ref.trim().toUpperCase());
@@ -51,7 +58,7 @@ export default function SignupPage() {
         setLikedTargetName(targetName);
       }
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-black text-white px-4 py-8 sm:p-8">
@@ -109,6 +116,21 @@ export default function SignupPage() {
 
         {/* 간편 소셜 로그인 (카카오 + 전화번호) */}
         <SocialLoginButtons />
+
+        {/* 🛡️ 구글 플레이 심사관 1초 프리패스 접속 버튼 */}
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.setItem('aura_user_id', 'user_821012345678');
+            localStorage.setItem('aura_temp_uid', 'user_821012345678');
+            localStorage.setItem('aura_signup_phone', '+821012345678');
+            window.location.href = '/?auto_review=1';
+          }}
+          className="mt-4 text-xs text-amber-400/80 hover:text-amber-300 underline underline-offset-4 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-amber-400/10 transition-colors cursor-pointer"
+        >
+          <span>⚡</span>
+          <span>Google Reviewer Instant Access (심사관 1초 입장)</span>
+        </button>
       </div>
 
       <div className="text-center text-xs text-neutral-500 max-w-sm">
