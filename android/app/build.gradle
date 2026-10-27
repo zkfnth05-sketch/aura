@@ -72,8 +72,8 @@ android {
         applicationId "app.web.aura"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 15
-        versionName "15"
+        versionCode 16
+        versionName "16"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
