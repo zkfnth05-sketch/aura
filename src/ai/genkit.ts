@@ -4,7 +4,7 @@ import {googleAI} from '@genkit-ai/google-genai';
 export const ai = genkit({
   plugins: [
     googleAI({ 
-      apiKey: process.env.GOOGLE_API_KEY || 'AQ.Ab8RN6JuIRKl_5qbAuFWz-9FbGG6cuxo49yhlPT4dPIX97jo5w'
+      apiKey: process.env.GOOGLE_API_KEY || process.env.GOOGLE_API_KEY_BACKUP || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY || ''
     })
   ],
   // By removing the default model here, we encourage specifying the model at the call site (e.g., in flows),
