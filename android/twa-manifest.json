@@ -21,8 +21,8 @@
     "path": "android.keystore",
     "alias": "android"
   },
-  "appVersionName": "16",
-  "appVersionCode": 16,
+  "appVersionName": "17",
+  "appVersionCode": 17,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://aura-ai-dating.vercel.app/manifest.json",
@@ -42,7 +42,7 @@
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://aura-ai-dating.vercel.app/",
-  "minSdkVersion": 21,
+  "minSdkVersion": 24,
   "orientation": "default",
   "fingerprints": [],
   "additionalTrustedOrigins": [],
@@ -51,5 +51,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "15"
+  "appVersion": "17"
 }

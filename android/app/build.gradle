@@ -70,10 +70,10 @@ android {
     namespace "app.web.aura"
     defaultConfig {
         applicationId "app.web.aura"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 36
-        versionCode 16
-        versionName "16"
+        versionCode 17
+        versionName "17"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name
