@@ -1,0 +1,211 @@
+
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLanguage } from '@/contexts/language-context';
+import { cn } from '@/lib/utils';
+import React from 'react';
+
+// Phone icon
+const PhoneIcon = () => (
+    <svg 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        className="absolute left-4"
+    >
+        <path d="M3.56778 8.16334C4.85732 10.6276 6.9602 12.7305 9.42452 14.0199L11.5933 11.8512C11.7997 11.6448 12.1026 11.5833 12.367 11.6911C13.2676 12.0463 14.2384 12.25 15.25 12.25C15.6642 12.25 16 12.5858 16 13V16.5C16 16.9142 15.6642 17.25 15.25 17.25C8.48122 17.25 3 11.7688 3 5C3 4.58579 3.33579 4.25 3.75 4.25H7.25C7.66421 4.25 8 4.58579 8 5C8 6.01156 8.20374 6.98236 8.55887 7.88296C8.66668 8.14736 8.60523 8.45025 8.39884 8.65664L6.23011 10.8254C6.23011 10.8254 3.56778 8.16334 3.56778 8.16334Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+import { FlagIcon } from '@/components/ui/flag-icon';
+import { GenderBalanceHeroCard } from '@/components/gender-balance-hero-card';
+import { SocialLoginButtons } from '@/components/social-login-buttons';
+
+export default function SignupPage() {
+  const router = useRouter();
+  const { t, setLanguage, supportedLanguages, language } = useLanguage();
+  const [likedTargetName, setLikedTargetName] = React.useState<string | null>(null);
+
+  // URL에서 초대 코드 (?ref=CODE) 및 프리뷰에서 좋아요 누른 대상 감지
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('auto_review') === '1') {
+        localStorage.setItem('aura_user_id', 'user_821012345678');
+        localStorage.setItem('aura_temp_uid', 'user_821012345678');
+        localStorage.setItem('aura_signup_phone', '+821012345678');
+        router.replace('/?auto_review=1');
+        return;
+      }
+      const ref = params.get('ref');
+      if (ref) {
+        localStorage.setItem('aura_referred_by_code', ref.trim().toUpperCase());
+      }
+      const targetName = localStorage.getItem('aura_liked_target_name');
+      if (targetName) {
+        setLikedTargetName(targetName);
+      }
+    }
+  }, [router]);
+
+  return (
+    <div className="flex flex-col items-center min-h-screen bg-black text-white px-4 py-8 sm:p-8">
+       <div className="w-full text-center pt-[30px] sm:pt-[50px]">
+        <p className="mb-3 text-xs text-neutral-400">
+            Hello, welcome to Aura Ai Dating. Please select your preferred language below.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-1.5 mb-6">
+            {supportedLanguages.map(lang => (
+                <Button key={lang.code} variant="ghost" size="sm" onClick={() => setLanguage(lang.code as any)} className={cn("gap-1.5 text-xs h-8", language === lang.code && "bg-primary text-primary-foreground hover:bg-primary/90")}>
+                    <FlagIcon code={lang.code} className="w-4 h-auto rounded-sm" />
+                    <span>{lang.name}</span>
+                </Button>
+            ))}
+        </div>
+      </div>
+
+      <div className="flex-grow flex flex-col items-center justify-center text-center w-full max-w-sm">
+        <span className="font-headline text-5xl sm:text-6xl font-extrabold bg-gradient-to-b from-[#FFF3D1] via-[#E5A934] to-[#B3791B] bg-clip-text text-transparent drop-shadow-[0_2px_16px_rgba(229,169,52,0.4)] scale-y-[.85]">
+          {t('app_title')}
+        </span>
+
+        {/* 🌟 4개국어(한국어, English, 日本語, Español) 자동 스위칭 배지 & 카피 */}
+        <div className="mt-3.5 mb-2 inline-flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-pink-500/40 rounded-full py-1.5 px-4 shadow-[0_0_20px_rgba(236,72,153,0.35)]">
+          <span className="text-base">💖</span>
+          <span className="text-xs sm:text-sm font-black tracking-wider text-white">{t('promo_badge_title')}</span>
+          <span className="text-xs sm:text-sm font-bold text-pink-400 pl-2.5 border-l border-white/25">{t('promo_badge_sub')}</span>
+        </div>
+        <p className="mb-6 text-xs sm:text-sm font-bold text-amber-200/95 leading-relaxed tracking-tight px-2 break-keep">
+          {t('promo_hero_line1')}<br className="sm:hidden" />
+          <span className="text-white font-extrabold sm:ml-1">{t('promo_hero_line2')}</span>
+        </p>
+
+        {/* 프리뷰에서 호감 보낸 이성이 있는 경우: 심쿵 안내 카드 */}
+        {likedTargetName && (
+          <div className="w-full mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-rose-950/60 to-amber-950/60 border border-rose-500/40 text-left shadow-lg animate-pulse">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">💖</span>
+              <div>
+                <p className="text-xs font-bold text-rose-200">
+                  {t('signup_liked_target_signal').replace('%s', likedTargetName)}
+                </p>
+                <p className="text-[11px] text-zinc-300 mt-0.5">
+                  {t('signup_liked_target_desc')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 50:50 성비 균형 보장제 공식 안내 카드 */}
+        <div className="w-full mb-6">
+          <GenderBalanceHeroCard />
+        </div>
+
+        {/* 간편 소셜 로그인 (카카오 + 전화번호) */}
+        <SocialLoginButtons />
+
+        {/* 🛡️ 구글 플레이 심사관 1초 프리패스 접속 버튼 */}
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.setItem('aura_user_id', 'user_821012345678');
+            localStorage.setItem('aura_temp_uid', 'user_821012345678');
+            localStorage.setItem('aura_signup_phone', '+821012345678');
+            window.location.href = '/?auto_review=1';
+          }}
+          className="mt-4 text-xs text-amber-400/80 hover:text-amber-300 underline underline-offset-4 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-amber-400/10 transition-colors cursor-pointer"
+        >
+          <span>⚡</span>
+          <span>Google Reviewer Instant Access (심사관 1초 입장)</span>
+        </button>
+      </div>
+
+      <div className="text-center text-xs text-neutral-500 max-w-sm">
+        {t('terms_agree_prefix')}
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="underline">{t('terms_of_service')}</button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] bg-card text-foreground">
+            <DialogHeader>
+              <DialogTitle>{t('terms_of_service')}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-96 w-full rounded-md border p-4">
+              <div className="prose prose-sm dark:prose-invert">
+                <h3 className="font-bold">{t('terms_article_1_title')}</h3>
+                <p>{t('terms_article_1_content')}</p>
+                
+                <h3 className="font-bold mt-4">{t('terms_article_2_title')}</h3>
+                <p>{t('terms_article_2_content_1')}</p>
+                <ol className="list-decimal pl-5">
+                  <li>{t('terms_article_2_content_2')}</li>
+                  <li>{t('terms_article_2_content_3')}</li>
+                </ol>
+
+                <h3 className="font-bold mt-4">{t('terms_article_3_title')}</h3>
+                <p>{t('terms_article_3_content')}</p>
+                
+                <h3 className="font-bold mt-4">{t('terms_article_4_title')}</h3>
+                <p>{t('terms_article_4_content_1')}</p>
+                <ul className="list-disc pl-5">
+                    <li>{t('terms_article_4_service_1')}</li>
+                    <li>{t('terms_article_4_service_2')}</li>
+                    <li>{t('terms_article_4_service_3')}</li>
+                </ul>
+                <p className="mt-4">...</p>
+                <p className="font-bold">{t('terms_effective_date')}</p>
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+        {t('and')}
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="underline">{t('privacy_policy')}</button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] bg-card text-foreground">
+            <DialogHeader>
+              <DialogTitle>{t('privacy_policy')}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-96 w-full rounded-md border p-4">
+              <div className="prose prose-sm dark:prose-invert">
+                <p>{t('privacy_intro')}</p>
+                
+                <h3 className="font-bold mt-4">{t('privacy_article_1_title')}</h3>
+                <p>{t('privacy_article_1_content_1')}</p>
+                <ol className="list-decimal pl-5">
+                  <li>{t('privacy_article_1_item_1')}</li>
+                  <li>{t('privacy_article_1_item_2')}</li>
+                </ol>
+
+                <h3 className="font-bold mt-4">{t('privacy_article_2_title')}</h3>
+                <p>{t('privacy_article_2_content_1')}</p>
+                <ul className="list-disc pl-5">
+                  <li>{t('privacy_article_2_item_1')}</li>
+                  <li>{t('privacy_article_2_item_2')}</li>
+                </ul>
+
+                <p className="mt-4">...</p>
+                <p className="font-bold">{t('privacy_effective_date')}</p>
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+        {t('terms_agree_suffix')}
+      </div>
+    </div>
+  );
+}

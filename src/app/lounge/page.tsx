@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Header from '@/components/layout/header';
 import { LoungeComposer } from '@/components/lounge/lounge-composer';
 import { LoungePostCard } from '@/components/lounge/lounge-post-card';
@@ -9,6 +9,7 @@ import { LoungeStore } from '@/lib/lounge-store';
 import { LoungePost, LoungeCategory } from '@/lib/lounge-types';
 import { useUser } from '@/contexts/user-context';
 import { useLanguage } from '@/contexts/language-context';
+import { useConversionGateway, LoungeIntent } from '@/lib/conversion-gateway';
 import { Sparkles, Flame, Coffee, Dumbbell, Dog, MessageSquare, Compass, Palette, RefreshCw, PenSquare, VenetianMask as Mask } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +27,33 @@ export default function LoungePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [noticeIndex, setNoticeIndex] = useState(0);
   const [fadeAnim, setFadeAnim] = useState(true);
+
+  // 전환 게이트웨이: 읽기는 자유, 쓰기/댓글/DM/프로필 열람은 intent 게이트 통과
+  const gateway = useConversionGateway();
+  const isGuest = !user || user.id === 'guest';
+  const pendingIntentRef = useRef<LoungeIntent | null>(null);
+
+  // 인증 완료 후 보류 intent 재생 (가입 직후 원래 행동 복귀)
+  useEffect(() => {
+    if (!isGuest && pendingIntentRef.current) {
+      const intent = pendingIntentRef.current;
+      pendingIntentRef.current = null;
+      gateway.replay(intent);
+    }
+  }, [isGuest, gateway]);
+
+  const guardIntent = useCallback(
+    (intent: LoungeIntent, action: () => void) => {
+      if (!isGuest) {
+        action();
+        return;
+      }
+      // 게스트: 보류 intent 저장 + AI 궁합 미리보기 모달 트리거
+      pendingIntentRef.current = intent;
+      gateway.requestSignup(intent);
+    },
+    [isGuest, gateway]
+  );
 
   const categoryTabs: CategoryTab[] = useMemo(() => [
     { id: 'all', label: t('lounge_cat_all') },
@@ -206,8 +234,12 @@ export default function LoungePage() {
           })}
         </div>
 
-        {/* Post Creation Box */}
-        <LoungeComposer onPostCreated={loadPosts} />
+        {/* Post Creation Box - 게스트는 작성 시 전환 게이트 통과 */}
+        <LoungeComposer
+          onPostCreated={loadPosts}
+          onIntent={(intent, action) => guardIntent(intent, action)}
+          isGuest={isGuest}
+        />
 
         {/* Posts Feed */}
         <section aria-label="Lounge Feed" className="space-y-4">
@@ -217,6 +249,8 @@ export default function LoungePage() {
                 key={post.id}
                 post={post}
                 onUpdated={loadPosts}
+                onIntent={(intent, action) => guardIntent(intent, action)}
+                isGuest={isGuest}
               />
             ))
           ) : (
@@ -239,15 +273,17 @@ export default function LoungePage() {
           )}
         </section>
 
-        {/* Floating Write Button */}
+        {/* Floating Write Button - 게스트는 가입 유도 모달로 라우팅 */}
         <button
           onClick={() => {
-            const el = document.getElementById('lounge-composer');
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              const textarea = el.querySelector('textarea');
-              if (textarea) textarea.focus();
-            }
+            guardIntent('write_post', () => {
+              const el = document.getElementById('lounge-composer');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const textarea = el.querySelector('textarea');
+                if (textarea) textarea.focus();
+              }
+            });
           }}
           className="fixed bottom-24 right-4 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-[#E5A934] to-[#C98718] hover:from-[#F0B746] hover:to-[#D49425] text-black font-extrabold text-xs shadow-xl shadow-amber-500/30 active:scale-95 transition-all"
         >
