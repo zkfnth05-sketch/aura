@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { openMemberOnlyDialog } from '@/lib/member-only-gate';
 import { Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import type { User, QuestPin } from '@/lib/types';
 import Image from 'next/image';
@@ -173,9 +174,13 @@ export default function MapClient({
   }, [router, currentUser?.id]);
 
   const handleQuestClick = useCallback((quest: QuestPin) => {
+    if (!currentUser) {
+      openMemberOnlyDialog('퀘스트 참여');
+      return;
+    }
     setSelectedQuest(quest);
     setIsDetailOpen(true);
-  }, []);
+  }, [currentUser?.id]);
 
   const handleQuestCreated = useCallback((newQuest: QuestPin) => {
     setQuestPins?.(prev => [newQuest, ...prev]);
@@ -250,21 +255,23 @@ export default function MapClient({
         </div>
       )}
 
-      {/* Floating Action Button (FAB) for Creating Quest */}
-      {currentUser && (
-        <div className="absolute bottom-6 right-6 z-20">
-          <Button
-            onClick={() => {
-              const allowed = requireActiveAdmission(() => setIsCreateOpen(true), t('map_quest_register_gate'));
-              if (allowed) setIsCreateOpen(true);
-            }}
-            className="h-14 px-5 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-bold shadow-2xl shadow-primary/40 hover:scale-105 transition-all flex items-center gap-2 border border-white/20"
-          >
-            <Zap className="w-5 h-5 fill-current animate-bounce" />
-            <span className="text-sm tracking-wide">{t('map_fab_quest')}</span>
-          </Button>
-        </div>
-      )}
+      {/* Floating Action Button (FAB) for Creating Quest — 게스트도 노출, 클릭 시 정회원 안내 */}
+      <div className="absolute bottom-6 right-6 z-20">
+        <Button
+          onClick={() => {
+            if (!currentUser) {
+              openMemberOnlyDialog('퀘스트 등록');
+              return;
+            }
+            const allowed = requireActiveAdmission(() => setIsCreateOpen(true), t('map_quest_register_gate'));
+            if (allowed) setIsCreateOpen(true);
+          }}
+          className="h-14 px-5 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-bold shadow-2xl shadow-primary/40 hover:scale-105 transition-all flex items-center gap-2 border border-white/20"
+        >
+          <Zap className="w-5 h-5 fill-current animate-bounce" />
+          <span className="text-sm tracking-wide">{t('map_fab_quest')}</span>
+        </Button>
+      </div>
 
       {/* Google Maps Container */}
       <Map

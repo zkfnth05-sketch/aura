@@ -19,6 +19,8 @@ import { calculateCompatibility } from '@/lib/utils';
 import { useLanguage } from '@/contexts/language-context';
 import CoachMarkGuide from '@/components/coach-mark-guide';
 import { aiGuide } from '@/lib/coachmark-steps';
+import { useRouter } from 'next/navigation';
+import { openMemberOnlyDialog } from '@/lib/member-only-gate';
 
 
 const UserGridSkeleton = () => (
@@ -39,6 +41,15 @@ export default function AiPage() {
   const [isAuraDialogOpen, setIsAuraDialogOpen] = useState(false);
   const [savedAuraReport, setSavedAuraReport] = useState<AuraCharmOutput | null>(null);
   const { t } = useLanguage();
+  const router = useRouter();
+
+  // 🎫 AI 추천은 정회원 전용: 주소로 직접 들어온 게스트도 안내 후 홈으로 복귀
+  useEffect(() => {
+    if (isUserLoaded && !currentUser) {
+      openMemberOnlyDialog('feature_ai_recommend');
+      router.replace('/');
+    }
+  }, [isUserLoaded, currentUser, router]);
 
   useEffect(() => {
     if (currentUser?.id) {

@@ -14,10 +14,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/contexts/language-context';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { useSignupBootstrap } from '@/hooks/use-signup-bootstrap';
-import { InAppBrowserGuard } from '@/components/in-app-browser-guard';
-import { SignupErrorBoundary } from '@/components/signup-error-boundary';
-import { trackFunnel } from '@/lib/telemetry';
 
 // Phone icon
 const PhoneIcon = () => (
@@ -37,37 +33,42 @@ import { FlagIcon } from '@/components/ui/flag-icon';
 import { GenderBalanceHeroCard } from '@/components/gender-balance-hero-card';
 import { SocialLoginButtons } from '@/components/social-login-buttons';
 
-function SignupPageInner() {
+export default function SignupPage() {
   const router = useRouter();
   const { t, setLanguage, supportedLanguages, language } = useLanguage();
-  const { likedTargetName, isReady } = useSignupBootstrap();
+  const [likedTargetName, setLikedTargetName] = React.useState<string | null>(null);
 
-  // 퍼널 진입 계측 (심사관 우회 경로는 훅 내부에서 격리됨)
+  // URL에서 초대 코드 (?ref=CODE) 및 프리뷰에서 좋아요 누른 대상 감지
   React.useEffect(() => {
-    trackFunnel('signup_page_view', {
-      lang: language,
-      hasReferral: typeof window !== 'undefined' && !!localStorage.getItem('aura_referred_by_code'),
-      hasLikedTarget: !!likedTargetName,
-    });
-  }, [language, likedTargetName]);
-
-  if (!isReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-neutral-400 text-sm">
-        {t('loading') || 'Loading...'}
-      </div>
-    );
-  }
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('auto_review') === '1') {
+        localStorage.setItem('aura_user_id', 'user_821012345678');
+        localStorage.setItem('aura_temp_uid', 'user_821012345678');
+        localStorage.setItem('aura_signup_phone', '+821012345678');
+        router.replace('/?auto_review=1');
+        return;
+      }
+      const ref = params.get('ref');
+      if (ref) {
+        localStorage.setItem('aura_referred_by_code', ref.trim().toUpperCase());
+      }
+      const targetName = localStorage.getItem('aura_liked_target_name');
+      if (targetName) {
+        setLikedTargetName(targetName);
+      }
+    }
+  }, [router]);
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-black text-white px-4 py-8 sm:p-8">
        <div className="w-full text-center pt-[30px] sm:pt-[50px]">
         <p className="mb-3 text-xs text-neutral-400">
-            {t('signup_welcome_line')}
+            Hello, welcome to Aura Ai Dating. Please select your preferred language below.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-1.5 mb-6">
             {supportedLanguages.map(lang => (
-                <Button key={lang.code} variant="ghost" size="sm" onClick={() => { setLanguage(lang.code as any); trackFunnel('signup_language_select', { lang: lang.code }); }} className={cn("gap-1.5 text-xs h-8", language === lang.code && "bg-primary text-primary-foreground hover:bg-primary/90")}>
+                <Button key={lang.code} variant="ghost" size="sm" onClick={() => setLanguage(lang.code as any)} className={cn("gap-1.5 text-xs h-8", language === lang.code && "bg-primary text-primary-foreground hover:bg-primary/90")}>
                     <FlagIcon code={lang.code} className="w-4 h-auto rounded-sm" />
                     <span>{lang.name}</span>
                 </Button>
@@ -108,15 +109,13 @@ function SignupPageInner() {
           </div>
         )}
 
-        {/* 간편 소셜 로그인 (카카오 + 전화번호) - 단일 CTA 우선 */}
-        <div className="w-full" onClickCapture={() => trackFunnel('signup_cta_click')}>
-          <SocialLoginButtons />
-        </div>
-
-        {/* 50:50 성비 균형 보장제 공식 안내 카드 - CTA 아래로 이동 */}
-        <div className="w-full mt-6">
+        {/* 50:50 성비 균형 보장제 공식 안내 카드 */}
+        <div className="w-full mb-6">
           <GenderBalanceHeroCard />
         </div>
+
+        {/* 간편 소셜 로그인 (카카오 + 전화번호 + 구글) */}
+        <SocialLoginButtons />
       </div>
 
       <div className="text-center text-xs text-neutral-500 max-w-sm">
@@ -193,15 +192,5 @@ function SignupPageInner() {
         {t('terms_agree_suffix')}
       </div>
     </div>
-  );
-}
-
-export default function SignupPage() {
-  return (
-    <SignupErrorBoundary>
-      <InAppBrowserGuard>
-        <SignupPageInner />
-      </InAppBrowserGuard>
-    </SignupErrorBoundary>
   );
 }

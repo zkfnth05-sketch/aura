@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { openMemberOnlyDialog } from '@/lib/member-only-gate';
 import Header from '@/components/layout/header';
 import ActionButtons from '@/components/action-buttons';
 import ProfileCard from '@/components/profile-card';
@@ -17,10 +18,31 @@ import { homeGuide } from '@/lib/coachmark-steps';
 import { fetchDiscoverUsers, recordSwipe } from '@/lib/supabaseDataService';
 import { useToast } from '@/hooks/use-toast';
 import { VipWaitingBanner } from '@/components/vip-waiting-banner';
+import { CURATED_GUEST_FEMALE_PROFILES, CURATED_GUEST_MALE_PROFILES } from '@/lib/guest-preview-users';
 
 
 const PREFETCH_THRESHOLD = 5;
 const FETCH_LIMIT = 20; // Fetch more to account for client-side filtering
+
+// 🎫 [게스트 전면 개방] 비로그인 상태에서도 ProfileCard 가 요구하는
+// currentUser: User 를 충족시키기 위한 합성 프로필 (궁합 계산 전용, DB 저장 없음)
+const GUEST_VIEWER: User = {
+  id: 'guest',
+  name: '게스트',
+  age: 0,
+  gender: '기타',
+  location: '',
+  lat: 0,
+  lng: 0,
+  bio: '',
+  photoUrls: [],
+  hobbies: [],
+  interests: [],
+  values: [],
+  communication: [],
+  lifestyle: [],
+  relationship: [],
+};
 
 const CardSkeleton = () => (
     <div className="absolute inset-0 w-full h-full">
@@ -55,7 +77,6 @@ export default function HomePageClient() {
   const prevFiltersRef = useRef(JSON.stringify(filters));
 
   const fetchNextRecommendedUsers = useCallback(async (isInitial = false) => {
-    if (!currentUser) return;
     if ((isLoadingMoreRef.current || !hasMoreRef.current) && !isInitial) {
       return;
     }
@@ -66,18 +87,37 @@ export default function HomePageClient() {
     }
     
     try {
-      const candidates = await fetchDiscoverUsers(currentUser.id, filters, 30, currentUser.gender);
-      if (candidates.length === 0) {
+      // 🎫 게스트도 동일 파이프라인 사용: currentUser 가 없으면 'guest' 로 조회
+      const guestGender = typeof window !== 'undefined' ? localStorage.getItem('aura_guest_gender') : null;
+      const viewerId = currentUser?.id || 'guest';
+      const viewerGender = currentUser?.gender || (guestGender === '여성' ? '여성' : '남성');
+      const candidates = await fetchDiscoverUsers(viewerId, filters, 30, viewerGender);
+
+      // 🎫 게스트 폴백: DB 결과가 빈약하면 성별 맞춤 큐레이션 프로필 결합
+      let merged = candidates;
+      if (!currentUser) {
+        const isTargetFemale = viewerGender !== '여성';
+        const curatedList = isTargetFemale ? CURATED_GUEST_FEMALE_PROFILES : CURATED_GUEST_MALE_PROFILES;
+        const existingIds = new Set(candidates.map(u => u.id));
+        const curated = curatedList.filter(u => !existingIds.has(u.id));
+        merged = [...candidates, ...curated];
+      }
+
+      if (merged.length === 0) {
         hasMoreRef.current = false;
       }
       setRecommendedUsers(prev => {
-        if (isInitial) return candidates;
+        if (isInitial) return merged;
         const existingIds = new Set(prev.map(u => u.id));
-        const unique = candidates.filter(u => !existingIds.has(u.id));
+        const unique = merged.filter(u => !existingIds.has(u.id));
         return [...prev, ...unique];
       });
     } catch (e) {
       console.error("Error fetching recommended users:", e);
+      // 🎫 네트워크/DB 실패 시에도 게스트 화면이 비지 않도록 큐레이션 폴백
+      if (!currentUser) {
+        setRecommendedUsers(prev => (prev.length > 0 ? prev : CURATED_GUEST_FEMALE_PROFILES));
+      }
     } finally {
       isLoadingMoreRef.current = false;
       if (isInitial) {
@@ -87,7 +127,9 @@ export default function HomePageClient() {
   }, [currentUser, filters]);
 
   const initializeRecommendations = useCallback(() => {
-    if (!isLoaded || !currentUser || peopleILiked === null) return;
+    // 🎫 게스트 개방: currentUser 가 없어도 isLoaded 만 충족되면 즉시 로드
+    if (!isLoaded) return;
+    if (currentUser && peopleILiked === null) return;
 
     setIsRecommendedUsersLoading(true);
     setRecommendedUsers([]);
@@ -99,7 +141,18 @@ export default function HomePageClient() {
 
   useEffect(() => {
     const currentFiltersJSON = JSON.stringify(filters);
-    if (isLoaded && currentUser && peopleILiked !== null) {
+    if (!isLoaded) return;
+
+    // 🎫 게스트 상태: currentUser 가 없어도 추천 목록이 비어있으면 즉시 초기화 로드
+    if (!currentUser) {
+      if (recommendedUsers.length === 0 && hasMoreRef.current && !isLoadingMoreRef.current) {
+        initializeRecommendations();
+      }
+      return;
+    }
+
+    // 로그인 회원 상태: 좋아요 목록 확인 완료 후 초기화
+    if (peopleILiked !== null) {
       if (prevFiltersRef.current !== currentFiltersJSON) {
         prevFiltersRef.current = currentFiltersJSON;
         initializeRecommendations();
@@ -128,7 +181,23 @@ export default function HomePageClient() {
   }, [matches, activeUser]);
 
   const handleAction = async (action: 'like' | 'dislike' | 'message') => {
-    if (!currentUser || !activeUser || swipeState) return;
+    if (!activeUser || swipeState) return;
+
+    // 🎫 [게스트 인터셉트] 비로그인 유저: dislike 는 자유 통과, like/message 는 로그인 유도
+    if (!currentUser) {
+      if (action === 'dislike') {
+        setSwipeState('left');
+        setTimeout(() => {
+          setCurrentIndex(prev => prev + 1);
+          setSwipeState(null);
+        }, 400);
+        return;
+      }
+
+      setSwipeState(null);
+      openMemberOnlyDialog(action === 'like' ? 'feature_like' : 'feature_dm_request');
+      return;
+    }
   
     // 대기 중인 남성 유저는 고화질 관전만 가능하며, 좋아요/메시지 시도시 VIP 모달 발동!
     if (action === 'like' || action === 'message') {
@@ -176,7 +245,8 @@ export default function HomePageClient() {
   
   const isLikedByMe = peopleILiked?.some(u => u.id === activeUser?.id);
   
-  const isReallyLoading = !isLoaded || (isRecommendedUsersLoading && recommendedUsers.length === 0);
+  // 🎫 게스트는 peopleILiked 가 항상 null 이므로 로딩 판정에서 제외 (스켈레톤 무한루프 방지)
+  const isReallyLoading = !isLoaded || (Boolean(currentUser) && isRecommendedUsersLoading && recommendedUsers.length === 0);
 
   if (isReallyLoading) {
     return (
@@ -208,7 +278,7 @@ export default function HomePageClient() {
               return (
                 <ProfileCard
                   key={user.id}
-                  currentUser={currentUser!}
+                  currentUser={currentUser || GUEST_VIEWER}
                   potentialMatch={user}
                   isActive={isTop}
                   zIndex={isTop ? 50 : 20}

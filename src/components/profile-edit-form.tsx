@@ -560,7 +560,7 @@ export default function ProfileEditForm() {
                 router.push('/signup');
               }}
             >
-              {t('logout_button' as any) || '로그아웃'}
+              {t('logout_button')}
             </Button>
             <span className="text-zinc-700">|</span>
             <AlertDialog>

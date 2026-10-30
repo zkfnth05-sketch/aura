@@ -59,11 +59,9 @@ const ProfileCard = React.memo(({ currentUser, potentialMatch, isActive, swipeSt
     setIsDragging(false);
 
     if (Math.abs(dragPosition.x) > SWIPE_THRESHOLD) {
-      if (dragPosition.x > 0) {
-        onSwipe('right');
-      } else {
-        onSwipe('left');
-      }
+      const direction = dragPosition.x > 0 ? 'right' : 'left';
+      setDragPosition({ x: 0, y: 0 }); // 🎫 스와이프 임계치 통과 시에도 위치를 리셋하여, 거부/인터셉트 시 카드가 비스듬히 굳지 않고 중앙으로 스프링백
+      onSwipe(direction);
     } else {
       // Snap back if not swiped far enough
       setDragPosition({ x: 0, y: 0 });

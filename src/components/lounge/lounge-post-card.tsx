@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { openMemberOnlyDialog } from '@/lib/member-only-gate';
 import { useRouter } from 'next/navigation';
 import { LoungePost } from '@/lib/lounge-types';
 import { LoungeStore } from '@/lib/lounge-store';
@@ -180,6 +181,12 @@ export function LoungePostCard({
   };
 
   const handleLike = () => {
+    // 🎫 [게스트 인터셉트] 비로그인 유저는 좋아요 불가 → 로그인(회원가입) 유도
+    if (!user) {
+      openMemberOnlyDialog('feature_like');
+      return;
+    }
+
     const nextState = LoungeStore.toggleLike(post.id, user?.id);
     setIsLiked(nextState);
     setLikesCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
@@ -187,6 +194,12 @@ export function LoungePostCard({
   };
 
   const handleAddComment = () => {
+    // 🎫 [게스트 인터셉트] 비로그인 유저는 댓글 작성 불가 → 로그인(회원가입) 유도
+    if (!user) {
+      openMemberOnlyDialog('feature_comment');
+      return;
+    }
+
     if (!commentText.trim()) return;
     setIsSubmittingComment(true);
 
@@ -216,6 +229,12 @@ export function LoungePostCard({
   };
 
   const handleSendDirectMessage = async () => {
+    // 🎫 [게스트 인터셉트] 비로그인 유저는 1:1 대화 신청 불가 → 로그인(회원가입) 유도
+    if (!user) {
+      openMemberOnlyDialog('feature_dm_request');
+      return;
+    }
+
     if (!dmMessage.trim()) {
       toast({
         variant: 'destructive',

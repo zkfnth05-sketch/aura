@@ -21,7 +21,6 @@ export default function GuestPreviewExperience() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipeState, setSwipeState] = useState<'left' | 'right' | null>(null);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
 
   // Success modal state
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -31,86 +30,35 @@ export default function GuestPreviewExperience() {
   // Initial gender picker dialog (first visit)
   const [showInitialPicker, setShowInitialPicker] = useState(false);
 
-  // 좀비 응답/경쟁 조건 차단용
-  const requestIdRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
-  const bootstrappedRef = useRef(false);
-
-  const LOAD_TIMEOUT_MS = 8000;
-
-  // 단일 소스 오브 트루스: 타임아웃 + 1회 재시도 + 큐레이션 폴백
-  const loadProfiles = useCallback(async (gender: '여성' | '남성') => {
-    const requestId = ++requestIdRef.current;
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    setIsLoadingCards(true);
-    setLoadFailed(false);
-
-    const withTimeout = <T,>(p: Promise<T>): Promise<T> =>
-      new Promise<T>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('guest-preview-timeout')), LOAD_TIMEOUT_MS);
-        p.then(
-          (v) => { clearTimeout(timer); resolve(v); },
-          (e) => { clearTimeout(timer); reject(e); }
-        );
-      });
-
-    const attempt = async (): Promise<User[] | null> => {
-      try {
-        const result = await withTimeout(fetchGuestPreviewProfiles(gender));
-        if (controller.signal.aborted) return null;
-        return Array.isArray(result) && result.length > 0 ? result : null;
-      } catch (e) {
-        if (controller.signal.aborted) return null;
-        console.error('Failed to load guest profiles (attempt):', e);
-        return null;
-      }
-    };
-
-    let result = await attempt();
-    if (!result && !controller.signal.aborted) {
-      result = await attempt(); // 1회 재시도
-    }
-
-    if (controller.signal.aborted || requestId !== requestIdRef.current) return;
-
-    if (result) {
-      setCards(result);
-    } else {
-      // 폴백: 큐레이션 데이터로 전환 접점 유지 (빈 배열 방치 금지)
-      const fallback = gender === '여성'
-        ? CURATED_GUEST_FEMALE_PROFILES
-        : (CURATED_GUEST_FEMALE_PROFILES || []);
-      setCards(Array.isArray(fallback) ? fallback : []);
-      setLoadFailed(true);
-    }
-    setCurrentIndex(0);
-    setIsLoadingCards(false);
-  }, []);
-
-  // 단일 부트스트랩: 성별 결정 → 1회 페칭 (이중 트리거 제거)
   useEffect(() => {
-    if (bootstrappedRef.current) return;
-    bootstrappedRef.current = true;
-
-    let resolvedGender: '여성' | '남성' = '여성';
     if (typeof window !== 'undefined') {
       const savedGender = localStorage.getItem('aura_guest_target_gender') as '여성' | '남성' | null;
-      if (savedGender === '여성' || savedGender === '남성') {
-        resolvedGender = savedGender;
+      if (savedGender) {
+        setTargetGender(savedGender);
       } else {
         setShowInitialPicker(true);
       }
     }
-    setTargetGender(resolvedGender);
-    loadProfiles(resolvedGender);
+  }, []);
 
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, [loadProfiles]);
+  const loadProfiles = useCallback(async (gender: '여성' | '남성') => {
+    setIsLoadingCards(true);
+    try {
+      const result = await fetchGuestPreviewProfiles(gender);
+      if (result && Array.isArray(result) && result.length > 0) {
+        setCards(result);
+      }
+      setCurrentIndex(0);
+    } catch (e) {
+      console.error('Failed to load guest profiles:', e);
+    } finally {
+      setIsLoadingCards(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfiles(targetGender);
+  }, [targetGender, loadProfiles]);
 
   const handleGenderSwitch = (gender: '여성' | '남성') => {
     setTargetGender(gender);
@@ -196,23 +144,6 @@ export default function GuestPreviewExperience() {
     return cards.slice(currentIndex, currentIndex + 2).reverse();
   }, [cards, currentIndex]);
 
-  // 파생값: 하드코딩 제거 (가짜 신호 → 데이터 기반)
-  const totalCount = cards.length;
-  const displayCounter = totalCount > 0 ? `${Math.min(currentIndex + 1, totalCount)} / ${totalCount}` : '0 / 0';
-
-  // 프로필 기반 궁합 점수 파생 (결정론적, 88~99)
-  const deriveMatchScore = useCallback((user: User | null): number => {
-    if (!user) return 0;
-    const seed = `${user.id ?? ''}|${user.name ?? ''}|${user.age ?? ''}`;
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-    }
-    return 88 + (hash % 12);
-  }, []);
-
-  const activeMatchScore = useMemo(() => deriveMatchScore(activeUser), [activeUser, deriveMatchScore]);
-
   return (
     <div className="flex flex-col min-h-screen bg-black text-white relative overflow-hidden select-none">
       {/* Ambient background glows */}
@@ -275,7 +206,7 @@ export default function GuestPreviewExperience() {
           <span className="text-zinc-300 font-medium">{t('guest_preview_banner')}</span>
         </div>
         <span className="text-amber-400 font-bold">
-          {displayCounter}
+          {currentIndex < cards.length ? `${currentIndex + 1} / ${cards.length}` : '3 / 3'}
         </span>
       </div>
 
@@ -347,7 +278,7 @@ export default function GuestPreviewExperience() {
                     <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2 z-10">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-amber-500/40 text-amber-300 text-xs font-extrabold shadow-md">
                         <Sparkles className="w-3 h-3 text-amber-400" />
-                        <span>{t('guest_preview_charm_score').replace('%s', String(activeMatchScore))}</span>
+                        <span>{t('guest_preview_charm_score').replace('%s', '98')}</span>
                       </div>
 
                       <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-[11px] font-bold">
@@ -379,7 +310,7 @@ export default function GuestPreviewExperience() {
                           #AuraDate
                         </span>
                         <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold text-zinc-200">
-                          {`#Match${activeMatchScore}%`}
+                          #Match99%
                         </span>
                       </div>
                     </div>
@@ -397,7 +328,7 @@ export default function GuestPreviewExperience() {
                 {t('guest_preview_completed_title')}
               </h3>
               <p className="text-xs text-zinc-400 mt-2 mb-6 leading-relaxed">
-                {loadFailed ? t('guest_preview_load_failed_desc') : t('guest_preview_completed_desc')}
+                {t('guest_preview_completed_desc')}
               </p>
               <Button
                 onClick={() => router.push('/signup')}

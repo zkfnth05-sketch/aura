@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { openMemberOnlyDialog } from '@/lib/member-only-gate';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/user-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,7 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
   const { user } = useUser();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const router = useRouter();
   const [content, setContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
@@ -101,6 +104,12 @@ export function LoungeComposer({ onPostCreated }: { onPostCreated?: () => void }
   };
 
   const handleSubmit = async () => {
+    // 🎫 [게스트 인터셉트] 비로그인 유저는 라운지 글쓰기 불가 → 로그인(회원가입) 유도
+    if (!user) {
+      openMemberOnlyDialog('feature_lounge_write');
+      return;
+    }
+
     if (!content.trim() && !selectedImage) {
       toast({
         variant: 'destructive',

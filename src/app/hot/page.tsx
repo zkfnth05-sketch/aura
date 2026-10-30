@@ -63,21 +63,26 @@ export default function HotPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
-    if (!currentUser || !supabase) return;
+    if (!supabase) return;
     setIsLoading(true);
 
     try {
-      const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
+      const guestGender = typeof window !== 'undefined' ? localStorage.getItem('aura_guest_gender') : null;
+      const viewerGender = currentUser?.gender || (guestGender === '여성' ? '여성' : '남성');
+      const isMale = viewerGender === '남성' || viewerGender?.toLowerCase().startsWith('m');
       const oppositeGender = isMale ? '여성' : '남성';
 
       // ── 🆕 NEW 탭: 반대 성별 최신 가입자 풀 (14일 제한 없이 최신순으로 20~50명 안정적 확보) ──
-      const { data: newUsersData, error: newError } = await supabase
+      const query = supabase
         .from('users')
         .select('*')
         .eq('gender', oppositeGender)
-        .neq('id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(100);
+
+      const { data: newUsersData, error: newError } = currentUser
+        ? await query.neq('id', currentUser.id)
+        : await query;
 
       if (newError) {
         console.error("Error fetching NEW users:", newError);
@@ -86,8 +91,7 @@ export default function HotPage() {
       const validCandidates = (newUsersData || []).map(fromSupabaseUser).filter(u =>
         u.gender === oppositeGender &&
         u.photoUrls && u.photoUrls.length > 0 &&
-        !currentUser.blockedUsers?.includes(u.id) &&
-        !u.blockedUsers?.includes(currentUser.id)
+        (!currentUser || (!currentUser.blockedUsers?.includes(u.id) && !u.blockedUsers?.includes(currentUser.id)))
       );
 
       // 최신순 후보군에서 최대 50명 (접속 시마다 자연스러운 셔플)
@@ -152,10 +156,10 @@ export default function HotPage() {
   }, [currentUser]);
 
   useEffect(() => {
-    if (isLoaded && currentUser) {
+    if (isLoaded) {
       fetchUsers();
     }
-  }, [isLoaded, currentUser, fetchUsers]);
+  }, [isLoaded, fetchUsers]);
   
 
   if (!isLoaded) {
@@ -165,15 +169,6 @@ export default function HotPage() {
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
         </main>
-      </div>
-    );
-  }
-
-  if (!currentUser) {
-    return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <GuestGateModal isOpen={true} featureName={t('feature_hot_members')} />
       </div>
     );
   }

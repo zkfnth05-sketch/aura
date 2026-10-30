@@ -13,6 +13,7 @@ import {
   fromSupabaseQuestApplication,
 } from './supabaseMappers';
 import type { FilterSettings } from '@/contexts/user-context';
+import { hasTagFilter, countTagMatches } from './tag-normalizer';
 import {
   notifyNewLike,
   notifyNewMatch,
@@ -71,12 +72,15 @@ export async function fetchDiscoverUsers(
     }
   }
 
+  // 태그 필터 활성 시: 서버에서는 태그를 걸러낼 수 없으므로(레거시 형식 혼재) 넉넉히 가져온 뒤 후처리
+  const tagFilterActive = hasTagFilter(filters);
+
   // 2. Query users
   let query = client
     .from('users')
     .select('*')
     .neq('id', currentUserId)
-    .limit(limitCount * 2);
+    .limit(tagFilterActive ? 500 : limitCount * 2);
 
   if (targetGenders.length > 0) {
     query = query.in('gender', targetGenders);
@@ -94,16 +98,25 @@ export async function fetchDiscoverUsers(
   }
 
   // 3. Filter out excluded IDs, enforce target gender, and hide queued/expired male members
-  const candidates = (usersData || [])
-    .filter((u) => {
-      if (excludeIds.has(u.id)) return false;
-      if (targetGenders.length > 0 && !targetGenders.includes(u.gender)) return false;
-      // 대기중(queued)이거나 만료(expired)된 유저는 여성 회원의 탐색 피드에 절대 노출되지 않음!
-      if (u.admission_status === 'queued' || u.admission_status === 'expired') return false;
-      return true;
-    })
-    .map(fromSupabaseUser);
+  const filtered = (usersData || []).filter((u) => {
+    if (excludeIds.has(u.id)) return false;
+    if (targetGenders.length > 0 && !targetGenders.includes(u.gender)) return false;
+    // 대기중(queued)이거나 만료(expired)된 유저는 여성 회원의 탐색 피드에 절대 노출되지 않음!
+    if (u.admission_status === 'queued' || u.admission_status === 'expired') return false;
+    // 태그 필터: 선택한 태그와 하나도 일치하지 않는 회원은 제외
+    if (tagFilterActive && countTagMatches(u, filters as FilterSettings) === 0) return false;
+    return true;
+  });
 
+  if (tagFilterActive) {
+    // 일치 태그가 많은 회원을 앞쪽에 노출 (동점은 무작위)
+    const scored = filtered
+      .map((u) => ({ u, score: countTagMatches(u, filters as FilterSettings), r: Math.random() }))
+      .sort((a, b) => b.score - a.score || a.r - b.r);
+    return scored.slice(0, limitCount).map(({ u }) => fromSupabaseUser(u));
+  }
+
+  const candidates = filtered.map(fromSupabaseUser);
   const shuffled = [...candidates].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, limitCount);
 }

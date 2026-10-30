@@ -32,15 +32,16 @@ export function GuestGateModal({
     router.push('/signup');
   };
 
-  const handleGoLounge = () => {
+  const handleDismiss = () => {
     if (onClose) {
       onClose();
+      return;
     }
-    router.push('/lounge');
+    router.back();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleGoLounge()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleDismiss()}>
       <DialogContent className="sm:max-w-md bg-zinc-950/95 border-amber-500/40 text-white p-6 shadow-2xl backdrop-blur-2xl rounded-3xl overflow-hidden text-left">
         {/* Ambient Glows */}
         <div className="absolute -top-16 -left-16 w-36 h-36 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -106,7 +107,7 @@ export function GuestGateModal({
 
           <Button
             variant="ghost"
-            onClick={handleGoLounge}
+            onClick={handleDismiss}
             className="w-full h-10 rounded-full text-xs font-semibold text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
           >
             <BookOpen className="w-3.5 h-3.5 mr-1" />

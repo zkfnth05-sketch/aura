@@ -111,8 +111,7 @@ export default function UploadPhotoPage() {
       await updateUser({
         photoUrls: [cdnUrl],
       });
-      setIsSignupFlowActive(false); // Signal that the signup flow is now complete
-      router.push('/profile');
+      router.push('/signup/tags');
     } catch (error) {
       console.error("Failed to complete signup:", error);
       toast({
@@ -133,12 +132,7 @@ export default function UploadPhotoPage() {
       await updateUser({
         photoUrls: [defaultAvatar],
       });
-      setIsSignupFlowActive(false);
-      toast({
-        title: t('welcome_title'),
-        description: t('welcome_default_avatar_desc'),
-      });
-      router.push('/profile');
+      router.push('/signup/tags');
     } catch (error) {
       console.error("Failed to complete signup with default avatar:", error);
       toast({
@@ -161,7 +155,7 @@ export default function UploadPhotoPage() {
     <div className="flex flex-col min-h-screen bg-black text-white px-8 py-12">
       <header className="flex-shrink-0">
         <h1 className="text-2xl font-bold text-center">{t('create_profile_title')}</h1>
-        <Progress value={75} className="w-full mt-4 h-1 bg-zinc-800" />
+        <Progress value={66} className="w-full mt-4 h-1 bg-zinc-800" />
       </header>
 
       <main className="flex-1 overflow-y-auto py-8">

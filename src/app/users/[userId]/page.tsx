@@ -30,6 +30,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/contexts/language-context';
 import { TranslationKeys } from '@/lib/locales';
+import { openMemberOnlyDialog } from '@/lib/member-only-gate';
 
 
 // Helper components for page structure
@@ -155,7 +156,15 @@ function UserProfilePageContent() {
 
 
   const handleAction = async (action: 'like' | 'dislike' | 'message') => {
-    if (!user || !currentUser) return;
+    if (!user) return;
+    if (!currentUser) {
+      if (action === 'dislike') {
+        router.back();
+        return;
+      }
+      openMemberOnlyDialog(action === 'like' ? 'feature_like' : 'feature_dm_request');
+      return;
+    }
 
     // 대기 중인 남성 유저는 관전만 가능하며 좋아요/메시지 시도시 VIP 모달 발동!
     if (action === 'like' || action === 'message') {

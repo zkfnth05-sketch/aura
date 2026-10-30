@@ -29,17 +29,16 @@ export default function MapPage() {
   const [center, setCenter] = useState({ lat: 37.5665, lng: 126.9780 });
 
   useEffect(() => {
+    // 🎫 게스트 개방: 로그아웃/미로그인 시 캐시만 정리하고 리다이렉트하지 않음
     if (isUserLoaded && !currentUser) {
-      // Clear cache on logout
       mapUsersCache = null;
-      router.replace('/signup');
     }
-  }, [isUserLoaded, currentUser, router]);
+  }, [isUserLoaded, currentUser]);
 
   useEffect(() => {
     if (currentUser?.lat && currentUser?.lng) {
       setCenter({ lat: currentUser.lat, lng: currentUser.lng });
-    } else if (isUserLoaded && currentUser && navigator.geolocation) {
+    } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => setCenter({ lat: position.coords.latitude, lng: position.coords.longitude }),
         (error) => console.error("Geolocation error:", error),
@@ -50,10 +49,12 @@ export default function MapPage() {
 
   // Load active 24-hour quest pins (opposite gender filtered) and subscribe to realtime updates
   useEffect(() => {
-    if (!currentUser) return;
-    fetchActiveQuestPins(currentUser.id, currentUser.gender).then(setQuestPins);
+    const viewerId = currentUser?.id || 'guest';
+    const guestGender = typeof window !== 'undefined' ? localStorage.getItem('aura_guest_gender') : null;
+    const viewerGender = currentUser?.gender || (guestGender === '여성' ? '여성' : '남성');
+    fetchActiveQuestPins(viewerId, viewerGender).then(setQuestPins);
     const unsubscribe = subscribeQuestPins(() => {
-      fetchActiveQuestPins(currentUser.id, currentUser.gender).then(setQuestPins);
+      fetchActiveQuestPins(viewerId, viewerGender).then(setQuestPins);
     });
     return () => unsubscribe();
   }, [currentUser]);
@@ -61,26 +62,28 @@ export default function MapPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       // 1. Caching & Smart Trigger: Only fetch if cache is empty and dependencies are ready.
-      if (mapUsersCache || !currentUser) {
-        if(mapUsersCache) setIsFetching(false); // If using cache, stop loading indicator
+      if (mapUsersCache) {
+        setIsFetching(false);
         return;
       }
 
       setIsFetching(true);
       try {
-        const isMale = currentUser.gender === '남성' || currentUser.gender?.toLowerCase().startsWith('m');
+        const guestGender = typeof window !== 'undefined' ? localStorage.getItem('aura_guest_gender') : null;
+        const viewerGender = currentUser?.gender || (guestGender === '여성' ? '여성' : '남성');
+        const isMale = viewerGender === '남성' || viewerGender?.toLowerCase().startsWith('m');
         const genderFilter = isMale ? ['여성'] : ['남성'];
 
-        const fetchedUsers = await fetchMapUsers(currentUser.id, genderFilter, 50, currentUser.gender);
+        const fetchedUsers = await fetchMapUsers(currentUser?.id || 'guest', genderFilter, 50, viewerGender);
         
         const otherUsers = fetchedUsers.filter(u => 
-          u.id !== currentUser.id &&
+          u.id !== currentUser?.id &&
           genderFilter.includes(u.gender) &&
-          !currentUser.blockedUsers?.includes(u.id) &&
-          !u.blockedUsers?.includes(currentUser.id)
+          !currentUser?.blockedUsers?.includes(u.id) &&
+          !u.blockedUsers?.includes(currentUser?.id || '')
         );
 
-        const newMapUsers = [currentUser, ...otherUsers];
+        const newMapUsers = currentUser ? [currentUser, ...otherUsers] : otherUsers;
         
         // 2. Update cache and state
         mapUsersCache = newMapUsers;
@@ -121,7 +124,7 @@ export default function MapPage() {
     );
   }
 
-  if (!isUserLoaded || !currentUser) {
+  if (!isUserLoaded) {
     return (
         <div className="flex flex-col h-screen">
             <Header />

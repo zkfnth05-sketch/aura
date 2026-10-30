@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import HomePageClient from '@/components/home-page-client';
-import GuestPreviewExperience from '@/components/guest-preview-experience';
+import GuestOnboardingView from '@/components/guest-onboarding-view';
 import SplashScreen from '@/components/splash-screen';
 import { useUser } from '@/contexts/user-context';
 
@@ -67,6 +67,17 @@ export default function HomePage() {
   const searchParams = useSearchParams();
   const { authUser, isLoaded, user, isSignupFlowActive } = useUser();
   const bootstrapRanRef = useRef(false);
+  const [guestGender, setGuestGender] = useState<string | null>(null);
+
+  // 로컬에 저장된 게스트 성별 로드
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('aura_guest_gender');
+      if (saved) {
+        setGuestGender(saved);
+      }
+    }
+  }, []);
 
   // [부트스트랩] 마운트 1회만 실행 — 렌더 중 부수효과 금지
   useEffect(() => {
@@ -99,10 +110,18 @@ export default function HomePage() {
     return <SplashScreen />;
   }
 
-  // 정규 앱 셸: 회원은 전체 인터페이스, 게스트는 프리뷰(액션 게이트는 셸 내부에서 처리)
-  if (user) {
-    return <HomePageClient />;
+  // 🎫 게스트 첫 진입(성별 미선택): 게스트 온보딩 화면(성별 선택 및 바로 시작)
+  if (!user && !guestGender) {
+    return (
+      <GuestOnboardingView
+        onStart={(gender) => {
+          setGuestGender(gender);
+        }}
+      />
+    );
   }
-  return <GuestPreviewExperience />;
+
+  // 🎫 로그인 회원 및 게스트: 100% 개방된 전체 회원 무제한 탐색 피드 직행!
+  return <HomePageClient />;
 }
 

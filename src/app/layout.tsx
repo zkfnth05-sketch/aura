@@ -10,6 +10,7 @@ import EscapeCallConfigDialog from '@/components/escape-call/escape-call-config-
 import IncomingEscapeCallModal from '@/components/escape-call/incoming-escape-call-modal';
 import InAppBrowserEscape from '@/components/in-app-browser-escape';
 import { TrafficTracker } from '@/components/traffic-tracker';
+import MemberOnlyDialogHost from '@/components/member-only-dialog-host';
 import { useEffect } from 'react';
 
 export default function RootLayout({
@@ -111,6 +112,7 @@ export default function RootLayout({
                 <IncomingEscapeCallModal />
               </EscapeCallProvider>
             </SelectedChatProvider>
+            <MemberOnlyDialogHost />
             <Toaster />
           </LanguageProvider>
         </UserProvider>
