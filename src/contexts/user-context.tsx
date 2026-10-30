@@ -297,7 +297,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // --- 14-Day Inactivity Check & Touch App Opened ---
   useEffect(() => {
-    if (user?.id) {
+    if (!user?.id) return;
+
+    const isFemale = user.gender === '여성' || user.gender?.toLowerCase().startsWith('f');
+    const isQueuedMale = !isFemale && user.admissionStatus === 'queued';
+
+    // 1) 여성 회원은 50:50 성비 유지를 위해 100% 무조건 정회원(active).
+    //    과거 버그로 expired/기타 상태가 남아 있으면 즉시 active로 자가 복구(self-healing).
+    if (isFemale && user.admissionStatus !== 'active') {
+      setUser((prev) => (prev ? { ...prev, admissionStatus: 'active' } : null));
+      if (supabase) {
+        supabase
+          .from('users')
+          .update({ admission_status: 'active', queue_position: null })
+          .eq('id', user.id)
+          .then(({ error }) => {
+            if (error) console.error('Failed to self-heal female admission status:', error);
+          });
+      }
+      touchAppOpened(user.id);
+      return;
+    }
+
+    // 2) 14일 미접속 만료 검사는 오직 남성 대기열 대기자에게만 적용.
+    if (isQueuedMale) {
       checkInactivityExpiry(user.id, user.lastAppOpenedAt).then((isExpired) => {
         if (isExpired) {
           toast({
@@ -310,8 +333,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
           touchAppOpened(user.id);
         }
       });
+      return;
     }
-  }, [user?.id]);
+
+    // 3) 정회원(여성 및 active 남성)은 관전 모드 토스트 대상이 아니므로
+    //    만료 검사 없이 접속 일시만 갱신한다.
+    touchAppOpened(user.id);
+  }, [user?.id, user?.gender, user?.admissionStatus]);
 
   // --- 50:50 Gender Equilibrium Action Gate Modal ---
   const [isActionGateOpen, setIsActionGateOpen] = useState(false);

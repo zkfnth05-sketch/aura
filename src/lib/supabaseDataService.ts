@@ -1027,14 +1027,26 @@ export async function checkInactivityExpiry(userId: string, lastAppOpenedAt?: st
     const diffDays = (now - lastOpened) / (1000 * 60 * 60 * 24);
 
     if (diffDays >= 14) {
-      await client
+      // ⚠️ 14일 미접속 만료는 오직 '대기열(queued)' 상태의 사용자에게만 적용한다.
+      // 이미 정회원(active)인 사용자를 expired로 강등시키는 사고를 원천 차단하기 위해
+      // admission_status = 'queued' 조건을 UPDATE 쿼리에 반드시 함께 건다.
+      const { data: expiredRows, error: expireError } = await client
         .from('users')
         .update({
           admission_status: 'expired',
           queue_position: null,
         })
-        .eq('id', userId);
-      return true; // 만료됨
+        .eq('id', userId)
+        .eq('admission_status', 'queued')
+        .select('id');
+
+      if (expireError) {
+        console.error('Failed to expire queued user:', expireError);
+        return false;
+      }
+
+      // 실제로 만료 처리된 행이 1건 이상일 때만 true (정회원은 0건 → false)
+      return Array.isArray(expiredRows) && expiredRows.length > 0;
     }
     return false;
   } catch (err) {
